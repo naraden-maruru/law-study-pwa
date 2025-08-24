@@ -113,9 +113,9 @@
     return v;
   }
 
-  const VKEYS = ["lawStudyProblemsCache_v91z","lawStudyProblemsCache_v91y","lawStudyProblemsCache_v91x"];
+  const VKEYS = ["lawStudyProblemsCache_v91aa","lawStudyProblemsCache_v91z","lawStudyProblemsCache_v91y"];
   const CACHE_KEY = VKEYS[0];
-  const UI_KEYS = ["lawStudyUI_v91z","lawStudyUI_v91y","lawStudyUI_v91x"];
+  const UI_KEYS = ["lawStudyUI_v91aa","lawStudyUI_v91z","lawStudyUI_v91y"];
   const UI_KEY = UI_KEYS[0];
 
   const CFG_STABLE_KEY = "lawStudyCfg";
@@ -617,7 +617,7 @@
               <span class="space"></span>
               <span class="small">連続演習：</span>
               <button class="ghost" onclick="__startSubtopic('', false)">順番</button>
-              <button class="ghost" onclick="__startSubtopic('', true)">ランダム</button>
+              <button class="ghost" onclick="event.stopPropagation();__startSubtopic('', true)">ランダム</button>
             </div>
           </div>
         </div>` : ''}
@@ -785,7 +785,7 @@
       }
 
       prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, self:null});
-      // reviewsは互換のため保持するが、ダッシュボードは history から逆算する
+      // next intervals (kept only for backward compatibility)
       const t = todayStr();
       prob.reviews = (prob.reviews || []).filter(d=>d>t);
       const nexts = [1,3,7,14,30].map(isoPlusDays);
@@ -882,29 +882,20 @@
 
   function renderReview(){
     const t = todayStr();
-    const labels = ["今日","1日後","3日後","7日後","14日後","1ヶ月後"];
-    const buckets = Object.fromEntries(labels.map(l=>[l,0]));
-    const mapIds = Object.fromEntries(labels.map(l=>[l,[]]));
-
     const intervals = [1,3,7,14,30];
 
+    // 今日やるべき問題（忘却曲線から逆算）
+    const dueToday = [];
     state.problems.forEach(p => {
       const last = lastAnswerYmd(p);
-      if (!last) return; // 未解答はスキップ（必要なら今日に含める仕様にも変更可）
-      const d = daysBetween(t, last); // 最終解答からの経過日数
-
-      if (intervals.includes(d) || d > intervals[intervals.length-1]){
-        buckets["今日"]++; mapIds["今日"].push(p.id); return;
-      }
-      // 次に到達する復習間隔を求め、残日数が 1/3/7/14/30 のときだけ表示
-      const nextInt = intervals.find(x => x > d);
-      if (typeof nextInt === "number"){
-        const left = nextInt - d;
-        const label = left===1?"1日後": left===3?"3日後": left===7?"7日後": left===14?"14日後": left===30?"1ヶ月後": null;
-        if (label){ buckets[label]++; mapIds[label].push(p.id); }
+      if (!last) return; // 初回未解答は除外（必要なら含める仕様に変更可）
+      const d = daysBetween(t, last); // 経過日
+      if (intervals.includes(d) || d > intervals[intervals.length-1]) {
+        dueToday.push(p.id);
       }
     });
 
+    // 自己評価まとめ
     const weakUnsure = state.problems.filter(p => latestSelfTag(p)==='unsure').map(p=>p.id);
     const weakFail   = state.problems.filter(p => latestSelfTag(p)==='fail').map(p=>p.id);
 
@@ -913,7 +904,11 @@
       if (sel==='all') return ids.slice();
       return ids.filter(id => latestSelfTag(idToProb(id))===sel);
     }
-
+    function segHTML(key){
+      const sel = state.reviewFilters[key] || 'all';
+      const mk = (v, label) => `<button class="${sel===v?'active':''}" onclick="event.stopPropagation();__setReviewFilter('${key}','${v}')">${label}</button>`;
+      return `<div class="seg" aria-label="表示切替">${mk('all','すべて')}${mk('perfect','完璧')}${mk('unsure','不安')}${mk('fail','できない')}</div>`;
+    }
     function detailsList(ids){
       if (!ids.length) return "<div class='muted small'>（対象の問題はありません）</div>";
       return `<div class="details small">` + ids.map(id => {
@@ -929,13 +924,7 @@
       }).join('') + `</div>`;
     }
 
-    function segHTML(key){
-      const sel = state.reviewFilters[key] || 'all';
-      const mk = (v, label) => `<button class="${sel===v?'active':''}" onclick="event.stopPropagation();__setReviewFilter('${key}','${v}')">${label}</button>`;
-      return `<div class="seg" aria-label="表示切替">${mk('all','すべて')}${mk('perfect','完璧')}${mk('unsure','不安')}${mk('fail','できない')}</div>`;
-    }
-
-    function row(label, key, baseIds, withSeg=true){
+    function rowOne(label, key, baseIds, withSeg=true){
       const ids = withSeg ? filterBySelf(baseIds, key) : baseIds.slice();
       const count = ids.length;
       const dis = count===0 ? 'disabled' : '';
@@ -957,20 +946,15 @@
 
     $app.innerHTML = `
       <div class="card">
-        <h2>復習ダッシュボード（忘却曲線・最終解答から逆算）</h2>
-        <div class="muted small">※ 最終解答日から <strong>1/3/7/14/30日</strong> 経過した日に「今日」に表示します。明日・3日後などは次の復習日までの残り日数で自動計算。</div>
+        <h2>今日の復習</h2>
+        <div class="muted small">※ 最終解答日から <strong>1/3/7/14/30日</strong> 経過した問題をまとめて表示します。問題を解いたらこの一覧から自動で消えます。</div>
         <div class="section">
-          ${row("今日","today", mapIds["今日"], true)}
-          ${row("1日後","d1", mapIds["1日後"], true)}
-          ${row("3日後","d3", mapIds["3日後"], true)}
-          ${row("7日後","d7", mapIds["7日後"], true)}
-          ${row("14日後","d14", mapIds["14日後"], true)}
-          ${row("1ヶ月後","d30", mapIds["1ヶ月後"], true)}
+          ${rowOne("今日やる問題","todayAll", dueToday, true)}
         </div>
         <div class="section">
           <h3>自己評価まとめ</h3>
-          ${row("不安だけ","weakU", weakUnsure, false)}
-          ${row("できないだけ","weakF", weakFail, false)}
+          ${rowOne("不安だけ","weakU", weakUnsure, false)}
+          ${rowOne("できないだけ","weakF", weakFail, false)}
         </div>
       </div>
     `;
@@ -980,7 +964,6 @@
     window.__toggleExpand = (key)=>{ state.reviewExpand[key] = !state.reviewExpand[key]; renderReview(); };
   }
 
-  // Add / Edit / Sync — unchanged from previous (shortened in this snippet for brevity)
   function renderAdd(){
     const subjectOptions = `
       <optgroup label="必修科目">
