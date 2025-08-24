@@ -35,7 +35,7 @@
     button.ghost{background:#fff;border:1px solid var(--border);padding:.6rem 1rem;border-radius:.6rem;cursor:pointer}
     .list-item{padding:.75rem;border:1px solid var(--border);border-radius:.6rem;background:#fff}
     .muted{color:var(--muted)}
-    .pill{display:inline-block;padding:.15rem .5rem;border-radius:999px;border:1px solid var(--border);font-size:.8rem;background:#fff}
+    .pill{display:inline-block;padding:.15rem .5rem;border:1px solid var(--border);font-size:.8rem;border-radius:999px;background:#fff}
     .flex{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
     .row{display:flex;gap:.5rem;align-items:center}
     .row-sm{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
@@ -127,9 +127,9 @@
     return v;
   }
 
-  const VKEYS = ["lawStudyProblemsCache_v91ad4","lawStudyProblemsCache_v91ad3","lawStudyProblemsCache_v91ad2"];
+  const VKEYS = ["lawStudyProblemsCache_v91ad5","lawStudyProblemsCache_v91ad4","lawStudyProblemsCache_v91ad3"];
   const CACHE_KEY = VKEYS[0];
-  const UI_KEYS = ["lawStudyUI_v91ad4","lawStudyUI_v91ad3","lawStudyUI_v91ad2"];
+  const UI_KEYS = ["lawStudyUI_v91ad5","lawStudyUI_v91ad4","lawStudyUI_v91ad3"];
   const UI_KEY = UI_KEYS[0];
 
   const CFG_STABLE_KEY = "lawStudyCfg";
@@ -151,9 +151,22 @@
   }
   function saveConfig(){ localStorage.setItem(CFG_STABLE_KEY, JSON.stringify(config)); }
 
-  function saveLocal(problems){
+  // ====== 日付（ローカル基準） ======
+  const ymdLocal = (d=new Date())=>{
+    const t=new Date(d); t.setHours(0,0,0,0);
+    const y=t.getFullYear(), m=t.getMonth()+1, dd=t.getDate();
+    return `${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+  };
+  const addDaysLocal = (days)=>{
+    const t=new Date(); t.setHours(0,0,0,0); t.setDate(t.getDate()+days);
+    return ymdLocal(t);
+  };
+  const parseYMD = (s)=>{ const [y,m,d]=s.split('-').map(Number); const dt=new Date(y,m-1,d); dt.setHours(0,0,0,0); return dt; };
+  const daysBetweenLocal = (ymdA, ymdB)=> Math.round((parseYMD(ymdA)-parseYMD(ymdB))/(1000*60*60*24));
+
+  function saveLocal(problems, sessions){
     if (!config.autoLocalSave) return;
-    const payload = { updatedAt: new Date().toISOString(), problems };
+    const payload = { updatedAt: new Date().toISOString(), problems, sessions: sessionsState.logs };
     localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
     updateNavBadges();
   }
@@ -274,10 +287,11 @@
       const file = await fileHandle.getFile();
       const text = await file.text();
       const data = text ? JSON.parse(text) : [];
-      if (!Array.isArray(data)) throw new Error("JSONは配列ではありません");
+      if (!Array.isArray(data)) throw new Error("JSONは配列ではありません（v9互換）");
       sanitizeProblems(data);
       state.problems = data;
-      saveLocal(state.problems);
+      reindex(); // ⑥
+      saveLocal(state.problems, sessionsState.logs);
       render();
       return true;
     }catch(e){
@@ -291,6 +305,7 @@
     if (!fileHandle) return;
     try{
       const writable = await fileHandle.createWritable();
+      // v9 互換：problems 配列のみ保存（セッションはローカル）
       await writable.write(JSON.stringify(state.problems, null, 2));
       await writable.close();
     }catch(e){ console.warn("ファイル保存に失敗:", e); }
@@ -310,11 +325,67 @@
       if (!p.note) p.note = "";
       if (!p.subject) p.subject = "未分類";
       if (!p.importance) p.importance = "★中程度";
-      if (!p.selfStats) p.selfStats = {perfect:0, unsure:0, fail:0};
+      if (!p.selfStats) p.selfStats = {perfect:0,unsure:0,fail:0};
       if (typeof p.topic === "undefined") p.topic = "";
       if (typeof p.subtopic === "undefined") p.subtopic = "";
     });
   }
+
+  // ====== 監査ログ（⑧） ======
+  const sessionsState = {
+    current: null,
+    logs: [] // {id,startAt,endAt,context:{subject,topic,subtopic,random}, planned, answered, scoreCount:{ok,good,low,bad}, durationSec}
+  };
+  function startSession(ids, random){
+    endSession(); // 既存を閉じる
+    sessionsState.current = {
+      id: Date.now()+Math.floor(Math.random()*1000),
+      startAt: new Date().toISOString(),
+      endAt: null,
+      context: {subject: state.currentSubject, topic: state.currentTopic, subtopic: state.currentSubtopic, random: !!random},
+      planned: ids.length,
+      answered: 0,
+      scoreCount: {ok:0, good:0, low:0, bad:0}
+    };
+    saveLocal(state.problems, sessionsState.logs);
+  }
+  function bumpSessionOnScore(scoreChar){
+    if (!sessionsState.current) return;
+    sessionsState.current.answered++;
+    if (scoreChar==="◎") sessionsState.current.scoreCount.ok++;
+    else if (scoreChar==="○") sessionsState.current.scoreCount.good++;
+    else if (scoreChar==="△") sessionsState.current.scoreCount.low++;
+    else sessionsState.current.scoreCount.bad++;
+    saveLocal(state.problems, sessionsState.logs);
+  }
+  function endSession(){
+    if (!sessionsState.current) return;
+    const s = sessionsState.current;
+    s.endAt = new Date().toISOString();
+    try{
+      const d1 = new Date(s.startAt).getTime(), d2 = new Date(s.endAt).getTime();
+      s.durationSec = Math.max(0, Math.round((d2-d1)/1000));
+    }catch{ s.durationSec = null; }
+    sessionsState.logs.push(s);
+    sessionsState.current = null;
+    saveLocal(state.problems, sessionsState.logs);
+  }
+  function exportSessionCSV(){
+    const rows = [["id","startAt","endAt","durationSec","subject","topic","subtopic","random","planned","answered","ok","good","low","bad"]];
+    sessionsState.logs.forEach(l=>{
+      rows.push([l.id,l.startAt,l.endAt,l.durationSec,
+        l.context?.subject||"", l.context?.topic||"", l.context?.subtopic||"", l.context?.random?1:0,
+        l.planned, l.answered, l.scoreCount.ok, l.scoreCount.good, l.scoreCount.low, l.scoreCount.bad]);
+    });
+    const csv = rows.map(r=> r.map(x=> `"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], {type:"text/csv"});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = "study-sessions.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
   const state = {
     view: 'subjects',
     problems: [],
@@ -329,6 +400,73 @@
     reviewExpand: {}
   };
 
+  // ====== ⑥ シンプルインデックス ======
+  let indexVersion = 0;
+  let indexCache = null; // {subjects:Map, topics:Map(subj->Map), subtopics:Map(subj->Map(topic->Map))}
+  function reindex(){
+    indexVersion++;
+    const subjects = new Map();
+    const topics = new Map();     // subj -> Map(topic -> [ids])
+    const subtopics = new Map();  // subj -> Map(topic -> Map(subtopic -> [ids]))
+    state.problems.forEach(p=>{
+      const subj = (p.subject===ELECTIVE_GROUP || ELECTIVE_SUBJECTS.includes(p.subject)) ? (p.subject===ELECTIVE_GROUP?ELECTIVE_GROUP:p.subject) : p.subject;
+      if (!subjects.has(subj)) subjects.set(subj, []);
+      subjects.get(subj).push(p.id);
+      const t = (p.topic||"");
+      const st = (p.subtopic||"");
+      if (!topics.has(subj)) topics.set(subj, new Map());
+      if (!topics.get(subj).has(t)) topics.get(subj).set(t, []);
+      topics.get(subj).get(t).push(p.id);
+      if (!subtopics.has(subj)) subtopics.set(subj, new Map());
+      if (!subtopics.get(subj).has(t)) subtopics.get(subj).set(t, new Map());
+      if (!subtopics.get(subj).get(t).has(st)) subtopics.get(subj).get(t).set(st, []);
+      subtopics.get(subj).get(t).get(st).push(p.id);
+    });
+    indexCache = {subjects, topics, subtopics};
+  }
+  function idsBySubject(subj){
+    if (!indexCache) reindex();
+    if (subj===ELECTIVE_GROUP){
+      // 選択科目 = ELECTIVE_GROUP に登録されたもの全部 + 既存の個別科目も論理上含める（互換用）
+      const ids = new Set(indexCache.subjects.get(ELECTIVE_GROUP) || []);
+      ELECTIVE_SUBJECTS.forEach(s=> (indexCache.subjects.get(s)||[]).forEach(id=>ids.add(id)));
+      return Array.from(ids);
+    }
+    return (indexCache.subjects.get(subj) || []).slice();
+  }
+  function idsByTopic(subj, topic){
+    if (!indexCache) reindex();
+    return ((indexCache.topics.get(subj)||new Map()).get(topic||"") || []).slice();
+  }
+  function idsBySubtopic(subj, topic, subtopic){
+    if (!indexCache) reindex();
+    return (((indexCache.subtopics.get(subj)||new Map()).get(topic||"")||new Map()).get(subtopic||"") || []).slice();
+  }
+
+  function meetsFilters(p){
+    const impOk = (state.currentImportance==='all') || (p.importance===state.currentImportance);
+    const tag = latestSelfTag(p);
+    const selfOk = (state.currentSelf==='all') || (tag===state.currentSelf);
+    return impOk && selfOk;
+  }
+  function problemsBySubjectFiltered(subj){
+    const ids = idsBySubject(subj);
+    const arr = ids.map(id=>idToProb(id)).filter(Boolean);
+    return arr.filter(meetsFilters);
+  }
+  function topicsForSubject(subj){
+    if (!indexCache) reindex();
+    const m = indexCache.topics.get(subj)||new Map();
+    const keys = Array.from(m.keys()).filter(Boolean);
+    return keys.sort((a,b)=> a.localeCompare(b,'ja'));
+  }
+  function subtopicsFor(subj, topic){
+    if (!indexCache) reindex();
+    const m = ((indexCache.subtopics.get(subj)||new Map()).get(topic||"")||new Map());
+    const keys = Array.from(m.keys()).filter(Boolean);
+    return keys.sort((a,b)=> a.localeCompare(b,'ja'));
+  }
+
   const $app = document.getElementById('app');
   document.getElementById('nav-subjects').onclick = () => { setActive('subjects') };
   document.getElementById('nav-review').onclick   = () => { setActive('review') };
@@ -339,7 +477,7 @@
 
   function setActive(view){
     state.view = view;
-    if (view !== 'quiz') state.reviewQueue = null;
+    if (view !== 'quiz') { state.reviewQueue = null; endSession(); } // ⑧ セッション終了
     render();
     document.querySelectorAll('header nav button').forEach(b => b.classList.remove('active'));
     if (view==='subjects' || view==='topics' || view==='subtopics' || view==='list') document.getElementById('nav-subjects').classList.add('active');
@@ -364,52 +502,40 @@
     }
     return null;
   }
-  function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
-  function daysBetween(a,b){
-    const A = new Date(a+"T00:00:00Z");
-    const B = new Date(b+"T00:00:00Z");
-    return Math.round((A-B)/(1000*60*60*24));
-  }
+  function todayStr(){ return ymdLocal(new Date()); }
   function escapeHtml(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-  function isoPlusDays(days){ const d=new Date(); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
   function idToProb(id){ return state.problems.find(p=>p.id===id); }
   function shuffleIds(ids){ const a=ids.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j]];} return a; }
 
-  function meetsFilters(p){
-    const impOk = (state.currentImportance==='all') || (p.importance===state.currentImportance);
-    const tag = latestSelfTag(p);
-    const selfOk = (state.currentSelf==='all') || (tag===state.currentSelf);
-    return impOk && selfOk;
-  }
-  function problemsBySubjectFiltered(subj){
-    let arr;
-    if (subj==="__ELECTIVE__"){
-      arr = state.problems.filter(p => p.subject==="__ELECTIVE__" || ["労働法","倒産法","知的財産法","租税法","国際私法","国際公法","経済法","環境法"].includes(p.subject));
-    } else {
-      arr = state.problems.filter(p => p.subject===subj);
+  function filtered(){
+    let arr = problemsBySubjectFiltered(state.currentSubject);
+    if (state.currentTopic !== 'all'){
+      arr = arr.filter(p => (p.topic||"") === state.currentTopic);
     }
-    return arr.filter(meetsFilters);
-  }
-  function topicsForSubject(subj){
-    const list = (problemsBySubjectFiltered(subj)).map(p => (p.topic||"").trim()).filter(t=>t);
-    return Array.from(new Set(list)).sort((a,b)=> a.localeCompare(b,'ja'));
-  }
-  function subtopicsFor(subj, topic){
-    const list = problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic).map(p => (p.subtopic||"").trim()).filter(t=>t);
-    return Array.from(new Set(list)).sort((a,b)=> a.localeCompare(b,'ja'));
+    if (state.currentSubtopic !== 'all'){
+      arr = arr.filter(p => (p.subtopic||"") === state.currentSubtopic);
+    }
+    return arr;
   }
 
-  // ====== 復習バッジ更新 ======
+  // ====== 復習バッジ更新（レビュー日ベース & ローカル日付）（①） ======
   function getDueTodayCount(){
     const t = todayStr();
-    const intervals = [1,3,7,14,30];
     let cnt = 0;
     state.problems.forEach(p => {
-      const last = lastAnswerYmd(p);
-      if (!last) return;
-      const d = daysBetween(t, last);
-      if (intervals.includes(d) || d > intervals[intervals.length-1]) cnt++;
+      const revs = (p.reviews||[]).filter(d => d <= t);
+      if (revs.length) cnt++;
     });
+    // 旧v9データ救済：レビューが空の場合は最終解答日から既定間隔で判定
+    if (cnt===0){
+      const intervals = [1,3,7,14,30];
+      state.problems.forEach(p=>{
+        const last = lastAnswerYmdLocal(p);
+        if (!last) return;
+        const d = daysBetweenLocal(t, last);
+        if (intervals.includes(d) || d > intervals[intervals.length-1]) cnt++;
+      });
+    }
     return cnt;
   }
   function updateNavBadges(){
@@ -466,9 +592,11 @@
   window.__resetFilters = ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); };
 
   function rawCountBySubject(name){
-    return state.problems.filter(p => (name==="__ELECTIVE__"
-      ? (p.subject==="__ELECTIVE__" || ["労働法","倒産法","知的財産法","租税法","国際私法","国際公法","経済法","環境法"].includes(p.subject))
-      : p.subject===name)).length;
+    if (name==="__ELECTIVE__"){
+      const ids = idsBySubject(name);
+      return ids.length;
+    }
+    return idsBySubject(name).length;
   }
   function renderSubjects(){
     const coreHtml = CORE_SUBJECTS.map(s=>`
@@ -509,12 +637,8 @@
     window.__selectElective = ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); };
   }
 
-  function topicCount(subj, topic){
-    return problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic).length;
-  }
-  function unclassifiedTopicCount(subj){
-    return problemsBySubjectFiltered(subj).filter(p => !p.topic).length;
-  }
+  function topicCount(subj, topic){ return idsByTopic(subj, topic).length; }
+  function unclassifiedTopicCount(subj){ return idsByTopic(subj, "").length; }
   function renderTopics(){
     const subj = state.currentSubject;
     if (!subj){ setActive('subjects'); return; }
@@ -532,7 +656,7 @@
       </div>
     `).join('');
 
-    const subjectCount = problemsBySubjectFiltered(subj).length;
+    const subjectCount = rawCountBySubject(subj);
 
     $app.innerHTML = `
       <div class="card">
@@ -587,21 +711,17 @@
       render();
     };
     window.__startSubjectAll = (rnd)=>{
-      const ids = problemsBySubjectFiltered(subj).map(p=>p.id);
+      const ids = idsBySubject(subj);
       startQueue(ids, rnd);
     };
     window.__startTopic = (topic, rnd)=>{
-      const ids = problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic).map(p=>p.id);
+      const ids = idsByTopic(subj, topic);
       startQueue(ids, rnd);
     };
   }
 
-  function subtopicCount(subj, topic, subtopic){
-    return problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic && (p.subtopic||"")===subtopic).length;
-  }
-  function unclassifiedSubtopicCount(subj, topic){
-    return problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic && !p.subtopic).length;
-  }
+  function subtopicCount(subj, topic, subtopic){ return idsBySubtopic(subj, topic, subtopic).length; }
+  function unclassifiedSubtopicCount(subj, topic){ return idsBySubtopic(subj, topic, "").length; }
   function renderSubtopics(){
     const subj = state.currentSubject;
     const topic = state.currentTopic;
@@ -622,7 +742,7 @@
       </div>
     `).join('');
 
-    const topicAll = problemsBySubjectFiltered(subj).filter(p=>(p.topic||"")===topic).length;
+    const topicAll = idsByTopic(subj, topic).length;
 
     $app.innerHTML = `
       <div class="card">
@@ -673,11 +793,11 @@
     window.__backTopics = () => { state.view='topics'; render(); };
     window.__selectSubtopic = (st)=>{ state.currentSubtopic = st; state.view='list'; render(); };
     window.__startTopicAll = (rnd)=>{
-      const ids = problemsBySubjectFiltered(subj).filter(p=>(p.topic||"")===topic).map(p=>p.id);
+      const ids = idsByTopic(subj, topic);
       startQueue(ids, rnd);
     };
     window.__startSubtopic = (st, rnd)=>{
-      const ids = problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic && (p.subtopic||"")===st).map(p=>p.id);
+      const ids = idsBySubtopic(subj, topic, st);
       startQueue(ids, rnd);
     };
   }
@@ -687,20 +807,11 @@
     if (!q.length) return;
     state.reviewQueue = q;
     state.currentProblemId = q[0];
+    startSession(q, randomize); // ⑧
     state.view='quiz';
     render();
   }
 
-  function filtered(){
-    let arr = problemsBySubjectFiltered(state.currentSubject);
-    if (state.currentTopic !== 'all'){
-      arr = arr.filter(p => (p.topic||"") === state.currentTopic);
-    }
-    if (state.currentSubtopic !== 'all'){
-      arr = arr.filter(p => (p.subtopic||"") === state.currentSubtopic);
-    }
-    return arr;
-  }
   function renderList(){
     const list = filtered();
     const topicLabel =
@@ -757,14 +868,15 @@
     window.__backTopics = () => { state.view='topics'; render(); };
     window.__backSubtopics = () => { state.view='subtopics'; render(); };
     window.__startAll = (rnd)=>{ startQueue(ids, rnd); };
-    window.__startQuiz = (id)=>{ state.reviewQueue=null; state.currentProblemId = id; state.view='quiz'; render(); };
+    window.__startQuiz = (id)=>{ state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); state.view='quiz'; render(); };
     window.__editProblem = (id)=>{ state.currentProblemId = id; state.view='edit'; render(); };
     window.__deleteProblem = (id)=>{
       const target = state.problems.find(p=>p.id===id);
       if (!target) return;
       if (!confirm(`次の問題を削除します。よろしいですか？\n\n「${target.question}」`)) return;
       state.problems = state.problems.filter(p=>p.id!==id);
-      saveLocal(state.problems);
+      reindex(); // ⑥
+      saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
       renderList();
@@ -803,16 +915,17 @@
         <div id="result" class="section"></div>
       </div>
     `;
-    window.__backList = ()=>{ state.view='list'; state.reviewQueue=null; render(); };
+    window.__backList = ()=>{ state.view='list'; state.reviewQueue=null; endSession(); render(); };
     window.__prev = ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; renderQuiz(); } else showNoPrev(); };
     window.__next = ()=>{ const id=navNextId(); if (id){ state.currentProblemId=id; renderQuiz(); } else showNoNext(); };
-    window.__goHome = ()=> setActive('subjects');
+    window.__goHome = ()=> { endSession(); setActive('subjects'); };
 
     function showNoPrev(){
       document.getElementById('result').innerHTML = `<div class="card"><div class="muted">前の問題はありません。</div><div class="section flex"><button class="ghost" onclick="__goHome()">トップへ戻る</button></div></div>`;
     }
     function showNoNext(){
       document.getElementById('result').innerHTML = `<div class="card"><div class="muted">キュー内の問題を解き終えました。</div><div class="section flex"><button class="ghost" onclick="__goHome()">トップへ戻る</button><button class="ghost" onclick="setActive('review')">復習ダッシュボードに戻る</button></div></div>`;
+      endSession();
     }
 
     window.__grade = ()=>{
@@ -830,17 +943,29 @@
         if (ratio===1){ score="◎"; cls="score-okay"; }
         else if (ratio>=0.6){ score="○"; cls="score-mid"; }
         else if (ratio>0){ score="△"; cls="score-low"; }
+        else { score="✕"; cls="score-bad"; }
         scoreDetail = `（${matches.length} / ${total}）`;
       }
 
-      prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, self:null});
+      // ① 次回レビュー日：スコア連動
       const t = todayStr();
+      const nextByScore = (()=>{
+        if (score==="◎") return [7,14,30];
+        if (score==="○") return [3,7,14,30];
+        if (score==="△") return [1,3,7,14];
+        if (score==="✕") return [1,3];
+        return [1,3,7,14,30];
+      })().map(addDaysLocal);
+      // 期限切れ分は消し、新規を追加（重複排除）
       prob.reviews = (prob.reviews || []).filter(d=>d>t);
-      const nexts = [1,3,7,14,30].map(isoPlusDays);
-      const set = new Set([...(prob.reviews||[]), ...nexts]);
+      const set = new Set([...(prob.reviews||[]), ...nextByScore]);
       prob.reviews = Array.from(set).sort();
 
-      saveLocal(state.problems);
+      // 履歴
+      prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, self:null});
+      bumpSessionOnScore(score); // ⑧
+
+      saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
 
@@ -853,7 +978,7 @@
         escaped = escaped.replace(re, `<mark class="hit">${kw}</mark>`);
       });
 
-      // 模範解答（命中は黄色、抜けはピンクでハイライト）
+      // 模範解答（命中は黄、抜けは桃でハイライト）
       let modelEscaped = escapeHtml(prob.example || "（登録なし）");
       (prob.keywords || []).forEach(kw=>{
         if (!kw) return;
@@ -911,19 +1036,19 @@
       if (tag==='perfect') prob.selfStats.perfect++;
       if (tag==='unsure') prob.selfStats.unsure++;
       if (tag==='fail') prob.selfStats.fail++;
-      saveLocal(state.problems);
+      saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
     };
   }
 
-  function lastAnswerYmd(p){
+  function lastAnswerYmdLocal(p){
     if (!Array.isArray(p.history) || p.history.length===0) return null;
     let last = null;
     for (let i=0;i<p.history.length;i++){
       const h = p.history[i];
       if (h && h.date){
-        const ymd = new Date(h.date).toISOString().slice(0,10);
+        const ymd = ymdLocal(new Date(h.date));
         if (!last || ymd > last) last = ymd;
       }
     }
@@ -932,18 +1057,22 @@
 
   function renderReview(){
     const t = todayStr();
-    const intervals = [1,3,7,14,30];
 
-    // 今日やるべき問題
+    // 今日やるべき問題（reviews <= today）。空なら旧ロジック救済
     const dueToday = [];
     state.problems.forEach(p => {
-      const last = lastAnswerYmd(p);
-      if (!last) return;
-      const d = daysBetween(t, last);
-      if (intervals.includes(d) || d > intervals[intervals.length-1]) {
-        dueToday.push(p.id);
-      }
+      const revs = (p.reviews||[]).filter(d => d <= t);
+      if (revs.length) dueToday.push(p.id);
     });
+    if (dueToday.length===0){
+      const intervals = [1,3,7,14,30];
+      state.problems.forEach(p => {
+        const last = lastAnswerYmdLocal(p);
+        if (!last) return;
+        const d = daysBetweenLocal(t, last);
+        if (intervals.includes(d) || d > intervals[intervals.length-1]) dueToday.push(p.id);
+      });
+    }
 
     const weakUnsure = state.problems.filter(p => latestSelfTag(p)==='unsure').map(p=>p.id);
     const weakFail   = state.problems.filter(p => latestSelfTag(p)==='fail').map(p=>p.id);
@@ -987,7 +1116,7 @@
     $app.innerHTML = `
       <div class="card">
         <h2>今日の復習</h2>
-        <div class="muted small">※ 最終解答日から <strong>1/3/7/14/30日</strong> 経過した問題をまとめて表示します。問題を解いたらこの一覧から自動で消えます。</div>
+        <div class="muted small">※ スコアに応じて次回間隔を調整。予定日はキュー消化時に自動更新されます。</div>
         <div class="section">
           ${rowOne("今日やる問題","todayAll", dueToday)}
         </div>
@@ -1070,7 +1199,8 @@
       const note     = (document.getElementById('f-note').value||'').trim();
       if (!question) return showMsg('問題文を入力してください。');
       state.problems.push({ id: Date.now()+Math.floor(Math.random()*1000), subject, topic, subtopic, importance, question, example, keywords, note, history:[], reviews:[], selfStats:{perfect:0,unsure:0,fail:0} });
-      saveLocal(state.problems);
+      reindex(); // ⑥
+      saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
       document.getElementById('f-question').value='';
@@ -1157,7 +1287,8 @@
       const note     = (document.getElementById('e-note').value||'').trim();
       if (!question) return showMsg('問題文を入力してください。');
       Object.assign(prob, {subject, topic, subtopic, importance, question, example, keywords, note});
-      saveLocal(state.problems);
+      reindex(); // ⑥
+      saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
       showMsg('保存しました。');
@@ -1168,7 +1299,8 @@
       if (!target) return;
       if (!confirm(`この問題を削除します。よろしいですか？\n\n「${target.question}」`)) return;
       state.problems = state.problems.filter(p=>p.id!==id);
-      saveLocal(state.problems);
+      reindex(); // ⑥
+      saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
       state.view='list'; render();
@@ -1211,6 +1343,14 @@
             <button class="ghost" id="btn-export">エクスポート</button>
           </div>
         </div>
+
+        <h3 class="section">D. 学習履歴（ローカル）</h3>
+        <div class="section">
+          <div class="row-sm">
+            <button class="ghost" id="btn-session-export">学習履歴をCSVで書き出し</button>
+            <span class="help">※ セッションはローカル保存です（v9互換のためファイルとは別管理）。</span>
+          </div>
+        </div>
       </div>
     `;
     const chkLocal   = document.getElementById('cfg-local');
@@ -1235,6 +1375,7 @@
     const btnLoad    = document.getElementById('btn-load');
     const btnReconnect = document.getElementById('btn-reconnect');
     const btnDisconnect= document.getElementById('btn-disconnect');
+    const btnSessExp  = document.getElementById('btn-session-export');
 
     if (btnSaveCfg) btnSaveCfg.onclick = ()=>{ saveConfig(); alert("設定を保存しました。"); };
     if (btnClear) btnClear.onclick = ()=>{
@@ -1272,6 +1413,7 @@
       fileHandle = null;
       alert("ファイルの接続情報を削除しました。");
     };
+    if (btnSessExp) btnSessExp.onclick = ()=> exportSessionCSV();
   }
 
   function showIOSImportModal(){
@@ -1347,7 +1489,8 @@
         const data = JSON.parse(reader.result);
         sanitizeProblems(data);
         state.problems = data;
-        saveLocal(state.problems);
+        reindex(); // ⑥
+        saveLocal(state.problems, sessionsState.logs);
         scheduleFileSave();
         updateNavBadges();
         if (notify) banner("インポートしました。");
@@ -1440,6 +1583,7 @@
         try {
           sanitizeProblems(cached.problems);
           state.problems = cached.problems;
+          if (Array.isArray(cached.sessions)) sessionsState.logs = cached.sessions;
           loaded = true;
         } catch(e) {}
       }
@@ -1447,6 +1591,7 @@
     if (!loaded){
       state.problems = [];
     }
+    reindex(); // ⑥
     state.view = 'subjects';
     const ui = loadUI() || {};
     state.currentImportance = ui.currentImportance || 'all';
