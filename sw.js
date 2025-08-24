@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'sapuri-theme-v1';
+const CACHE_NAME = 'ronsho-typing-v91ad2-v1';
 const ASSETS = [
   './',
   './index.html',
