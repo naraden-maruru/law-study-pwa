@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'ronsho-typing-v91ad5-v1';
+const CACHE_NAME = 'ronsho-typing-v91ad11-v1';
 const ASSETS = [
   './',
   './index.html',

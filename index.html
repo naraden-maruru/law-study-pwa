@@ -20,8 +20,8 @@
     nav button.danger{color:var(--bad);border-color:#fecaca;background:#fff}
     nav button.danger:hover{background:#fee2e2}
     .badge{display:inline-flex; align-items:center; justify-content:center; height:1.2em; min-width:1.2em; padding:0 .35rem; margin-left:.4rem; border-radius:999px; background:#dc2626; color:#fff; font-size:.72rem; line-height:1; font-weight:700}
-    main{max-width:980px;margin:0 auto;padding:1rem}
-    .banner{position:sticky;top:52px;z-index:25;margin:0 auto;max-width:980px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:.6rem;padding:.6rem 1rem;display:flex;gap:.5rem;align-items:center}
+    main{max-width:1000px;margin:0 auto;padding:1rem}
+    .banner{position:sticky;top:52px;z-index:25;margin:0 auto;max-width:1000px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:.6rem;padding:.6rem 1rem;display:flex;gap:.5rem;align-items:center}
     .banner.hidden{display:none}
     .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;margin:.65rem 0}
     .section{margin-top:1rem}
@@ -44,8 +44,8 @@
     .danger:hover{background:#fee2e2}
     .note{background:#fff7ed;border:1px solid #fed7aa;border-radius:.6rem;padding:.6rem}
     mark{background:#fff59d;padding:0 .1rem;border-radius:.2rem}
-    mark.hit{background:#fff59d} /* 命中 */
-    mark.miss{background:#fecaca} /* 抜け */
+    mark.hit{background:#fff59d}
+    mark.miss{background:#fecaca}
     .kw{display:inline-block;margin:.1rem .2rem;padding:.15rem .4rem;border:1px dashed #bbb;border-radius:.4rem;background:#fafafa;font-size:.85rem}
     .kw-miss{background:#fee2e2;border-color:#fecaca;color:#991b1b;font-weight:700}
     .score{font-weight:700}
@@ -66,30 +66,32 @@
     .review-row{display:flex;align-items:center;gap:.5rem;padding:.6rem;border:1px solid var(--border);border-radius:.6rem;background:#fff;margin:.4rem 0;cursor:pointer}
     .review-row .label{min-width:10em;font-weight:700}
     .btncol{display:flex;flex-direction:column;gap:.35rem}
-    .btncol button{writing-mode:horizontal-tb;text-orientation:mixed;white-space:nowrap}
     .chip{display:inline-block;padding:.25rem .6rem;border:1px solid var(--border);border-radius:999px;margin:.15rem;cursor:default}
     .chip:hover{background:#f8fafc}
     .help{font-size:.8rem;color:#666}
     .details{border:1px dashed var(--border);border-radius:.6rem;padding:.6rem;margin:.35rem 0;background:#fcfcfc}
     .inline{display:flex;gap:.5rem;align-items:center}
     .hidden{display:none}
-    .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:50}
-    .modal{background:#fff;border-radius:12px;max-width:640px;width:100%;border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.2);padding:1rem}
-    .modal h3{margin:.2rem 0 .6rem}
-    ol.guide{padding-left:1.2rem;margin:.5rem 0}
-    ol.guide li{margin:.4rem 0}
-    @media (max-width:560px){
-      .review-row {align-items:flex-start}
-      .review-row .label{min-width:auto}
-      .review-row .space{min-width:0}
-    }
+
+    /* Error overlay */
+    #errlayer{position:fixed;inset:0;background:rgba(0,0,0,.6);color:#fff;z-index:9999;display:none;align-items:center;justify-content:center;padding:1rem}
+    #errbox{background:#111;border:1px solid #444;max-width:900px;width:100%;padding:1rem;border-radius:.75rem}
+    #errbox pre{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;background:#000;padding:.75rem;border-radius:.5rem;color:#0f0;max-height:50vh;overflow:auto}
   </style>
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(()=>{});
-      });
-    }
+    // Optional: disable SW if ?nosw in URL
+    (function(){
+      if (location.search.includes('nosw')) {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+        }
+        console.log('[SW] Disabled via ?nosw');
+      } else if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('SW register failed', err));
+        });
+      }
+    })();
   </script>
 </head>
 <body>
@@ -107,9 +109,22 @@
 <main id="app"></main>
 <div id="sys-banner" class="banner hidden"></div>
 <div id="modal-root"></div>
+<div id="errlayer"><div id="errbox"><h3>エラーが発生しました</h3><pre id="errtext"></pre><div class="section"><button onclick="document.getElementById('errlayer').style.display='none'">閉じる</button></div></div></div>
 
 <script>
 (() => {
+  // ===== Debug overlay =====
+  function showError(msg){
+    try{
+      const txt = (msg && msg.stack) ? msg.stack : (typeof msg==='string' ? msg : JSON.stringify(msg));
+      document.getElementById('errtext').textContent = txt;
+      document.getElementById('errlayer').style.display = 'flex';
+      console.error('[FATAL]', msg);
+    }catch(e){ console.error('Error while showing error', e, msg); }
+  }
+  window.addEventListener('error', e => showError(e.error || e.message));
+  window.addEventListener('unhandledrejection', e => showError(e.reason || e));
+
   const UA = navigator.userAgent || "";
   const IS_IPHONE = /iPhone|iPod/.test(UA) && "ontouchend" in document;
 
@@ -127,9 +142,9 @@
     return v;
   }
 
-  const VKEYS = ["lawStudyProblemsCache_v91ad5","lawStudyProblemsCache_v91ad4","lawStudyProblemsCache_v91ad3"];
+  const VKEYS = ["lawStudyProblemsCache_v91ad8","lawStudyProblemsCache_v91ad7","lawStudyProblemsCache_v91ad6"];
   const CACHE_KEY = VKEYS[0];
-  const UI_KEYS = ["lawStudyUI_v91ad5","lawStudyUI_v91ad4","lawStudyUI_v91ad3"];
+  const UI_KEYS = ["lawStudyUI_v91ad8","lawStudyUI_v91ad7","lawStudyUI_v91ad6"];
   const UI_KEY = UI_KEYS[0];
 
   const CFG_STABLE_KEY = "lawStudyCfg";
@@ -143,9 +158,14 @@
         try{ const v = JSON.parse(localStorage.getItem(k)); if (v){ c=v; break; } }catch{}
       }
     }
-    if (!c) c = {autoLocalSave:true, autoRestore:true, fileAutoSave:true, iosShowImportAtBoot:true, iosShowExportGuide:true};
-    ["autoLocalSave","autoRestore","fileAutoSave","iosShowImportAtBoot","iosShowExportGuide"].forEach(k=>{
-      if (typeof c[k]==="undefined") c[k]=true;
+    if (!c) c = {
+      autoLocalSave:true, autoRestore:true, fileAutoSave:true,
+      iosShowImportAtBoot:true, iosShowExportGuide:true,
+      mixRatio: {unsure:5, fail:3, other:2},
+      enableCommandPalette: true
+    };
+    ["autoLocalSave","autoRestore","fileAutoSave","iosShowImportAtBoot","iosShowExportGuide","mixRatio","enableCommandPalette"].forEach(k=>{
+      if (typeof c[k]==="undefined") c[k]= (k==="mixRatio"?{unsure:5,fail:3,other:2} : true);
     });
     return c;
   }
@@ -164,6 +184,30 @@
   const parseYMD = (s)=>{ const [y,m,d]=s.split('-').map(Number); const dt=new Date(y,m-1,d); dt.setHours(0,0,0,0); return dt; };
   const daysBetweenLocal = (ymdA, ymdB)=> Math.round((parseYMD(ymdA)-parseYMD(ymdB))/(1000*60*60*24));
 
+  // ====== 日次カウント ======
+  const DAILY_KEY = "lawStudyDaily_v1";
+  function getDailyMap(){
+    try{ return JSON.parse(localStorage.getItem(DAILY_KEY)) || {}; }catch{ return {}; }
+  }
+  function setDailyMap(m){ localStorage.setItem(DAILY_KEY, JSON.stringify(m)); }
+  function addDailyAnswered(n=1){
+    const t = ymdLocal(new Date());
+    const m = getDailyMap(); m[t] = (m[t]||0) + n; setDailyMap(m);
+  }
+  function calcStreak(){
+    const m = getDailyMap();
+    let streak = 0;
+    for (let back=0; ; back++){
+      const d = new Date(); d.setDate(d.getDate()-back);
+      const ymd = ymdLocal(d);
+      if ((m[ymd]||0) > 0) streak++;
+      else break;
+    }
+    return streak;
+  }
+  function todayCount(){ const m=getDailyMap(); const t=ymdLocal(new Date()); return m[t]||0; }
+
+  // ====== ローカル保存 ======
   function saveLocal(problems, sessions){
     if (!config.autoLocalSave) return;
     const payload = { updatedAt: new Date().toISOString(), problems, sessions: sessionsState.logs };
@@ -194,6 +238,7 @@
     return {};
   }
 
+  // ====== IDB（ファイルハンドル保存） ======
   const DB_NAME = 'lawStudyFS';
   const STORE = 'handles';
   function idbOpen(){
@@ -290,7 +335,7 @@
       if (!Array.isArray(data)) throw new Error("JSONは配列ではありません（v9互換）");
       sanitizeProblems(data);
       state.problems = data;
-      reindex(); // ⑥
+      reindex();
       saveLocal(state.problems, sessionsState.logs);
       render();
       return true;
@@ -305,7 +350,6 @@
     if (!fileHandle) return;
     try{
       const writable = await fileHandle.createWritable();
-      // v9 互換：problems 配列のみ保存（セッションはローカル）
       await writable.write(JSON.stringify(state.problems, null, 2));
       await writable.close();
     }catch(e){ console.warn("ファイル保存に失敗:", e); }
@@ -326,23 +370,24 @@
       if (!p.subject) p.subject = "未分類";
       if (!p.importance) p.importance = "★中程度";
       if (!p.selfStats) p.selfStats = {perfect:0,unsure:0,fail:0};
+      if (typeof p.weakPoints !== 'number') p.weakPoints = 0;
       if (typeof p.topic === "undefined") p.topic = "";
       if (typeof p.subtopic === "undefined") p.subtopic = "";
     });
   }
 
-  // ====== 監査ログ（⑧） ======
+  // ====== 監査ログ ======
   const sessionsState = {
     current: null,
     logs: [] // {id,startAt,endAt,context:{subject,topic,subtopic,random}, planned, answered, scoreCount:{ok,good,low,bad}, durationSec}
   };
-  function startSession(ids, random){
-    endSession(); // 既存を閉じる
+  function startSession(ids, random, mode){
+    endSession();
     sessionsState.current = {
       id: Date.now()+Math.floor(Math.random()*1000),
       startAt: new Date().toISOString(),
       endAt: null,
-      context: {subject: state.currentSubject, topic: state.currentTopic, subtopic: state.currentSubtopic, random: !!random},
+      context: {subject: state.currentSubject, topic: state.currentTopic, subtopic: state.currentSubtopic, random: !!random, mode: mode||null},
       planned: ids.length,
       answered: 0,
       scoreCount: {ok:0, good:0, low:0, bad:0}
@@ -363,8 +408,7 @@
     const s = sessionsState.current;
     s.endAt = new Date().toISOString();
     try{
-      const d1 = new Date(s.startAt).getTime(), d2 = new Date(s.endAt).getTime();
-      s.durationSec = Math.max(0, Math.round((d2-d1)/1000));
+      s.durationSec = Math.max(0, Math.round((new Date(s.endAt)-new Date(s.startAt))/1000));
     }catch{ s.durationSec = null; }
     sessionsState.logs.push(s);
     sessionsState.current = null;
@@ -396,18 +440,17 @@
     currentSelf: 'all',
     currentProblemId: null,
     reviewQueue: null,
-    reviewFilters: {},
-    reviewExpand: {}
+    reviewExpand: {},
+    timerStart: null,
+    timerTick: null
   };
 
-  // ====== ⑥ シンプルインデックス ======
-  let indexVersion = 0;
-  let indexCache = null; // {subjects:Map, topics:Map(subj->Map), subtopics:Map(subj->Map(topic->Map))}
+  // ====== インデックス ======
+  let indexCache = null;
   function reindex(){
-    indexVersion++;
     const subjects = new Map();
-    const topics = new Map();     // subj -> Map(topic -> [ids])
-    const subtopics = new Map();  // subj -> Map(topic -> Map(subtopic -> [ids]))
+    const topics = new Map();
+    const subtopics = new Map();
     state.problems.forEach(p=>{
       const subj = (p.subject===ELECTIVE_GROUP || ELECTIVE_SUBJECTS.includes(p.subject)) ? (p.subject===ELECTIVE_GROUP?ELECTIVE_GROUP:p.subject) : p.subject;
       if (!subjects.has(subj)) subjects.set(subj, []);
@@ -424,48 +467,11 @@
     });
     indexCache = {subjects, topics, subtopics};
   }
-  function idsBySubject(subj){
-    if (!indexCache) reindex();
-    if (subj===ELECTIVE_GROUP){
-      // 選択科目 = ELECTIVE_GROUP に登録されたもの全部 + 既存の個別科目も論理上含める（互換用）
-      const ids = new Set(indexCache.subjects.get(ELECTIVE_GROUP) || []);
-      ELECTIVE_SUBJECTS.forEach(s=> (indexCache.subjects.get(s)||[]).forEach(id=>ids.add(id)));
-      return Array.from(ids);
-    }
-    return (indexCache.subjects.get(subj) || []).slice();
-  }
-  function idsByTopic(subj, topic){
-    if (!indexCache) reindex();
-    return ((indexCache.topics.get(subj)||new Map()).get(topic||"") || []).slice();
-  }
-  function idsBySubtopic(subj, topic, subtopic){
-    if (!indexCache) reindex();
-    return (((indexCache.subtopics.get(subj)||new Map()).get(topic||"")||new Map()).get(subtopic||"") || []).slice();
-  }
-
-  function meetsFilters(p){
-    const impOk = (state.currentImportance==='all') || (p.importance===state.currentImportance);
-    const tag = latestSelfTag(p);
-    const selfOk = (state.currentSelf==='all') || (tag===state.currentSelf);
-    return impOk && selfOk;
-  }
-  function problemsBySubjectFiltered(subj){
-    const ids = idsBySubject(subj);
-    const arr = ids.map(id=>idToProb(id)).filter(Boolean);
-    return arr.filter(meetsFilters);
-  }
-  function topicsForSubject(subj){
-    if (!indexCache) reindex();
-    const m = indexCache.topics.get(subj)||new Map();
-    const keys = Array.from(m.keys()).filter(Boolean);
-    return keys.sort((a,b)=> a.localeCompare(b,'ja'));
-  }
-  function subtopicsFor(subj, topic){
-    if (!indexCache) reindex();
-    const m = ((indexCache.subtopics.get(subj)||new Map()).get(topic||"")||new Map());
-    const keys = Array.from(m.keys()).filter(Boolean);
-    return keys.sort((a,b)=> a.localeCompare(b,'ja'));
-  }
+  function idsBySubject(s){ if (!indexCache) reindex(); if (s===ELECTIVE_GROUP){ const ids=new Set(indexCache.subjects.get(ELECTIVE_GROUP)||[]); ELECTIVE_SUBJECTS.forEach(x=> (indexCache.subjects.get(x)||[]).forEach(id=>ids.add(id))); return [...ids]; } return (indexCache.subjects.get(s)||[]).slice(); }
+  function idsByTopic(s,t){ if (!indexCache) reindex(); return ((indexCache.topics.get(s)||new Map()).get(t||"")||[]).slice(); }
+  function idsBySubtopic(s,t,st){ if (!indexCache) reindex(); return (((indexCache.subtopics.get(s)||new Map()).get(t||"")||new Map()).get(st||"")||[]).slice(); }
+  function topicsForSubject(s){ if (!indexCache) reindex(); const m=indexCache.topics.get(s)||new Map(); return [...m.keys()].filter(Boolean).sort((a,b)=>a.localeCompare(b,'ja')); }
+  function subtopicsFor(s,t){ if (!indexCache) reindex(); const m=((indexCache.subtopics.get(s)||new Map()).get(t||"")||new Map()); return [...m.keys()].filter(Boolean).sort((a,b)=>a.localeCompare(b,'ja')); }
 
   const $app = document.getElementById('app');
   document.getElementById('nav-subjects').onclick = () => { setActive('subjects') };
@@ -477,7 +483,7 @@
 
   function setActive(view){
     state.view = view;
-    if (view !== 'quiz') { state.reviewQueue = null; endSession(); } // ⑧ セッション終了
+    if (view !== 'quiz') { state.reviewQueue = null; endSession(); stopTimer(); }
     render();
     document.querySelectorAll('header nav button').forEach(b => b.classList.remove('active'));
     if (view==='subjects' || view==='topics' || view==='subtopics' || view==='list') document.getElementById('nav-subjects').classList.add('active');
@@ -505,39 +511,45 @@
   function todayStr(){ return ymdLocal(new Date()); }
   function escapeHtml(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function idToProb(id){ return state.problems.find(p=>p.id===id); }
-  function shuffleIds(ids){ const a=ids.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j]];} return a; }
+  function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
 
   function filtered(){
     let arr = problemsBySubjectFiltered(state.currentSubject);
-    if (state.currentTopic !== 'all'){
-      arr = arr.filter(p => (p.topic||"") === state.currentTopic);
-    }
-    if (state.currentSubtopic !== 'all'){
-      arr = arr.filter(p => (p.subtopic||"") === state.currentSubtopic);
-    }
+    if (state.currentTopic !== 'all'){ arr = arr.filter(p => (p.topic||"") === state.currentTopic); }
+    if (state.currentSubtopic !== 'all'){ arr = arr.filter(p => (p.subtopic||"") === state.currentSubtopic); }
     return arr;
   }
+  function meetsFilters(p){
+    const impOk = (state.currentImportance==='all') || (p.importance===state.currentImportance);
+    const tag = latestSelfTag(p);
+    const selfOk = (state.currentSelf==='all') || (tag===state.currentSelf);
+    return impOk && selfOk;
+  }
+  function problemsBySubjectFiltered(subj){
+    const ids = idsBySubject(subj);
+    return ids.map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters);
+  }
 
-  // ====== 復習バッジ更新（レビュー日ベース & ローカル日付）（①） ======
-  function getDueTodayCount(){
+  // ====== 復習バッジ ======
+  function getDueTodayIds(){
     const t = todayStr();
-    let cnt = 0;
+    const dueToday = [];
     state.problems.forEach(p => {
       const revs = (p.reviews||[]).filter(d => d <= t);
-      if (revs.length) cnt++;
+      if (revs.length) dueToday.push(p.id);
     });
-    // 旧v9データ救済：レビューが空の場合は最終解答日から既定間隔で判定
-    if (cnt===0){
+    if (dueToday.length===0){
       const intervals = [1,3,7,14,30];
-      state.problems.forEach(p=>{
+      state.problems.forEach(p => {
         const last = lastAnswerYmdLocal(p);
         if (!last) return;
         const d = daysBetweenLocal(t, last);
-        if (intervals.includes(d) || d > intervals[intervals.length-1]) cnt++;
+        if (intervals.includes(d) || d > intervals[intervals.length-1]) dueToday.push(p.id);
       });
     }
-    return cnt;
+    return dueToday;
   }
+  function getDueTodayCount(){ return getDueTodayIds().length; }
   function updateNavBadges(){
     const btn = document.getElementById('nav-review');
     if (!btn) return;
@@ -553,16 +565,115 @@
     }
   }
 
+  // ====== インタリーブ（分野一覧でのみ使う） ======
+  function buildInterleavedQueue(ids, groupBy){
+    const groups = new Map();
+    ids.forEach(id => {
+      const p = idToProb(id);
+      const key = groupBy==='subtopic' ? (p.subtopic||"") : (p.topic||"");
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(id);
+    });
+    const keys = [...groups.keys()].filter(k=>k!=="" || groups.size===1);
+    keys.forEach(k => { groups.set(k, shuffle(groups.get(k))); });
+    const result = [];
+    let added = true;
+    while (added){
+      added = false;
+      for (const k of keys){
+        const arr = groups.get(k);
+        if (arr && arr.length){
+          result.push(arr.shift());
+          added = true;
+        }
+      }
+    }
+    return result;
+  }
+
+  // ====== 弱点ドリル ======
+
+  // 弱点ドリル（全体・重み付き）
+  function buildWeakDrillWeighted(allIds, ratio, takeN, doShuffle){
+    const buckets = {unsure:[], fail:[], other:[]};
+    allIds.forEach(id=>{
+      const p = idToProb(id);
+      const last = latestSelfTag(p);
+      const weight = Math.max(0, Number(p.weakPoints||0));
+      const rec = {id, weight};
+      if (last==='unsure') buckets.unsure.push(rec);
+      else if (last==='fail') buckets.fail.push(rec);
+      else buckets.other.push(rec);
+    });
+    // 重みの高い順に並べる
+    buckets.unsure.sort((a,b)=> b.weight - a.weight);
+    buckets.fail.sort((a,b)=> b.weight - a.weight);
+    buckets.other.sort((a,b)=> b.weight - a.weight);
+
+    // 目安件数
+    const N = Math.max(1, Number(takeN||20));
+    const result = [];
+    let iu=0, ifa=0, io=0;
+    while (result.length < N && (iu<buckets.unsure.length || ifa<buckets.fail.length || io<buckets.other.length)){
+      for(let i=0; i<ratio.unsure && result.length<N && iu<buckets.unsure.length; i++){ result.push(buckets.unsure[iu++].id); }
+      for(let i=0; i<ratio.fail   && result.length<N && ifa<buckets.fail.length;   i++){ result.push(buckets.fail[ifa++].id); }
+      for(let i=0; i<ratio.other  && result.length<N && io<buckets.other.length;  i++){ result.push(buckets.other[io++].id); }
+      if (iu>=buckets.unsure.length && ifa>=buckets.fail.length && io<buckets.other.length){
+        while (io<buckets.other.length && result.length<N){ result.push(buckets.other[io++].id); }
+      }
+      if (iu<buckets.unsure.length && ifa>=buckets.fail.length && io>=buckets.other.length){
+        while (iu<buckets.unsure.length && result.length<N){ result.push(buckets.unsure[iu++].id); }
+      }
+      if (iu>=buckets.unsure.length && ifa<buckets.fail.length && io>=buckets.other.length){
+        while (ifa<buckets.fail.length && result.length<N){ result.push(buckets.fail[ifa++].id); }
+      }
+    }
+    if (doShuffle){
+      for(let i=result.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [result[i],result[j]]=[result[j],result[i]]; }
+    }
+    return result;
+  }
+  function buildWeakDrill(ids, ratio, randomize=true){
+    const u=[], f=[], o=[];
+    ids.forEach(id=>{
+      const p=idToProb(id); const t=latestSelfTag(p);
+      if (t==='unsure') u.push(id);
+      else if (t==='fail') f.push(id);
+      else o.push(id);
+    });
+    if (randomize){ shuffle(u).forEach(()=>{}); shuffle(f).forEach(()=>{}); shuffle(o).forEach(()=>{}); }
+    const total = ids.length;
+    const res=[];
+    let iu=0, ifa=0, io=0;
+    while (res.length<total && (iu<u.length || ifa<f.length || io<o.length)){
+      for(let i=0;i<ratio.unsure && iu<u.length && res.length<total;i++){ res.push(u[iu++]); }
+      for(let i=0;i<ratio.fail   && ifa<f.length && res.length<total;i++){ res.push(f[ifa++]); }
+      for(let i=0;i<ratio.other  && io<o.length && res.length<total;i++){ res.push(o[io++]); }
+      if (iu>=u.length && ifa>=f.length && io<o.length){
+        while(io<o.length && res.length<total){ res.push(o[io++]); }
+      }
+      if (iu<u.length && ifa>=f.length && io>=o.length){
+        while(iu<u.length && res.length<total){ res.push(u[iu++]); }
+      }
+      if (iu>=u.length && ifa<f.length && io>=o.length){
+        while(ifa<f.length && res.length<total){ res.push(f[ifa++]); }
+      }
+    }
+    return res;
+  }
+
   function render(){
-    if (state.view === 'subjects') return renderSubjects();
-    if (state.view === 'topics')   return renderTopics();
-    if (state.view === 'subtopics')return renderSubtopics();
-    if (state.view === 'list')     return renderList();
-    if (state.view === 'quiz')     return renderQuiz();
-    if (state.view === 'add')      return renderAdd();
-    if (state.view === 'review')   return renderReview();
-    if (state.view === 'edit')     return renderEdit();
-    if (state.view === 'sync')     return renderSync();
+    try{
+      if (state.view === 'subjects') return renderSubjects();
+      if (state.view === 'topics')   return renderTopics();
+      if (state.view === 'subtopics')return renderSubtopics();
+      if (state.view === 'list')     return renderList();
+      if (state.view === 'quiz')     return renderQuiz();
+      if (state.view === 'add')      return renderAdd();
+      if (state.view === 'review')   return renderReview();
+      if (state.view === 'edit')     return renderEdit();
+      if (state.view === 'sync')     return renderSync();
+    }catch(e){ showError(e); }
   }
 
   function filterBarHTML(){
@@ -591,19 +702,16 @@
   window.__setSelf = (v)=>{ state.currentSelf=v; render(); };
   window.__resetFilters = ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); };
 
-  function rawCountBySubject(name){
-    if (name==="__ELECTIVE__"){
-      const ids = idsBySubject(name);
-      return ids.length;
-    }
-    return idsBySubject(name).length;
-  }
+  function rawCountBySubject(name){ return idsBySubject(name).length; }
+
   function renderSubjects(){
     const coreHtml = CORE_SUBJECTS.map(s=>`
       <div class="list-item" style="cursor:pointer" onclick="__selectSubject('${s}')">
         <div class="flex">
           <strong>${s}</strong>
           <span class="pill">${rawCountBySubject(s)} 問</span>
+          <span class="space"></span>
+          <!-- インタリーブ模試は分野一覧の行で提供 -->
         </div>
       </div>`).join('');
 
@@ -612,6 +720,7 @@
         <div class="flex">
           <strong>選択科目</strong>
           <span class="pill">${rawCountBySubject("__ELECTIVE__")} 問</span>
+          <span class="space"></span>
         </div>
       </div>
     `;
@@ -652,6 +761,7 @@
           <span class="small">連続演習：</span>
           <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\\'")}', false)">順番</button>
           <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\\'")}', true)">ランダム</button>
+          <button class="ghost" onclick="event.stopPropagation();__startInterleaveTopic('${t.replace(/'/g,"\\'")}')">インタリーブ模試</button>
         </div>
       </div>
     `).join('');
@@ -676,6 +786,7 @@
               <span class="small">連続演習：</span>
               <button class="ghost" onclick="__startSubjectAll(false)">順番</button>
               <button class="ghost" onclick="__startSubjectAll(true)">ランダム</button>
+              <button class="ghost" onclick="__startInterleaveSubject()">インタリーブ</button>
             </div>
           </div>
         </div>
@@ -714,9 +825,19 @@
       const ids = idsBySubject(subj);
       startQueue(ids, rnd);
     };
+    window.__startInterleaveSubject = ()=>{
+      const ids = idsBySubject(subj);
+      const queue = buildInterleavedQueue(ids, 'topic');
+      startQueue(queue, false);
+    };
     window.__startTopic = (topic, rnd)=>{
       const ids = idsByTopic(subj, topic);
       startQueue(ids, rnd);
+    };
+    window.__startInterleaveTopic = (topic)=>{
+      const ids = idsByTopic(subj, topic);
+      const queue = buildInterleavedQueue(ids, 'subtopic');
+      startQueue(queue, false);
     };
   }
 
@@ -802,12 +923,12 @@
     };
   }
 
-  function startQueue(ids, randomize){
-    const q = (randomize ? shuffleIds(ids) : ids.slice());
+  function startQueue(ids, randomize, mode){
+    const q = (randomize ? shuffle(ids) : ids.slice());
     if (!q.length) return;
     state.reviewQueue = q;
     state.currentProblemId = q[0];
-    startSession(q, randomize); // ⑧
+    startSession(q, randomize, mode||null);
     state.view='quiz';
     render();
   }
@@ -875,7 +996,7 @@
       if (!target) return;
       if (!confirm(`次の問題を削除します。よろしいですか？\n\n「${target.question}」`)) return;
       state.problems = state.problems.filter(p=>p.id!==id);
-      reindex(); // ⑥
+      reindex();
       saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
@@ -892,6 +1013,9 @@
   function navNextId(){ const ids = idsForNav(); const i = ids.indexOf(state.currentProblemId); return (i>=0 && i<ids.length-1) ? ids[i+1] : null; }
   function navPrevId(){ const ids = idsForNav(); const i = ids.indexOf(state.currentProblemId); return (i>0) ? ids[i-1] : null; }
 
+  function stopTimer(){ if (state.timerTick){ clearInterval(state.timerTick); state.timerTick=null; } state.timerStart=null; }
+  function startTimer(){ stopTimer(); state.timerStart=Date.now(); const el=document.getElementById('timer'); if (!el) return; const fmt=(s)=>{ const m=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return m+':'+ss;}; el.textContent='00:00'; state.timerTick=setInterval(()=>{ const secs=Math.floor((Date.now()-state.timerStart)/1000); el.textContent=fmt(secs); }, 500); }
+
   function renderQuiz(){
     const p = state.problems.find(x=>x.id===state.currentProblemId);
     if (!p) { setActive('subjects'); return; }
@@ -902,23 +1026,27 @@
         <div class="flex">
           <button class="ghost" onclick="__backList()">← 問題一覧</button>
           <h2 style="margin:0 .5rem">Q: ${p.question}</h2>
+          <div class="space"></div>
+          <div class="small">タイマー：<span id="timer" class="timer">00:00</span></div>
         </div>
         <div class="section">
           <label>あなたの回答</label>
           <textarea id="answer" placeholder=""></textarea>
           <div class="section flex">
             ${prevExists ? `<button class="ghost" onclick="__prev()">◀ 前の問題へ</button>` : ""}
-            <button class="primary" onclick="__grade()">採点する</button>
+            <button class="primary" id="btn-grade" onclick="__grade()" title="ショートカット: ⌘/Ctrl + Enter">採点する</button>
             ${nextExists ? `<button class="ghost" onclick="__next()">次の問題へ ▶</button>` : ""}
           </div>
+          <div class="small muted">ショートカット：採点 <span class="kbd">⌘</span>/<span class="kbd">Ctrl</span>+<span class="kbd">Enter</span>、前へ <span class="kbd">K</span>、次へ <span class="kbd">J</span>、自己評価 <span class="kbd">1</span>/<span class="kbd">2</span>/<span class="kbd">3</span></div>
         </div>
         <div id="result" class="section"></div>
       </div>
     `;
-    window.__backList = ()=>{ state.view='list'; state.reviewQueue=null; endSession(); render(); };
+    startTimer();
+    window.__backList = ()=>{ state.view='list'; state.reviewQueue=null; endSession(); stopTimer(); render(); };
     window.__prev = ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; renderQuiz(); } else showNoPrev(); };
     window.__next = ()=>{ const id=navNextId(); if (id){ state.currentProblemId=id; renderQuiz(); } else showNoNext(); };
-    window.__goHome = ()=> { endSession(); setActive('subjects'); };
+    window.__goHome = ()=> { endSession(); stopTimer(); setActive('subjects'); };
 
     function showNoPrev(){
       document.getElementById('result').innerHTML = `<div class="card"><div class="muted">前の問題はありません。</div><div class="section flex"><button class="ghost" onclick="__goHome()">トップへ戻る</button></div></div>`;
@@ -926,9 +1054,11 @@
     function showNoNext(){
       document.getElementById('result').innerHTML = `<div class="card"><div class="muted">キュー内の問題を解き終えました。</div><div class="section flex"><button class="ghost" onclick="__goHome()">トップへ戻る</button><button class="ghost" onclick="setActive('review')">復習ダッシュボードに戻る</button></div></div>`;
       endSession();
+      stopTimer();
     }
 
     window.__grade = ()=>{
+      const elapsed = state.timerStart ? Math.round((Date.now()-state.timerStart)/1000) : null;
       const txt = (document.getElementById('answer').value || '').trim();
       const prob = state.problems.find(x=>x.id===state.currentProblemId);
       const total = (prob.keywords||[]).length;
@@ -947,7 +1077,7 @@
         scoreDetail = `（${matches.length} / ${total}）`;
       }
 
-      // ① 次回レビュー日：スコア連動
+      // 次回レビュー日：スコア連動
       const t = todayStr();
       const nextByScore = (()=>{
         if (score==="◎") return [7,14,30];
@@ -956,14 +1086,23 @@
         if (score==="✕") return [1,3];
         return [1,3,7,14,30];
       })().map(addDaysLocal);
-      // 期限切れ分は消し、新規を追加（重複排除）
       prob.reviews = (prob.reviews || []).filter(d=>d>t);
       const set = new Set([...(prob.reviews||[]), ...nextByScore]);
       prob.reviews = Array.from(set).sort();
 
-      // 履歴
-      prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, self:null});
-      bumpSessionOnScore(score); // ⑧
+      // 履歴（所要秒）
+      prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, secs: elapsed, self:null});
+      // 弱点ドリル中に正解したら累積点を減らす
+      try {
+        const mode = (sessionsState.current && sessionsState.current.context && sessionsState.current.context.mode) || null;
+        if (mode === 'weak'){
+          if (score === '◎') prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 3);
+          else if (score === '○') prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 2);
+        }
+      } catch(_) {}
+
+      bumpSessionOnScore(score);
+      addDailyAnswered(1);
 
       saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
@@ -971,14 +1110,14 @@
 
       function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
-      // あなたの回答（命中キーワードをハイライト）
+      // あなたの回答（命中ハイライト）
       let escaped = escapeHtml(txt);
       matches.forEach(kw=>{
         const re = new RegExp(escReg(kw), 'g');
         escaped = escaped.replace(re, `<mark class="hit">${kw}</mark>`);
       });
 
-      // 模範解答（命中は黄、抜けは桃でハイライト）
+      // 模範解答（命中=黄／抜け=桃）
       let modelEscaped = escapeHtml(prob.example || "（登録なし）");
       (prob.keywords || []).forEach(kw=>{
         if (!kw) return;
@@ -999,7 +1138,7 @@
       const result = document.getElementById('result');
       result.innerHTML = `
         <div class="card">
-          <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail}</div>
+          <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail} ${elapsed!=null? `<span class="muted small">（所要 ${Math.floor(elapsed/60)}分${elapsed%60}秒）</span>`:''}</div>
           <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div>
           ${ total>0 ? `<div class="section"><strong>抜けていたキーワード</strong><div>${missing.length? missing.map(k=>`<span class='kw kw-miss'>${k}</span>`).join(' ') : "なし"}</div></div>` : ""}
           <div class="section">
@@ -1034,11 +1173,14 @@
       if (last) last.self = tag;
       prob.selfStats = prob.selfStats || {perfect:0,unsure:0,fail:0};
       if (tag==='perfect') prob.selfStats.perfect++;
-      if (tag==='unsure') prob.selfStats.unsure++;
-      if (tag==='fail') prob.selfStats.fail++;
+      if (tag==='unsure') { prob.selfStats.unsure++; prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 2); }
+      if (tag==='fail')   { prob.selfStats.fail++;   prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 3); }
       saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
+      document.querySelectorAll('.selfbtn').forEach(b=> b.classList.remove('active'));
+      const target = Array.from(document.querySelectorAll('.selfbtn')).find(b=> b.getAttribute('data-tag')===tag);
+      if (target) target.classList.add('active');
     };
   }
 
@@ -1058,22 +1200,7 @@
   function renderReview(){
     const t = todayStr();
 
-    // 今日やるべき問題（reviews <= today）。空なら旧ロジック救済
-    const dueToday = [];
-    state.problems.forEach(p => {
-      const revs = (p.reviews||[]).filter(d => d <= t);
-      if (revs.length) dueToday.push(p.id);
-    });
-    if (dueToday.length===0){
-      const intervals = [1,3,7,14,30];
-      state.problems.forEach(p => {
-        const last = lastAnswerYmdLocal(p);
-        if (!last) return;
-        const d = daysBetweenLocal(t, last);
-        if (intervals.includes(d) || d > intervals[intervals.length-1]) dueToday.push(p.id);
-      });
-    }
-
+    const dueToday = getDueTodayIds();
     const weakUnsure = state.problems.filter(p => latestSelfTag(p)==='unsure').map(p=>p.id);
     const weakFail   = state.problems.filter(p => latestSelfTag(p)==='fail').map(p=>p.id);
 
@@ -1113,23 +1240,85 @@
       `;
     }
 
+    const prog = todayCount();
+    const streak = calcStreak();
+
     $app.innerHTML = `
       <div class="card">
         <h2>今日の復習</h2>
-        <div class="muted small">※ スコアに応じて次回間隔を調整。予定日はキュー消化時に自動更新されます。</div>
+        <div class="small muted">進捗 ${prog} 件 / 連続達成 ${streak} 日</div>
         <div class="section">
           ${rowOne("今日やる問題","todayAll", dueToday)}
         </div>
+
+        <div class="section">
+          <h3>科目横断・ランダム出題</h3>
+          <div class="row-sm">
+            <label class="small">件数</label>
+            <input type="number" id="randN" min="1" step="1" value="10" style="max-width:8rem">
+            <label class="small">重要度</label>
+            <select id="randImp">
+              <option value="all">すべて</option>
+              <option value="★重要">⚫︎ 重要のみ</option>
+              <option value="★中程度">◆ 普通のみ</option>
+              <option value="★低め">▲ 低いのみ</option>
+            </select>
+            <label class="checkline small nowrap"><input type="checkbox" id="randSort"> 重要度順で出題</label>
+            <button class="ghost" id="btnRandStart">開始</button>
+          </div>
+          <div class="help">科目を問わず全問題から抽出します。重要度で絞り込み、または重要度順で出題が可能です。</div>
+        </div>
+
+        <div class="section">
+          <h3>弱点ドリル（全体から抽出）</h3>
+          <div class="row-sm">
+            <label class="small">件数</label>
+            <input type="number" id="wdN" min="1" step="1" value="20" style="max-width:8rem">
+            <span class="small">比率 不安:${config.mixRatio.unsure} / できない:${config.mixRatio.fail} / その他:${config.mixRatio.other}</span>
+          </div>
+          <div class="row-sm" style="margin-top:.35rem">
+            <button class="ghost" onclick="__weakDrill(false)">順番</button>
+            <button class="ghost" onclick="__weakDrill(true)">ランダム</button>
+          </div>
+          <div class="small muted">※ 最新の自己評価の区分で振り分け、各区分内は「累積点（できない×3＋不安×2）」の高い順に優先します。</div>
+        </div>
+
         <div class="section">
           <h3>自己評価まとめ</h3>
           ${rowOne("不安だけ","weakU", weakUnsure)}
           ${rowOne("できないだけ","weakF", weakFail)}
         </div>
+
       </div>
     `;
 
     window.__startQueue = (ids, rnd)=> startQueue(ids, rnd);
     window.__toggleExpand = (key)=>{ state.reviewExpand[key] = !state.reviewExpand[key]; renderReview(); };
+    window.__weakDrill = (rnd)=>{
+      const n = Math.max(1, Number((document.getElementById('wdN')||{}).value||20));
+      const ids = state.problems.map(p=>p.id);
+      const queue = buildWeakDrillWeighted(ids, config.mixRatio, n, rnd);
+      startQueue(queue, false, 'weak');
+    };
+
+
+    // 科目横断ランダム出題
+    const btnRand = document.getElementById('btnRandStart');
+    if (btnRand) btnRand.onclick = ()=>{
+      const n = Math.max(1, Number((document.getElementById('randN')||{}).value||10));
+      const impSel = (document.getElementById('randImp')||{}).value || 'all';
+      const sortByImp = !!((document.getElementById('randSort')||{}).checked);
+      let arr = state.problems.slice();
+      if (impSel !== 'all'){ arr = arr.filter(p => p.importance === impSel); }
+      if (sortByImp){
+        const order = {'★重要':0,'★中程度':1,'★低め':2};
+        arr.sort((a,b)=> (order[a.importance]??9)-(order[b.importance]??9));
+      }else{
+        arr = shuffle(arr);
+      }
+      const ids = arr.slice(0, n).map(p=>p.id);
+      startQueue(ids, false);
+    };
   }
 
   function renderAdd(){
@@ -1194,12 +1383,11 @@
       const question = (document.getElementById('f-question').value||'').trim();
       const example  = (document.getElementById('f-example').value||'').trim();
       const keywordsRaw = (document.getElementById('f-keywords').value||'');
-      const KEY_SPLIT=/[,\u3001\uFF0C\u3002\uFF0E]+/;
       const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : [];
       const note     = (document.getElementById('f-note').value||'').trim();
       if (!question) return showMsg('問題文を入力してください。');
       state.problems.push({ id: Date.now()+Math.floor(Math.random()*1000), subject, topic, subtopic, importance, question, example, keywords, note, history:[], reviews:[], selfStats:{perfect:0,unsure:0,fail:0} });
-      reindex(); // ⑥
+      reindex();
       saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
@@ -1282,12 +1470,11 @@
       const question = (document.getElementById('e-question').value||'').trim();
       const example  = (document.getElementById('e-example').value||'').trim();
       const keywordsRaw = (document.getElementById('e-keywords').value||'');
-      const KEY_SPLIT=/[,\u3001\uFF0C\u3002\uFF0E]+/;
       const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : [];
       const note     = (document.getElementById('e-note').value||'').trim();
       if (!question) return showMsg('問題文を入力してください。');
       Object.assign(prob, {subject, topic, subtopic, importance, question, example, keywords, note});
-      reindex(); // ⑥
+      reindex();
       saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
@@ -1299,7 +1486,7 @@
       if (!target) return;
       if (!confirm(`この問題を削除します。よろしいですか？\n\n「${target.question}」`)) return;
       state.problems = state.problems.filter(p=>p.id!==id);
-      reindex(); // ⑥
+      reindex();
       saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
@@ -1317,14 +1504,24 @@
           <label class="checkline small nowrap"><input type="checkbox" id="cfg-restore"> 起動時に自動復元</label>
           <label class="checkline small nowrap"><input type="checkbox" id="cfg-ios-import"> iPhone起動時にインポート案内を表示</label>
           <label class="checkline small nowrap"><input type="checkbox" id="cfg-ios-export"> iPhoneエクスポート時に置き換えガイドを表示</label>
-          <div class="row-sm">
-            <button class="ghost" id="btn-save-cfg">設定を保存</button>
-            <button class="ghost danger" id="btn-clear">ローカルキャッシュを消去</button>
-          </div>
-          <div class="muted small">※ iPhoneは端末ローカルに自動保存。外部ファイルへは「インポート/エクスポート」をご利用ください。</div>
         </div>
 
-        <h3 class="section">B. iCloud Drive の JSON と自動連携（Mac Chrome/Edge）</h3>
+        <h3 class="section">B. ドリル設定</h3>
+        <div class="section">
+          <label>弱点ドリルの比率（不安 / できない / その他）</label>
+          <div class="row-sm">
+            <input type="number" id="cfg-mix-u" min="0" step="1" style="max-width:6rem">
+            <input type="number" id="cfg-mix-f" min="0" step="1" style="max-width:6rem">
+            <input type="number" id="cfg-mix-o" min="0" step="1" style="max-width:6rem">
+          </div>
+          <div class="help">例）5 / 3 / 2</div>
+        </div>
+        <div class="section row-sm">
+          <button class="ghost" id="btn-save-cfg">設定を保存</button>
+          <button class="ghost danger" id="btn-clear">ローカルキャッシュを消去</button>
+        </div>
+
+        <h3 class="section">C. iCloud Drive の JSON と自動連携（Mac Chrome/Edge）</h3>
         <div class="section">
           <div class="row-sm">
             <button class="primary" id="btn-pick" ${supportsFS?'':'disabled'}>ファイルを開く（problems.json）</button>
@@ -1335,7 +1532,7 @@
           <div class="muted small" style="margin-top:.5rem">※ 接続中は操作の度に自動保存。起動時は可能なら自動で読み込みます。</div>
         </div>
 
-        <h3 class="section">C. 手動インポート/エクスポート（iPhone 等）</h3>
+        <h3 class="section">D. 手動インポート/エクスポート（iPhone 等）</h3>
         <div class="section">
           <div class="row-sm">
             <input class="full" type="file" id="file" accept="application/json" />
@@ -1344,7 +1541,7 @@
           </div>
         </div>
 
-        <h3 class="section">D. 学習履歴（ローカル）</h3>
+        <h3 class="section">E. 学習履歴（ローカル）</h3>
         <div class="section">
           <div class="row-sm">
             <button class="ghost" id="btn-session-export">学習履歴をCSVで書き出し</button>
@@ -1362,10 +1559,17 @@
     if (chkIOSImp)  chkIOSImp.checked  = !!config.iosShowImportAtBoot;
     if (chkIOSExp)  chkIOSExp.checked  = !!config.iosShowExportGuide;
 
-    if (chkLocal)   chkLocal.addEventListener('change',  e => { config.autoLocalSave = e.target.checked; });
-    if (chkRestore) chkRestore.addEventListener('change',e => { config.autoRestore = e.target.checked; });
-    if (chkIOSImp)  chkIOSImp.addEventListener('change',e => { config.iosShowImportAtBoot = e.target.checked; });
-    if (chkIOSExp)  chkIOSExp.addEventListener('change',e => { config.iosShowExportGuide = e.target.checked; });
+    const mu = document.getElementById('cfg-mix-u');
+    const mf = document.getElementById('cfg-mix-f');
+    const mo = document.getElementById('cfg-mix-o');
+    mu.value = Number(config.mixRatio?.unsure||0);
+    mf.value = Number(config.mixRatio?.fail||0);
+    mo.value = Number(config.mixRatio?.other||0);
+
+    chkLocal && (chkLocal.onchange = e => { config.autoLocalSave = e.target.checked; });
+    chkRestore && (chkRestore.onchange = e => { config.autoRestore = e.target.checked; });
+    chkIOSImp && (chkIOSImp.onchange = e => { config.iosShowImportAtBoot = e.target.checked; });
+    chkIOSExp && (chkIOSExp.onchange = e => { config.iosShowExportGuide = e.target.checked; });
 
     const btnSaveCfg = document.getElementById('btn-save-cfg');
     const btnClear   = document.getElementById('btn-clear');
@@ -1377,43 +1581,46 @@
     const btnDisconnect= document.getElementById('btn-disconnect');
     const btnSessExp  = document.getElementById('btn-session-export');
 
-    if (btnSaveCfg) btnSaveCfg.onclick = ()=>{ saveConfig(); alert("設定を保存しました。"); };
-    if (btnClear) btnClear.onclick = ()=>{
+    btnSaveCfg && (btnSaveCfg.onclick = ()=>{
+      config.mixRatio = {unsure:Number(mu.value||0), fail:Number(mf.value||0), other:Number(mo.value||0)};
+      saveConfig(); alert("設定を保存しました。");
+    });
+    btnClear && (btnClear.onclick = ()=>{
       clearLocal();
       alert("ローカルキャッシュを消去しました。");
-    };
-    if (btnImport) btnImport.onclick = ()=>{
+    });
+    btnImport && (btnImport.onclick = ()=>{
       const f = document.getElementById('file').files[0];
       if (!f) return alert("JSONファイルを選択してください。");
       handleImportFile(f, true);
-    };
+    });
     function doExport(filename){
-      const blob = new Blob([JSON.stringify(state.problems, null, 2)], {type: "application/json"});
+      const blob = new Blob([JSON.stringify(state.problems, null, 2)], {type:"application/json"});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = filename || "problems.json";
       a.click();
       URL.revokeObjectURL(a.href);
     }
-    if (btnExport) btnExport.onclick = ()=>{
+    btnExport && (btnExport.onclick = ()=>{
       if (IS_IPHONE && config.iosShowExportGuide){
         showIOSExportModal(()=> doExport("problems.json"));
       }else{
         doExport("problems.json");
       }
-    };
-    if (btnPick) btnPick.onclick = pickFile;
-    if (btnLoad) btnLoad.onclick = ()=>{ if (!fileHandle) return alert("まず『ファイルを開く』で接続してください。"); loadFromFile(); };
-    if (btnReconnect) btnReconnect.onclick = async ()=>{
+    });
+    btnPick && (btnPick.onclick = pickFile);
+    btnLoad && (btnLoad.onclick = ()=>{ if (!fileHandle) return alert("まず『ファイルを開く』で接続してください。"); loadFromFile(); });
+    btnReconnect && (btnReconnect.onclick = async ()=>{
       const ok = await tryRestoreFileHandle(true);
       alert(ok ? "前回のファイルに再接続し、読み込みました。" : "前回のファイルを見つけるか権限を得られませんでした。『ファイルを開く』を押してください。");
-    };
-    if (btnDisconnect) btnDisconnect.onclick = async ()=>{
+    });
+    btnDisconnect && (btnDisconnect.onclick = async ()=>{
       await idbDelete('problems');
       fileHandle = null;
       alert("ファイルの接続情報を削除しました。");
-    };
-    if (btnSessExp) btnSessExp.onclick = ()=> exportSessionCSV();
+    });
+    btnSessExp && (btnSessExp.onclick = ()=> exportSessionCSV());
   }
 
   function showIOSImportModal(){
@@ -1489,7 +1696,7 @@
         const data = JSON.parse(reader.result);
         sanitizeProblems(data);
         state.problems = data;
-        reindex(); // ⑥
+        reindex();
         saveLocal(state.problems, sessionsState.logs);
         scheduleFileSave();
         updateNavBadges();
@@ -1566,49 +1773,123 @@
     }
   };
 
+  // ====== コマンドパレット（⌘K / Ctrl+K） ======
+  function openPalette(){
+    if (!config.enableCommandPalette) return;
+    const root = document.getElementById('modal-root');
+    const list = state.problems.slice(0,2000);
+    root.innerHTML = `
+      <div class="mask" role="dialog" aria-modal="true" onclick="__closePalette()">
+        <div class="modal" onclick="event.stopPropagation()">
+          <h3>コマンドパレット</h3>
+          <input id="pal-q" placeholder="問題文/分野/小分類を検索（Enterで開始）">
+          <div id="pal-list" class="section"></div>
+          <div class="small muted">ショートカット：<span class="kbd">Esc</span> で閉じる</div>
+        </div>
+      </div>
+    `;
+    const q = document.getElementById('pal-q');
+    const listEl = document.getElementById('pal-list');
+    function search(){
+      const s = (q.value||"").trim();
+      let arr = list;
+      if (s) {
+        const lower = s.toLowerCase();
+        arr = list.filter(p=> (p.question||"").toLowerCase().includes(lower)
+            || (p.topic||"").toLowerCase().includes(lower)
+            || (p.subtopic||"").toLowerCase().includes(lower));
+      }
+      arr = arr.slice(0, 20);
+      listEl.innerHTML = arr.length ? arr.map(p=>`
+        <div class="list-item">
+          <div class="row">
+            <div class="space"><strong>${escapeHtml(p.question)}</strong></div>
+            <span class="pill">${subjectLabel(p.subject)}</span>
+            ${p.topic?`<span class="pill">${escapeHtml(p.topic)}</span>`:''}
+            ${p.subtopic?`<span class="pill">${escapeHtml(p.subtopic)}</span>`:''}
+            <button class="ghost" onclick="__palStart(${p.id})">開始</button>
+            <button class="ghost" onclick="__palEdit(${p.id})">編集</button>
+          </div>
+        </div>
+      `).join('') : '<div class="muted small">該当なし</div>';
+    }
+    q.oninput = search;
+    q.onkeydown = (e)=>{ if (e.key==='Enter'){ const first = listEl.querySelector('button'); if (first){ first.click(); } } };
+    setTimeout(()=>{ q.focus(); search(); }, 0);
+    window.__palStart = (id)=>{ root.innerHTML = ""; state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); state.view='quiz'; render(); };
+    window.__palEdit = (id)=>{ root.innerHTML = ""; state.currentProblemId=id; state.view='edit'; render(); };
+    window.__closePalette = ()=>{ root.innerHTML = ""; };
+  }
+
+  // ====== グローバルショートカット ======
+  document.addEventListener('keydown', (e)=>{
+    const inText = document.activeElement && (document.activeElement.tagName==='INPUT' || document.activeElement.tagName==='TEXTAREA' || document.activeElement.isContentEditable);
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase()==='k'){
+      e.preventDefault();
+      openPalette();
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter'){
+      const btn = document.getElementById('btn-grade');
+      if (btn){ e.preventDefault(); btn.click(); }
+      return;
+    }
+    if (inText) return;
+    if (state.view==='quiz'){
+      if (e.key.toLowerCase()==='j'){ e.preventDefault(); const nxt=navNextId(); if (nxt){ state.currentProblemId=nxt; renderQuiz(); } }
+      if (e.key.toLowerCase()==='k'){ e.preventDefault(); const prv=navPrevId(); if (prv){ state.currentProblemId=prv; renderQuiz(); } }
+      if (e.key==='1'){ e.preventDefault(); window.__selfMark('perfect'); }
+      if (e.key==='2'){ e.preventDefault(); window.__selfMark('unsure'); }
+      if (e.key==='3'){ e.preventDefault(); window.__selfMark('fail'); }
+    }
+    if (e.key==='Escape'){ const root=document.getElementById('modal-root'); if (root && root.innerHTML){ root.innerHTML=""; } }
+  });
+
   (async function boot(){
-    let loaded = false;
-    if (await tryRestoreFileHandle(true)){
-      loaded = true;
-    } else {
-      if (supportsFS){
-        banner(`iCloud Drive の <span class="mono">problems.json</span> に自動接続できませんでした。
-          <button class="ghost" onclick="__reconnect()">再接続</button>
-          <button class="ghost" onclick="__pick()">別ファイルを選ぶ</button>`);
+    try{
+      let loaded = false;
+      if (await tryRestoreFileHandle(true)){
+        loaded = true;
+      } else {
+        if (supportsFS){
+          banner(`iCloud Drive の <span class="mono">problems.json</span> に自動接続できませんでした。
+            <button class="ghost" onclick="__reconnect()">再接続</button>
+            <button class="ghost" onclick="__pick()">別ファイルを選ぶ</button>`);
+        }
       }
-    }
-    if (!loaded && config.autoRestore){
-      const cached = loadLocal();
-      if (cached && Array.isArray(cached.problems)) {
-        try {
-          sanitizeProblems(cached.problems);
-          state.problems = cached.problems;
-          if (Array.isArray(cached.sessions)) sessionsState.logs = cached.sessions;
-          loaded = true;
-        } catch(e) {}
+      if (!loaded && config.autoRestore){
+        const cached = loadLocal();
+        if (cached && Array.isArray(cached.problems)) {
+          try {
+            sanitizeProblems(cached.problems);
+            state.problems = cached.problems;
+            if (Array.isArray(cached.sessions)) sessionsState.logs = cached.sessions;
+            loaded = true;
+          } catch(e) {}
+        }
       }
-    }
-    if (!loaded){
-      state.problems = [];
-    }
-    reindex(); // ⑥
-    state.view = 'subjects';
-    const ui = loadUI() || {};
-    state.currentImportance = ui.currentImportance || 'all';
-    state.currentSelf = ui.currentSelf || 'all';
-    render();
-    updateNavBadges();
+      if (!loaded){
+        state.problems = [];
+      }
+      reindex();
+      state.view = 'subjects';
+      const ui = loadUI() || {};
+      state.currentImportance = ui.currentImportance || 'all';
+      state.currentSelf = ui.currentSelf || 'all';
+      render();
+      updateNavBadges();
 
-    if (IS_IPHONE && config.iosShowImportAtBoot){
-      showIOSImportModal();
-    }
-
-    document.addEventListener('visibilitychange', async ()=>{
-      if (document.visibilityState === 'visible' && !fileHandle){
-        await tryRestoreFileHandle(false);
-        updateNavBadges();
+      if (IS_IPHONE && config.iosShowImportAtBoot){
+        showIOSImportModal();
       }
-    });
+
+      document.addEventListener('visibilitychange', async ()=>{
+        if (document.visibilityState === 'visible' && !fileHandle){
+          await tryRestoreFileHandle(false);
+          updateNavBadges();
+        }
+      });
+    }catch(e){ showError(e); }
   })();
 
   window.__reconnect = async ()=>{ await tryRestoreFileHandle(true); updateNavBadges(); };
