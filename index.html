@@ -519,7 +519,21 @@
     if (state.currentSubtopic !== 'all'){ arr = arr.filter(p => (p.subtopic||"") === state.currentSubtopic); }
     return arr;
   }
-  function meetsFilters(p){
+  
+  // === Filter-aware utilities (ad28g) ===
+  function idsBySubjectFiltered(subj){ return problemsBySubjectFiltered(subj).map(p=>p.id); }
+  function idsByTopicFiltered(subj, topic){
+    const ids = idsByTopic(subj, topic);
+    return ids.map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).map(p=>p.id);
+  }
+  function idsBySubtopicFiltered(subj, topic, st){
+    const ids = idsBySubtopic(subj, topic, st);
+    return ids.map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).map(p=>p.id);
+  }
+  function countSubjectFiltered(subj){ return problemsBySubjectFiltered(subj).length; }
+  function countTopicFiltered(subj, topic){ return idsByTopicFiltered(subj, topic).length; }
+  function countSubtopicFiltered(subj, topic, st){ return idsBySubtopicFiltered(subj, topic, st).length; }
+function meetsFilters(p){
     const impOk = (state.currentImportance==='all') || (p.importance===state.currentImportance);
     const tag = latestSelfTag(p);
     const selfOk = (state.currentSelf==='all') || (tag===state.currentSelf);
@@ -704,7 +718,7 @@
   window.__setSelf = (v)=>{ state.currentSelf=v; render(); };
   window.__resetFilters = ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); };
 
-  function rawCountBySubject(name){ return idsBySubject(name).length; }
+  function rawCountBySubject(name){ return countSubjectFiltered(name); }
 
   function renderSubjects(){
     const coreHtml = CORE_SUBJECTS.map(s=>`
@@ -748,8 +762,8 @@
     window.__selectElective = ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); };
   }
 
-  function topicCount(subj, topic){ return idsByTopic(subj, topic).length; }
-  function unclassifiedTopicCount(subj){ return idsByTopic(subj, "").length; }
+  function topicCount(subj, topic){ return countTopicFiltered(subj, topic); }
+  function unclassifiedTopicCount(subj){ return idsByTopicFiltered(subj, "").length; }
 
   function getSubjectCount(){
     const inp = document.getElementById('count-subject');
@@ -859,8 +873,8 @@
 
   }
 
-  function subtopicCount(subj, topic, subtopic){ return idsBySubtopic(subj, topic, subtopic).length; }
-  function unclassifiedSubtopicCount(subj, topic){ return idsBySubtopic(subj, topic, "").length; }
+  function subtopicCount(subj, topic, subtopic){ return countSubtopicFiltered(subj, topic, subtopic); }
+  function unclassifiedSubtopicCount(subj, topic){ return idsBySubtopicFiltered(subj, topic, "").length; }
   function renderSubtopics(){
     const subj = state.currentSubject;
     const topic = state.currentTopic;
