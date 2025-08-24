@@ -128,6 +128,25 @@ html.iphone .section{padding-top:.4rem}
 /* Optional: hide decorative vertical title if present */
 html.iphone .app-side-title{display:none}
 
+
+/* ===== iPhone Compact: header tabs not obstructing solve ===== */
+html.iphone header{padding:6px 10px}
+html.iphone header nav{display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch}
+html.iphone header nav::-webkit-scrollbar{display:none}
+html.iphone header nav button{font-size:13px; padding:6px 10px; border-radius:10px; flex:0 0 auto}
+html.iphone #global-inputmode{margin-top:4px !important; padding:4px 6px !important}
+html.iphone #btn-mode-full, html.iphone #btn-mode-cloze{font-size:13px; padding:6px 10px; border-radius:10px}
+
+/* When solving, hide big nav & mode bar and show a tiny top-right menu button */
+html.iphone.solving header nav,
+html.iphone.solving #global-inputmode{display:none !important}
+html.iphone.solving #mobile-menu-btn{display:inline-flex}
+html.iphone #mobile-menu-btn{display:none; align-items:center; justify-content:center; font-size:18px; line-height:1; padding:6px 8px; border-radius:8px; border:1px solid var(--border,#ddd); background:#fff}
+html.iphone #mobile-menu{display:none; position:fixed; top:48px; right:8px; background:#fff; border:1px solid #ddd; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.2); z-index:2000; min-width:180px}
+html.iphone #mobile-menu.open{display:block}
+html.iphone #mobile-menu .item{display:block; padding:10px 12px; font-size:15px; border-bottom:1px solid #eee; text-align:left; width:100%; background:#fff}
+html.iphone #mobile-menu .item:last-child{border-bottom:none}
+
 </style>
   <script>
     // Optional: disable SW if ?nosw in URL
@@ -245,6 +264,44 @@ try{
   }
 }catch(_){}
 
+
+// --- Mobile solving mode helpers ---
+function enterSolving(){ try{ if (typeof IS_IPHONE!=='undefined' && IS_IPHONE){ document.documentElement.classList.add('solving'); } }catch(_){ } }
+function leaveSolving(){ try{ document.documentElement.classList.remove('solving'); }catch(_){ } }
+
+
+// --- Mobile menu wiring ---
+(function(){
+  const btn = document.getElementById('mobile-menu-btn');
+  const menu = document.getElementById('mobile-menu');
+  if(btn && menu){
+    btn.addEventListener('click', ()=>{
+      menu.classList.toggle('open');
+    });
+    document.addEventListener('click', (e)=>{
+      if(!menu.contains(e.target) && e.target !== btn){ menu.classList.remove('open'); }
+    });
+    const map = {
+      'mnu-subjects':'nav-subjects',
+      'mnu-review':'nav-review',
+      'mnu-add':'nav-add',
+      'mnu-settings':'nav-settings',
+      'mnu-exit':'nav-exit'
+    };
+    Object.keys(map).forEach(k=>{
+      const el = document.getElementById(k);
+      const targetId = map[k];
+      if(el){
+        el.addEventListener('click', ()=>{
+          menu.classList.remove('open');
+          const t = document.getElementById(targetId);
+          if(t && typeof t.click==='function') t.click();
+        });
+      }
+    });
+  }
+})();
+
 </script>
 </head>
 <body>
@@ -257,6 +314,15 @@ try{
     <button id="nav-sync">設定/同期</button>
     <button id="nav-exit" class="danger" title="エクスポートして終了">終了</button>
   </nav>
+<button id="mobile-menu-btn" aria-label="メニュー">☰</button>
+<div id="mobile-menu" role="menu">
+  <button class="item" id="mnu-subjects">科目一覧</button>
+  <button class="item" id="mnu-review">今日の復習</button>
+  <button class="item" id="mnu-add">問題追加</button>
+  <button class="item" id="mnu-settings">設定/同期</button>
+  <button class="item" id="mnu-exit">終了</button>
+</div>
+
 
     <div id="global-inputmode" class="toolbar" style="padding:.4rem 1rem; border-bottom:1px solid var(--border); display:flex; gap:.5rem; align-items:center;">
       <span class="small muted">入力モード</span>
@@ -1003,6 +1069,7 @@ function rawCountBySubject(name){
       render();
     };
     window.__startSubjectAll = (rnd)=>{
+  try{ enterSolving(); }catch(_){ }
   try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
   try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
       let ids = idsBySubject(subj);
@@ -1013,6 +1080,7 @@ function rawCountBySubject(name){
 
 
     window.__startTopic = (topic, rnd)=>{
+  try{ enterSolving(); }catch(_){ }
   try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
   try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
       let ids = idsByTopic(subj, topic);
@@ -1090,9 +1158,11 @@ function rawCountBySubject(name){
       </div>
     `;
     window.__backSubjects = () => setActive('subjects');
-    window.__backTopics = () => { state.view='topics'; render(); };
+    window.__backTopics = () => {
+  try{ leaveSolving(); }catch(_){ } state.view='topics'; render(); };
     window.__selectSubtopic = (st)=>{ state.currentSubtopic = st; state.view='list'; render(); };
     window.__startTopicAll = (rnd)=>{
+  try{ enterSolving(); }catch(_){ }
   try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
   try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
       let ids = idsByTopic(subj, topic);
@@ -1102,6 +1172,7 @@ function rawCountBySubject(name){
     };
 
     window.__startSubtopic = (st, rnd)=>{
+  try{ enterSolving(); }catch(_){ }
   try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
   try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
       let ids = idsBySubtopic(subj, topic, st);
@@ -1180,6 +1251,7 @@ function rawCountBySubject(name){
     window.__backTopics = () => { state.view='topics'; render(); };
     window.__backSubtopics = () => { state.view='subtopics'; render(); };
     window.__startAll = (rnd)=>{
+  try{ enterSolving(); }catch(_){ }
   try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
   try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
       let base = ids.slice();
