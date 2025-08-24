@@ -77,7 +77,20 @@
     #errlayer{position:fixed;inset:0;background:rgba(0,0,0,.6);color:#fff;z-index:9999;display:none;align-items:center;justify-content:center;padding:1rem}
     #errbox{background:#111;border:1px solid #444;max-width:900px;width:100%;padding:1rem;border-radius:.75rem}
     #errbox pre{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;background:#000;padding:.75rem;border-radius:.5rem;color:#0f0;max-height:50vh;overflow:auto}
-  </style>
+  
+/* Cloze styles */
+.cloze-card{white-space:pre-wrap;border:1px dashed var(--border);background:#fcfcff;padding:.75rem;border-radius:.6rem}
+.cloze-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.5rem}
+.cloze-inputs .cell{display:flex;gap:.35rem;align-items:center}
+.cloze-inputs .cell .n{font-weight:700;min-width:1.6em;text-align:right}
+button.active{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand) inset}
+
+
+/* --- Title-under buttons: break line after title/pill and align buttons below --- */
+.list-actions{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.list-title{display:block;margin-bottom:.4rem}
+
+</style>
   <script>
     // Optional: disable SW if ?nosw in URL
     (function(){
@@ -92,7 +105,71 @@
         });
       }
     })();
-  </script>
+  
+/* ===== Input Mode (full/cloze) & Cloze helpers ===== */
+function getInputMode(){
+  try{
+    if (typeof config!=='undefined' && config && config.inputMode) return config.inputMode;
+  }catch(_){}
+  try{
+    const v = localStorage.getItem('rt_inputMode');
+    return (v==='cloze' ? 'cloze' : 'full');
+  }catch(_){}
+  return 'full';
+}
+function setInputMode(m){
+  const mode = (m==='cloze') ? 'cloze' : 'full';
+  try{ config.inputMode = mode; }catch(_){}
+  try{ localStorage.setItem('rt_inputMode', mode); }catch(_){}
+  try{ if (typeof saveConfig==='function') saveConfig(); }catch(_){}
+  try{ updateInputModeUI(); }catch(_){}
+  try{ render(); ensureIOSImportBanner(); }catch(_){}
+}
+window.__setInputMode = setInputMode;
+
+function updateInputModeUI(){
+  try{
+    const full=document.getElementById('btn-mode-full');
+    const clo=document.getElementById('btn-mode-cloze');
+    const mode=getInputMode();
+    if(full&&clo){
+      full.classList.toggle('active', mode==='full');
+      clo.classList.toggle('active', mode==='cloze');
+    }
+  }catch(_){}
+}
+window.addEventListener('load', ()=>{
+  try{
+    if (!config.inputMode){
+      const v = localStorage.getItem('rt_inputMode');
+      if (v) config.inputMode = (v==='cloze'?'cloze':'full');
+    }
+  }catch(_){}
+  try{ updateInputModeUI(); }catch(_){}
+  try{
+    const f = document.getElementById('btn-mode-full');
+    const c = document.getElementById('btn-mode-cloze');
+    if (f && !f.__wired){ f.addEventListener('click', ()=>setInputMode('full')); f.__wired=true; }
+    if (c && !c.__wired){ c.addEventListener('click', ()=>setInputMode('cloze')); c.__wired=true; }
+  }catch(_){}
+});
+
+// Build numbered cloze text: replace each keyword with ［n］ (1-based).
+// If a keyword appears multiple times, all occurrences share the same number.
+function buildClozeNumbered(text, keywords){
+  if (!text || !Array.isArray(keywords) || !keywords.length) return null;
+  let out = text;
+  // Sort keywords by length desc to avoid partial overlaps
+  const pairs = keywords.map((kw, i)=>({kw: String(kw||''), n: i+1})).filter(x=>x.kw.length>0)
+                       .sort((a,b)=> b.kw.length - a.kw.length);
+  for (const {kw, n} of pairs){
+    const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp(esc, 'g'), `［${n}］`);
+  }
+  return out!==text ? out : null;
+}
+
+</script>
 </head>
 <body>
 <header>
@@ -104,6 +181,12 @@
     <button id="nav-sync">設定/同期</button>
     <button id="nav-exit" class="danger" title="エクスポートして終了">終了</button>
   </nav>
+
+    <div id="global-inputmode" class="toolbar" style="padding:.4rem 1rem; border-bottom:1px solid var(--border); display:flex; gap:.5rem; align-items:center;">
+      <span class="small muted">入力モード</span>
+      <button class="ghost" id="btn-mode-full" onclick="__setInputMode('full')">全文入力</button>
+      <button class="ghost" id="btn-mode-cloze" onclick="__setInputMode('cloze')">穴埋め（番号入力）</button>
+    </div>
 </header>
 
 <main id="app"></main>
@@ -126,7 +209,7 @@
   window.addEventListener('unhandledrejection', e => showError(e.reason || e));
 
   const UA = navigator.userAgent || "";
-  const IS_IPHONE = /iPhone|iPod/.test(UA) && "ontouchend" in document;
+  const IS_IPHONE = (/iPhone|iPod/.test(UA) && 'ontouchend' in document) || /iPhone/.test(UA);
 
   const CORE_SUBJECTS = ["憲法","行政法","民法","刑法","商法","民訴法","刑訴法"];
   const ELECTIVE_SUBJECTS = ["労働法","倒産法","知的財産法","租税法","国際私法","国際公法","経済法","環境法"];
@@ -299,7 +382,7 @@
       await saveToFile();
       banner('iCloud Drive のファイルに接続しました。自動保存を開始します。');
       setTimeout(hideBanner, 2000);
-      render();
+      render(); ensureIOSImportBanner();
     }catch(e){ console.warn(e); }
   }
 
@@ -337,7 +420,7 @@
       state.problems = data;
       reindex();
       saveLocal(state.problems, sessionsState.logs);
-      render();
+      render(); ensureIOSImportBanner();
       return true;
     }catch(e){
       console.warn("ファイル読込失敗:", e);
@@ -479,12 +562,13 @@
   document.getElementById('nav-add').onclick      = () => { setActive('add') };
   document.getElementById('nav-sync').onclick     = () => { setActive('sync') };
   document.getElementById('nav-exit').onclick     = () => { __exitFlow(); };
+  document.getElementById('nav-exit').addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); __exitFlow(); }, {passive:true});
   if (!IS_IPHONE) { document.getElementById('nav-exit').style.display = 'none'; }
 
   function setActive(view){
     state.view = view;
     if (view !== 'quiz') { state.reviewQueue = null; endSession(); stopTimer(); }
-    render();
+    render(); ensureIOSImportBanner();
     document.querySelectorAll('header nav button').forEach(b => b.classList.remove('active'));
     if (view==='subjects' || view==='topics' || view==='subtopics' || view==='list') document.getElementById('nav-subjects').classList.add('active');
     if (view==='review'  ) document.getElementById('nav-review').classList.add('active');
@@ -519,21 +603,7 @@
     if (state.currentSubtopic !== 'all'){ arr = arr.filter(p => (p.subtopic||"") === state.currentSubtopic); }
     return arr;
   }
-  
-  // === Filter-aware utilities (ad28g) ===
-  function idsBySubjectFiltered(subj){ return problemsBySubjectFiltered(subj).map(p=>p.id); }
-  function idsByTopicFiltered(subj, topic){
-    const ids = idsByTopic(subj, topic);
-    return ids.map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).map(p=>p.id);
-  }
-  function idsBySubtopicFiltered(subj, topic, st){
-    const ids = idsBySubtopic(subj, topic, st);
-    return ids.map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).map(p=>p.id);
-  }
-  function countSubjectFiltered(subj){ return problemsBySubjectFiltered(subj).length; }
-  function countTopicFiltered(subj, topic){ return idsByTopicFiltered(subj, topic).length; }
-  function countSubtopicFiltered(subj, topic, st){ return idsBySubtopicFiltered(subj, topic, st).length; }
-function meetsFilters(p){
+  function meetsFilters(p){
     const impOk = (state.currentImportance==='all') || (p.importance===state.currentImportance);
     const tag = latestSelfTag(p);
     const selfOk = (state.currentSelf==='all') || (tag===state.currentSelf);
@@ -714,18 +784,22 @@ function meetsFilters(p){
       </div>
     `;
   }
-  window.__setImp = (v)=>{ state.currentImportance=v; render(); };
-  window.__setSelf = (v)=>{ state.currentSelf=v; render(); };
-  window.__resetFilters = ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); };
+  window.__setImp = (v)=>{ state.currentImportance=v; render(); ensureIOSImportBanner(); };
+  window.__setSelf = (v)=>{ state.currentSelf=v; render(); ensureIOSImportBanner(); };
+  window.__resetFilters = ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); ensureIOSImportBanner(); };
 
-  function rawCountBySubject(name){ return countSubjectFiltered(name); }
+  function rawCountBySubject(name){ return idsBySubject(name).length; }
+function countBySubjectFiltered(name){
+  const ids = idsBySubject(name);
+  return ids.map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length;
+}
 
   function renderSubjects(){
     const coreHtml = CORE_SUBJECTS.map(s=>`
       <div class="list-item" style="cursor:pointer" onclick="__selectSubject('${s}')">
         <div class="flex">
           <strong>${s}</strong>
-          <span class="pill">${rawCountBySubject(s)} 問</span>
+          <span class="pill">${countBySubjectFiltered(s)} 問</span>
           <span class="space"></span>
           <!-- インタリーブ模試は分野一覧の行で提供 -->
         </div>
@@ -735,7 +809,7 @@ function meetsFilters(p){
       <div class="list-item" style="cursor:pointer" onclick="__selectElective()">
         <div class="flex">
           <strong>選択科目</strong>
-          <span class="pill">${rawCountBySubject("__ELECTIVE__")} 問</span>
+          <span class="pill">${countBySubjectFiltered("__ELECTIVE__")} 問</span>
           <span class="space"></span>
         </div>
       </div>
@@ -758,12 +832,12 @@ function meetsFilters(p){
         </div>
       </div>
     `;
-    window.__selectSubject = (s)=>{ state.currentSubject = s; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); };
-    window.__selectElective = ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); };
+    window.__selectSubject = (s)=>{ state.currentSubject = s; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); ensureIOSImportBanner(); };
+    window.__selectElective = ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); ensureIOSImportBanner(); };
   }
 
-  function topicCount(subj, topic){ return countTopicFiltered(subj, topic); }
-  function unclassifiedTopicCount(subj){ return idsByTopicFiltered(subj, "").length; }
+  function topicCount(subj, topic){ return idsByTopic(subj, topic).length; }
+  function unclassifiedTopicCount(subj){ return idsByTopic(subj, "").length; }
 
   function getSubjectCount(){
     const inp = document.getElementById('count-subject');
@@ -787,15 +861,15 @@ function meetsFilters(p){
     if (!subj){ setActive('subjects'); return; }
     const topics = topicsForSubject(subj);
     const list = topics.filter(t=>t).map(t=>`
-      <div class="list-item" style="cursor:pointer" onclick="__selectTopic('${t.replace(/'/g,"\\'")}')">
-        <div class="flex">
+      <div class="list-item" style="cursor:pointer" onclick="__selectTopic('${t.replace(/'/g,"\'")}')">
+        <div class="list-title">
           <strong>${t}</strong>
           <span class="pill">${topicCount(subj, t)} 件</span>
-          <span class="space"></span>
-          <span class="small">連続演習：</span>
-          <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\\'")}', false)">順番</button>
-          <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\\'")}', true)">ランダム</button>
-          <button class="ghost" style="display:none" onclick="event.stopPropagation();__startInterleaveTopic('${t.replace(/'/g,"\\'")}')">インタリーブ模試</button>
+        </div>
+        <div class="list-actions">
+          <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\'")}', false)">順番</button>
+          <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\'")}', true)">ランダム</button>
+          <button class="ghost" style="display:none" onclick="event.stopPropagation();__startInterleaveTopic('${t.replace(/'/g,"\'")}')">インタリーブ模試</button>
         </div>
       </div>
     `).join('');
@@ -811,18 +885,15 @@ function meetsFilters(p){
         ${filterBarHTML()}
         <div class="section">
           <div class="list-item">
-            <div class="flex">
-              <div style="cursor:pointer" onclick="__selectTopic('all')">
-                <strong>（この科目の全て）</strong>
-                <span class="pill">${subjectCount} 件</span>
-              </div>
-              <span class="space"></span>
-              <span class="small">連続演習：</span>
-              <button class="ghost" onclick="__startSubjectAll(false)">順番</button>
-              <button class="ghost" onclick="__startSubjectAll(true)">ランダム</button>
-
-            </div>
-          </div>
+      <div style="cursor:pointer" onclick="__selectTopic('all')" class="list-title">
+        <strong>（この科目の全て）</strong>
+        <span class="pill">${subjectCount} 件</span>
+      </div>
+      <div class="list-actions">
+        <button class="ghost" onclick="__startSubjectAll(false)">順番</button>
+        <button class="ghost" onclick="__startSubjectAll(true)">ランダム</button>
+      </div>
+    </div>
         </div>
         <div class="section">
           <h3>分野</h3>
@@ -834,17 +905,15 @@ function meetsFilters(p){
         <div class="section">
           <h3>未分類の分野</h3>
           <div class="list-item">
-            <div class="flex">
-              <div style="cursor:pointer" onclick="__selectTopic('')">
-                <strong>未分類</strong>
-                <span class="pill">${unclassifiedTopicCount(subj)} 件</span>
-              </div>
-              <span class="space"></span>
-              <span class="small">連続演習：</span>
-              <button class="ghost" onclick="__startTopic('', false)">順番</button>
-              <button class="ghost" onclick="event.stopPropagation();__startTopic('', true)">ランダム</button>
-            </div>
-          </div>
+      <div style="cursor:pointer" onclick="__selectTopic('')" class="list-title">
+        <strong>未分類</strong>
+        <span class="pill">${unclassifiedTopicCount(subj)} 件</span>
+      </div>
+      <div class="list-actions">
+        <button class="ghost" onclick="__startTopic('', false)">順番</button>
+        <button class="ghost" onclick="event.stopPropagation();__startTopic('', true)">ランダム</button>
+      </div>
+    </div>
         </div>` : ''}
       </div>
     `;
@@ -853,7 +922,7 @@ function meetsFilters(p){
       state.currentTopic = t;
       state.currentSubtopic = 'all';
       state.view = (t==='all') ? 'list' : 'subtopics';
-      render();
+      render(); ensureIOSImportBanner();
     };
     window.__startSubjectAll = (rnd)=>{
       let ids = idsBySubject(subj);
@@ -873,24 +942,24 @@ function meetsFilters(p){
 
   }
 
-  function subtopicCount(subj, topic, subtopic){ return countSubtopicFiltered(subj, topic, subtopic); }
-  function unclassifiedSubtopicCount(subj, topic){ return idsBySubtopicFiltered(subj, topic, "").length; }
+  function subtopicCount(subj, topic, subtopic){ return idsBySubtopic(subj, topic, subtopic).length; }
+  function unclassifiedSubtopicCount(subj, topic){ return idsBySubtopic(subj, topic, "").length; }
   function renderSubtopics(){
     const subj = state.currentSubject;
     const topic = state.currentTopic;
     if (!subj) { setActive('subjects'); return; }
-    if (topic==='all'){ state.view='list'; render(); return; }
+    if (topic==='all'){ state.view='list'; render(); ensureIOSImportBanner(); return; }
 
     const subs = subtopicsFor(subj, topic);
     const list = subs.map(st=>`
-      <div class="list-item" style="cursor:pointer" onclick="__selectSubtopic('${st.replace(/'/g,"\\'")}')">
-        <div class="flex">
+      <div class="list-item" style="cursor:pointer" onclick="__selectSubtopic('${st.replace(/'/g,"\'")}')">
+        <div class="list-title">
           <strong>${st}</strong>
           <span class="pill">${subtopicCount(subj, topic, st)} 件</span>
-          <span class="space"></span>
-          <span class="small">連続演習：</span>
-          <button class="ghost" onclick="event.stopPropagation();__startSubtopic('${st.replace(/'/g,"\\'")}', false)">順番</button>
-          <button class="ghost" onclick="event.stopPropagation();__startSubtopic('${st.replace(/'/g,"\\'")}', true)">ランダム</button>
+        </div>
+        <div class="list-actions">
+          <button class="ghost" onclick="event.stopPropagation();__startSubtopic('${st.replace(/'/g,"\'")}', false)">順番</button>
+          <button class="ghost" onclick="event.stopPropagation();__startSubtopic('${st.replace(/'/g,"\'")}', true)">ランダム</button>
         </div>
       </div>
     `).join('');
@@ -906,17 +975,15 @@ function meetsFilters(p){
         </div>
         <div class="section">
           <div class="list-item">
-            <div class="flex">
-              <div style="cursor:pointer" onclick="__selectSubtopic('all')">
-                <strong>（この分野の全て）</strong>
-                <span class="pill">${topicAll} 件</span>
-              </div>
-              <span class="space"></span>
-              <span class="small">連続演習：</span>
-              <button class="ghost" onclick="__startTopicAll(false)">順番</button>
-              <button class="ghost" onclick="__startTopicAll(true)">ランダム</button>
-            </div>
-          </div>
+      <div style="cursor:pointer" onclick="__selectSubtopic('all')" class="list-title">
+        <strong>（この分野の全て）</strong>
+        <span class="pill">${topicAll} 件</span>
+      </div>
+      <div class="list-actions">
+        <button class="ghost" onclick="__startTopicAll(false)">順番</button>
+        <button class="ghost" onclick="__startTopicAll(true)">ランダム</button>
+      </div>
+    </div>
         </div>
         <div class="section">
           <h3>小分類</h3>
@@ -928,23 +995,21 @@ function meetsFilters(p){
         <div class="section">
           <h3>未分類の小分類</h3>
           <div class="list-item">
-            <div class="flex">
-              <div style="cursor:pointer" onclick="__selectSubtopic('')">
-                <strong>未分類</strong>
-                <span class="pill">${unclassifiedSubtopicCount(subj, topic)} 件</span>
-              </div>
-              <span class="space"></span>
-              <span class="small">連続演習：</span>
-              <button class="ghost" onclick="__startSubtopic('', false)">順番</button>
-              <button class="ghost" onclick="event.stopPropagation();__startSubtopic('', true)">ランダム</button>
-            </div>
-          </div>
+      <div style="cursor:pointer" onclick="__selectSubtopic('')" class="list-title">
+        <strong>未分類</strong>
+        <span class="pill">${unclassifiedSubtopicCount(subj, topic)} 件</span>
+      </div>
+      <div class="list-actions">
+        <button class="ghost" onclick="__startSubtopic('', false)">順番</button>
+        <button class="ghost" onclick="event.stopPropagation();__startSubtopic('', true)">ランダム</button>
+      </div>
+    </div>
         </div>` : ''}
       </div>
     `;
     window.__backSubjects = () => setActive('subjects');
-    window.__backTopics = () => { state.view='topics'; render(); };
-    window.__selectSubtopic = (st)=>{ state.currentSubtopic = st; state.view='list'; render(); };
+    window.__backTopics = () => { state.view='topics'; render(); ensureIOSImportBanner(); };
+    window.__selectSubtopic = (st)=>{ state.currentSubtopic = st; state.view='list'; render(); ensureIOSImportBanner(); };
     window.__startTopicAll = (rnd)=>{
       let ids = idsByTopic(subj, topic);
       const n = getSubjectCount();
@@ -968,7 +1033,7 @@ function meetsFilters(p){
     state.currentProblemId = q[0];
     startSession(q, randomize, mode||null);
     state.view='quiz';
-    render();
+    render(); ensureIOSImportBanner();
   }
 
   function renderList(){
@@ -992,11 +1057,13 @@ function meetsFilters(p){
           <h2 style="margin:0 .5rem">科目：${subjectLabel(state.currentSubject)} / 分野：${topicLabel} / 小分類：${subLabel}（${list.length} 件）</h2>
         </div>
 
-        <div class="section flex">
-          <strong>この一覧の全問題を連続演習：</strong>
-          <button class="ghost" ${disabled} onclick="__startAll(false)">順番</button>
-          <button class="ghost" ${disabled} onclick="__startAll(true)">ランダム</button>
-        </div>
+        <div class="section">
+      <div class="list-title"><strong>この一覧の全問題を連続演習：</strong></div>
+      <div class="list-actions">
+        <button class="ghost" ${disabled} onclick="__startAll(false)">順番</button>
+        <button class="ghost" ${disabled} onclick="__startAll(true)">ランダム</button>
+      </div>
+    </div>
 
         <div class="section">
           ${list.length===0 ? '<div class="muted">この条件の問題はありません。</div>' :
@@ -1024,8 +1091,8 @@ function meetsFilters(p){
       </div>
     `;
     window.__backSubjects = () => setActive('subjects');
-    window.__backTopics = () => { state.view='topics'; render(); };
-    window.__backSubtopics = () => { state.view='subtopics'; render(); };
+    window.__backTopics = () => { state.view='topics'; render(); ensureIOSImportBanner(); };
+    window.__backSubtopics = () => { state.view='subtopics'; render(); ensureIOSImportBanner(); };
     window.__startAll = (rnd)=>{
       let base = ids.slice();
       const n = getSubjectCount();
@@ -1033,8 +1100,8 @@ function meetsFilters(p){
       startQueue(chosen, false);
     };
 
-    window.__startQuiz = (id)=>{ state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); state.view='quiz'; render(); };
-    window.__editProblem = (id)=>{ state.currentProblemId = id; state.view='edit'; render(); };
+    window.__startQuiz = (id)=>{ state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); state.view='quiz'; render(); ensureIOSImportBanner(); };
+    window.__editProblem = (id)=>{ state.currentProblemId = id; state.view='edit'; render(); ensureIOSImportBanner(); };
     window.__deleteProblem = (id)=>{
       const target = state.problems.find(p=>p.id===id);
       if (!target) return;
@@ -1071,11 +1138,22 @@ function meetsFilters(p){
           <button class="ghost" onclick="__backList()">← 問題一覧</button>
           <h2 style="margin:0 .5rem">Q: ${p.question}</h2>
           <div class="space"></div>
-          <div class="small">タイマー：<span id="timer" class="timer">00:00</span></div>
+          <div class="small">タイマー：<span id="timer" class="timer">00:00</span></div><div class="small muted" style="margin-left:.75rem">入力モード：${getInputMode()==="cloze"?"穴埋め":"全文"}</div>
         </div>
         <div class="section">
           <label>あなたの回答</label>
-          <textarea id="answer" placeholder=""></textarea>
+<textarea id="answer" ${ (getInputMode()==='cloze' && (p.keywords||[]).length) ? 'style="display:none"' : '' }></textarea>
+${(function(){
+  try{
+    if (getInputMode()!=='cloze') return '';
+    const kws = (p.keywords||[]);
+    if (!kws.length) return '';
+    const masked = buildClozeNumbered(p.example || "", kws);
+    const inputs = kws.map((_,i)=>`<div class="cell"><span class="n">[${i+1}]</span><input type="text" id="cloze-${i+1}" placeholder="キーワード ${i+1}"></div>`).join('');
+    return `<div class="section"><strong>穴埋め（番号）</strong><div class="cloze-card">${masked || '（模範解答が未登録です）'}</div></div>
+            <div class="section"><label>番号ごとにキーワードを入力</label><div class="cloze-inputs">${inputs}</div></div>`;
+  }catch(_){ return ''; }
+})()}</textarea>
           <div class="section flex">
             ${prevExists ? `<button class="ghost" onclick="__prev()">◀ 前の問題へ</button>` : ""}
             <button class="primary" id="btn-grade" onclick="__grade()" title="ショートカット: ⌘/Ctrl + Enter">採点する</button>
@@ -1087,7 +1165,7 @@ function meetsFilters(p){
       </div>
     `;
     startTimer();
-    window.__backList = ()=>{ state.view='list'; state.reviewQueue=null; endSession(); stopTimer(); render(); };
+    window.__backList = ()=>{ state.view='list'; state.reviewQueue=null; endSession(); stopTimer(); render(); ensureIOSImportBanner(); };
     window.__prev = ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; renderQuiz(); } else showNoPrev(); };
     window.__next = ()=>{ const id=navNextId(); if (id){ state.currentProblemId=id; renderQuiz(); } else showNoNext(); };
     window.__goHome = ()=> { endSession(); stopTimer(); setActive('subjects'); };
@@ -1180,6 +1258,7 @@ function meetsFilters(p){
       const prev2 = !!navPrevId();
       const next2 = !!navNextId();
       const result = document.getElementById('result');
+      const answersBlock = (function(){ try{ if (getInputMode()!=='cloze' || total===0) return ''; const rows = (prob.keywords||[]).map((kw,i)=>{ const v = (document.getElementById('cloze-'+(i+1))||{}).value||''; const ok = (String(v).trim()===String(kw)); return `<div class='row'><div class='pill'>[${i+1}]</div><div class='space mono'>${escapeHtml(v)||'（未入力）'}</div><div class='pill ${ok?'':'danger'}'>${ok?'正解':'不正解'}</div></div>`; }).join(''); return `<div class='section'><strong>番号ごとの回答</strong><div class='details'>${rows}</div></div>`;}catch(_){return '';} })();
       result.innerHTML = `
         <div class="card">
           <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail} ${elapsed!=null? `<span class="muted small">（所要 ${Math.floor(elapsed/60)}分${elapsed%60}秒）</span>`:''}</div>
@@ -1505,7 +1584,7 @@ function meetsFilters(p){
         <div id="edit-msg" class="section muted small"></div>
       </div>
     `;
-    window.__backList = ()=>{ state.view='list'; render(); };
+    window.__backList = ()=>{ state.view='list'; render(); ensureIOSImportBanner(); };
     window.__saveEdit = ()=>{
       const subject = document.getElementById('e-subject').value;
       const topic = (document.getElementById('e-topic').value||'').trim();
@@ -1534,7 +1613,7 @@ function meetsFilters(p){
       saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
-      state.view='list'; render();
+      state.view='list'; render(); ensureIOSImportBanner();
     };
   }
 
@@ -1810,11 +1889,14 @@ function meetsFilters(p){
     document.getElementById('exit-cancel').onclick = ()=>{ root.innerHTML = ""; };
   }
   window.__exitFlow = ()=>{
-    if (IS_IPHONE){
-      showIOSExitFlow();
-    }else{
+    if (!IS_IPHONE){
       alert("終了ボタンはiPhone用です。PCでは設定/同期からエクスポートしてください。");
+      return;
     }
+    try{
+      if (config && config.iosShowExportGuide){ showIOSExitFlow(); }
+      else { doExportNow(); setTimeout(attemptClose, 500); }
+    }catch(_){ showIOSExitFlow(); }
   };
 
   // ====== コマンドパレット（⌘K / Ctrl+K） ======
@@ -1860,8 +1942,8 @@ function meetsFilters(p){
     q.oninput = search;
     q.onkeydown = (e)=>{ if (e.key==='Enter'){ const first = listEl.querySelector('button'); if (first){ first.click(); } } };
     setTimeout(()=>{ q.focus(); search(); }, 0);
-    window.__palStart = (id)=>{ root.innerHTML = ""; state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); state.view='quiz'; render(); };
-    window.__palEdit = (id)=>{ root.innerHTML = ""; state.currentProblemId=id; state.view='edit'; render(); };
+    window.__palStart = (id)=>{ root.innerHTML = ""; state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); state.view='quiz'; render(); ensureIOSImportBanner(); };
+    window.__palEdit = (id)=>{ root.innerHTML = ""; state.currentProblemId=id; state.view='edit'; render(); ensureIOSImportBanner(); };
     window.__closePalette = ()=>{ root.innerHTML = ""; };
   }
 
@@ -1920,11 +2002,12 @@ function meetsFilters(p){
       const ui = loadUI() || {};
       state.currentImportance = ui.currentImportance || 'all';
       state.currentSelf = ui.currentSelf || 'all';
-      render();
+      render(); ensureIOSImportBanner();
       updateNavBadges();
 
-      if (IS_IPHONE && config.iosShowImportAtBoot){
-        showIOSImportModal();
+      if (IS_IPHONE){
+        const hasAny = Array.isArray(state.problems) && state.problems.length>0;
+        if (!hasAny || config.iosShowImportAtBoot){ showIOSImportModal(); }
       }
 
       document.addEventListener('visibilitychange', async ()=>{
