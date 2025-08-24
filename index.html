@@ -683,8 +683,8 @@
     `;
     const selfOpts = `
       <option value="all" ${state.currentSelf==='all'?'selected':''}>すべて</option>
-      <option value="perfect" ${state.currentSelf==='perfect'?'selected':''}>完璧</option>
-      <option value="unsure" ${state.currentSelf==='unsure'?'selected':''}>不安</option>
+      <option value="perfect" ${state.currentSelf==='perfect'?'selected':''}>できた</option>
+      <option value="unsure" ${state.currentSelf==='unsure'?'selected':''}>普通</option>
       <option value="fail" ${state.currentSelf==='fail'?'selected':''}>できない</option>
     `;
     return `
@@ -693,7 +693,9 @@
         <select onchange="__setImp(this.value)">${impOpts}</select>
         <label class="small">自己評価：</label>
         <select onchange="__setSelf(this.value)">${selfOpts}</select>
-        <div class="space"></div>
+        <label class="small" style="margin-left:1rem">件数</label>
+<input type="number" id="count-subject" min="1" step="1" placeholder="（空=全件）" style="max-width:6rem">
+<div class="space"></div>
         <button class="ghost" onclick="__resetFilters()">リセット</button>
       </div>
     `;
@@ -748,6 +750,24 @@
 
   function topicCount(subj, topic){ return idsByTopic(subj, topic).length; }
   function unclassifiedTopicCount(subj){ return idsByTopic(subj, "").length; }
+
+  function getSubjectCount(){
+    const inp = document.getElementById('count-subject');
+    if (!inp) return null;
+    const v = Math.floor(Number(inp.value||0));
+    return (isFinite(v) && v>0) ? v : null;
+  }
+  function pickWithLimit(ids, n, rnd){
+    let arr = ids.slice();
+    if (n && rnd){ // random N
+      for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+      arr = arr.slice(0, n);
+      return arr;
+    }
+    if (n){ return arr.slice(0, n); }
+    return arr;
+  }
+
   function renderTopics(){
     const subj = state.currentSubject;
     if (!subj){ setActive('subjects'); return; }
@@ -761,7 +781,7 @@
           <span class="small">連続演習：</span>
           <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\\'")}', false)">順番</button>
           <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\\'")}', true)">ランダム</button>
-          <button class="ghost" onclick="event.stopPropagation();__startInterleaveTopic('${t.replace(/'/g,"\\'")}')">インタリーブ模試</button>
+          <button class="ghost" style="display:none" onclick="event.stopPropagation();__startInterleaveTopic('${t.replace(/'/g,"\\'")}')">インタリーブ模試</button>
         </div>
       </div>
     `).join('');
@@ -786,7 +806,7 @@
               <span class="small">連続演習：</span>
               <button class="ghost" onclick="__startSubjectAll(false)">順番</button>
               <button class="ghost" onclick="__startSubjectAll(true)">ランダム</button>
-              <button class="ghost" onclick="__startInterleaveSubject()">インタリーブ</button>
+
             </div>
           </div>
         </div>
@@ -822,23 +842,21 @@
       render();
     };
     window.__startSubjectAll = (rnd)=>{
-      const ids = idsBySubject(subj);
-      startQueue(ids, rnd);
+      let ids = idsBySubject(subj);
+      const n = getSubjectCount();
+      ids = pickWithLimit(ids, n, rnd);
+      startQueue(ids, false);
     };
-    window.__startInterleaveSubject = ()=>{
-      const ids = idsBySubject(subj);
-      const queue = buildInterleavedQueue(ids, 'topic');
-      startQueue(queue, false);
-    };
+
+
     window.__startTopic = (topic, rnd)=>{
-      const ids = idsByTopic(subj, topic);
-      startQueue(ids, rnd);
+      let ids = idsByTopic(subj, topic);
+      const n = getSubjectCount();
+      ids = pickWithLimit(ids, n, rnd);
+      startQueue(ids, false);
     };
-    window.__startInterleaveTopic = (topic)=>{
-      const ids = idsByTopic(subj, topic);
-      const queue = buildInterleavedQueue(ids, 'subtopic');
-      startQueue(queue, false);
-    };
+
+
   }
 
   function subtopicCount(subj, topic, subtopic){ return idsBySubtopic(subj, topic, subtopic).length; }
@@ -914,13 +932,19 @@
     window.__backTopics = () => { state.view='topics'; render(); };
     window.__selectSubtopic = (st)=>{ state.currentSubtopic = st; state.view='list'; render(); };
     window.__startTopicAll = (rnd)=>{
-      const ids = idsByTopic(subj, topic);
-      startQueue(ids, rnd);
+      let ids = idsByTopic(subj, topic);
+      const n = getSubjectCount();
+      ids = pickWithLimit(ids, n, rnd);
+      startQueue(ids, false);
     };
+
     window.__startSubtopic = (st, rnd)=>{
-      const ids = idsBySubtopic(subj, topic, st);
-      startQueue(ids, rnd);
+      let ids = idsBySubtopic(subj, topic, st);
+      const n = getSubjectCount();
+      ids = pickWithLimit(ids, n, rnd);
+      startQueue(ids, false);
     };
+
   }
 
   function startQueue(ids, randomize, mode){
@@ -964,7 +988,7 @@
           ${list.length===0 ? '<div class="muted">この条件の問題はありません。</div>' :
             list.map(p=>{
               const tag = latestSelfTag(p);
-              const tagLabel = tag==='perfect'?'完璧':tag==='unsure'?'不安':tag==='fail'?'できない':'未評価';
+              const tagLabel = tag==='perfect'?'できた':tag==='unsure'?'普通':tag==='fail'?'できない':'未評価';
               const tagBadge = tag ? `<span class="pill">${tagLabel}</span>` : '<span class="pill">未評価</span>';
               return `
               <div class="list-item">
@@ -988,7 +1012,13 @@
     window.__backSubjects = () => setActive('subjects');
     window.__backTopics = () => { state.view='topics'; render(); };
     window.__backSubtopics = () => { state.view='subtopics'; render(); };
-    window.__startAll = (rnd)=>{ startQueue(ids, rnd); };
+    window.__startAll = (rnd)=>{
+      let base = ids.slice();
+      const n = getSubjectCount();
+      const chosen = pickWithLimit(base, n, rnd);
+      startQueue(chosen, false);
+    };
+
     window.__startQuiz = (id)=>{ state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); state.view='quiz'; render(); };
     window.__editProblem = (id)=>{ state.currentProblemId = id; state.view='edit'; render(); };
     window.__deleteProblem = (id)=>{
@@ -1092,14 +1122,14 @@
 
       // 履歴（所要秒）
       prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, secs: elapsed, self:null});
-      // 弱点ドリル中に正解したら累積点を減らす
+      // 弱点ドリル中に満点（◎）だったら累積点を減点
       try {
         const mode = (sessionsState.current && sessionsState.current.context && sessionsState.current.context.mode) || null;
-        if (mode === 'weak'){
-          if (score === '◎') prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 3);
-          else if (score === '○') prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 2);
+        if (mode === 'weak' && score === '◎') {
+          prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 3);
         }
       } catch(_) {}
+
 
       bumpSessionOnScore(score);
       addDailyAnswered(1);
@@ -1153,8 +1183,8 @@
           <div class="section">
             <strong>自己評価：</strong>
             <div class="flex" id="selfBtns" style="margin-top:.5rem">
-              <button class="ghost selfbtn ${currentSel==='perfect'?'active':''}" data-tag="perfect" onclick="__selfMark('perfect')">完璧</button>
-              <button class="ghost selfbtn ${currentSel==='unsure'?'active':''}" data-tag="unsure" onclick="__selfMark('unsure')">不安</button>
+              <button class="ghost selfbtn ${currentSel==='perfect'?'active':''}" data-tag="perfect" onclick="__selfMark('perfect')">できた</button>
+              <button class="ghost selfbtn ${currentSel==='unsure'?'active':''}" data-tag="unsure" onclick="__selfMark('unsure')">普通</button>
               <button class="ghost selfbtn ${currentSel==='fail'?'active':''}" data-tag="fail" onclick="__selfMark('fail')">できない</button>
             </div>
           </div>
@@ -1209,7 +1239,7 @@
       return `<div class="details small">` + ids.map(id => {
         const p = idToProb(id);
         const tag = latestSelfTag(p);
-        const tagLabel = tag==='perfect'?'完璧':tag==='unsure'?'不安':tag==='fail'?'できない':'未評価';
+        const tagLabel = tag==='perfect'?'できた':tag==='unsure'?'普通':tag==='fail'?'できない':'未評価';
         return `<div class="row" style="margin:.25rem 0">
           <div class="space">${escapeHtml(p.question)}</div>
           <span class="pill">${importanceLabel(p.importance)}</span>
@@ -1274,7 +1304,7 @@
           <div class="row-sm">
             <label class="small">件数</label>
             <input type="number" id="wdN" min="1" step="1" value="20" style="max-width:8rem">
-            <span class="small">比率 不安:${config.mixRatio.unsure} / できない:${config.mixRatio.fail} / その他:${config.mixRatio.other}</span>
+            <span class="small">比率 普通:${config.mixRatio.unsure} / できない:${config.mixRatio.fail} / その他:${config.mixRatio.other}</span>
           </div>
           <div class="row-sm" style="margin-top:.35rem">
             <button class="ghost" onclick="__weakDrill(false)">順番</button>
@@ -1285,7 +1315,7 @@
 
         <div class="section">
           <h3>自己評価まとめ</h3>
-          ${rowOne("不安だけ","weakU", weakUnsure)}
+          ${rowOne("普通だけ","weakU", weakUnsure)}
           ${rowOne("できないだけ","weakF", weakFail)}
         </div>
 
@@ -1508,7 +1538,7 @@
 
         <h3 class="section">B. ドリル設定</h3>
         <div class="section">
-          <label>弱点ドリルの比率（不安 / できない / その他）</label>
+          <label>弱点ドリルの比率（普通 / できない / その他）</label>
           <div class="row-sm">
             <input type="number" id="cfg-mix-u" min="0" step="1" style="max-width:6rem">
             <input type="number" id="cfg-mix-f" min="0" step="1" style="max-width:6rem">
