@@ -6,69 +6,121 @@
   <title>司法試験 論証タイピング</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <meta name="theme-color" content="#2563eb">
+  <meta name="theme-color" content="#2F5AE9">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#f9f9fb;--fg:#222;--card:#fff;--muted:#666;--border:#ddd;--brand:#2563eb;--good:#16a34a;--mid:#ca8a04;--low:#ea580c;--bad:#dc2626;}
+    /* ===== StudySapuri-inspired palette & typography (approximate) ===== */
+    :root{
+      --brand:#2F5AE9;          /* メイン（濃い青） */
+      --brand-deep:#2237A5;     /* ヘッダー濃色 */
+      --accent:#00A0E9;         /* シアン系アクセント */
+      --bg:#F6F8FF;             /* 薄いブルーグレー背景 */
+      --card:#FFFFFF;
+      --fg:#0F172A;             /* Slate-900 */
+      --muted:#64748B;          /* Slate-500 */
+      --border:#E2E8F0;         /* Slate-200 */
+      --good:#14A44D;
+      --mid:#D97706;
+      --low:#EA580C;
+      --bad:#DC2626;
+      --link:#2F5AE9;
+    }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; margin:0; background:var(--bg); color:var(--fg)}
-    header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);padding:.75rem 1rem;display:flex;gap:.5rem;align-items:center;z-index:20}
-    header h1{font-size:1.05rem;margin:0;font-weight:700;line-height:1.2}
-    nav{margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
-    nav button{border:1px solid var(--border);background:#fff;padding:.45rem .7rem;border-radius:.6rem;cursor:pointer;white-space:nowrap}
-    nav button.active{border-color:var(--brand);color:#fff;background:#2563eb}
-    nav button.danger{color:var(--bad);border-color:#fecaca;background:#fff}
-    nav button.danger:hover{background:#fee2e2}
+    body{
+      font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN','Yu Gothic',Meiryo,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      margin:0;background:var(--bg);color:var(--fg);
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
+    /* Header */
+    header{
+      position:sticky;top:0;z-index:30;
+      background:linear-gradient(90deg,var(--brand-deep),var(--brand));
+      color:#fff;border-bottom:1px solid rgba(255,255,255,.08);
+      padding:.75rem 1rem;display:flex;gap:.75rem;align-items:center;
+    }
+    header h1{font-size:1.05rem;margin:0;font-weight:700;line-height:1.2;letter-spacing:.02em}
+    nav{margin-left:auto;display:flex;gap:.25rem;flex-wrap:wrap;align-items:center}
+    /* Header nav buttons → テキストリンク風 */
+    nav button{
+      background:transparent;border:0;color:#fff;opacity:.9;
+      padding:.5rem .6rem;border-radius:.5rem;cursor:pointer;font-weight:600;
+    }
+    nav button:hover{opacity:1;background:rgba(255,255,255,.08)}
+    nav button.active{background:rgba(255,255,255,.16)}
+    nav button.danger{color:#FFE1E1;background:rgba(220,38,38,.15)}
+    nav button.danger:hover{background:rgba(220,38,38,.25)}
     main{max-width:980px;margin:0 auto;padding:1rem}
-    .banner{position:sticky;top:52px;z-index:25;margin:0 auto;max-width:980px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:.6rem;padding:.6rem 1rem;display:flex;gap:.5rem;align-items:center}
+    /* Banner */
+    .banner{position:sticky;top:56px;z-index:25;margin:0 auto;max-width:980px;
+      background:#E8EEFF;border:1px solid #CBD6FF;color:#11227A;border-radius:.75rem;
+      padding:.6rem 1rem;display:flex;gap:.5rem;align-items:center}
     .banner.hidden{display:none}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;margin:.65rem 0}
+    /* Cards & layout */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;
+      padding:1rem;margin:.75rem 0;box-shadow:0 4px 12px rgba(20,41,140,.06)}
     .section{margin-top:1rem}
     .grid{display:grid;gap:.75rem}
     @media(min-width:720px){.grid.two{grid-template-columns:1fr 1fr} .grid.three{grid-template-columns:1fr 1fr 1fr}}
+    /* Inputs */
     label{font-size:.9rem;color:var(--muted)}
     input,select,textarea,button{font:inherit}
-    input,select,textarea{width:100%;padding:.6rem;border:1px solid var(--border);border-radius:.6rem;background:#fff}
-    textarea{min-height:8rem;line-height:1.6}
-    button.primary{background:var(--brand);color:#fff;border:none;padding:.65rem 1rem;border-radius:.6rem;cursor:pointer}
-    button.ghost{background:#fff;border:1px solid var(--border);padding:.6rem 1rem;border-radius:.6rem;cursor:pointer}
-    .list-item{padding:.75rem;border:1px solid var(--border);border-radius:.6rem;background:#fff}
+    input,select,textarea{width:100%;padding:.65rem;border:1px solid var(--border);border-radius:.65rem;background:#fff}
+    input:focus,select:focus,textarea:focus{outline:2px solid #C7D2FE;border-color:#C7D2FE}
+    textarea{min-height:8rem;line-height:1.8}
+    /* Buttons */
+    button.primary{
+      background:var(--brand);color:#fff;border:none;padding:.7rem 1rem;border-radius:.7rem;cursor:pointer;
+      box-shadow:0 6px 14px rgba(47,90,233,.18);font-weight:700;
+    }
+    button.primary:hover{filter:brightness(1.02)}
+    button.ghost{
+      background:#fff;border:1px solid var(--brand);color:var(--brand);
+      padding:.65rem 1rem;border-radius:.7rem;cursor:pointer;font-weight:600;
+    }
+    button.ghost:hover{background:#F0F4FF}
+    .list-item{padding:.85rem;border:1px solid var(--border);border-radius:.7rem;background:#fff}
     .muted{color:var(--muted)}
-    .pill{display:inline-block;padding:.15rem .5rem;border-radius:999px;border:1px solid var(--border);font-size:.8rem;background:#fff}
+    .pill{display:inline-block;padding:.2rem .6rem;border-radius:999px;border:1px solid #CBD6FF;font-size:.8rem;background:#F4F7FF;color:#11227A}
     .flex{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
     .row{display:flex;gap:.5rem;align-items:center}
     .row-sm{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
     .space{flex:1 1 auto}
     .danger{color:var(--bad);border-color:#fecaca;background:#fff}
     .danger:hover{background:#fee2e2}
-    .note{background:#fff7ed;border:1px solid #fed7aa;border-radius:.6rem;padding:.6rem}
-    mark{background:#fff59d;padding:0 .1rem;border-radius:.2rem}
-    .kw{display:inline-block;margin:.1rem .2rem;padding:.15rem .4rem;border:1px dashed #bbb;border-radius:.4rem;background:#fafafa;font-size:.85rem}
-    .score{font-weight:700}
+    .note{background:#FFF9ED;border:1px solid #FFE6B3;border-radius:.6rem;padding:.6rem}
+    /* Keyword highlight → ブルー系に */
+    mark{background:#DDE7FF;padding:0 .15rem;border-radius:.2rem}
+    .kw{display:inline-block;margin:.1rem .2rem;padding:.2rem .45rem;border:1px dashed #9DB4FF;border-radius:.45rem;background:#F4F7FF;font-size:.85rem;color:#11227A}
+    /* Scores */
+    .score{font-weight:800}
     .score-okay{color:var(--good)}
-    .score-mid{color:var(--mid)}
-    .score-low{color:var(--low)}
+    .score-mid{color:#D97706}
+    .score-low{color:#EA580C}
     .score-bad{color:var(--bad)}
-    .small{font-size:.85rem}
+    .small{font-size:.86rem}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
-    .stack-tight{display:flex;flex-direction:column;gap:.5rem}
-    .checkline{display:flex;align-items:center;gap:.45rem}
+    .stack-tight{display:flex;flex-direction:column;gap:.55rem}
+    .checkline{display:flex;align-items:center;gap:.5rem}
     .nowrap{white-space:nowrap}
     input[type="checkbox"]{width:auto; margin:0}
     .seg{display:inline-flex;border:1px solid var(--border);border-radius:.5rem;overflow:hidden}
-    .seg button{border:0;background:#fff;padding:.35rem .6rem;font-size:.85rem}
-    .seg button.active{background:#eff6ff;color:#2563eb}
-    .selfbtn.active{background:#eff6ff;border-color:#93c5fd;color:#2563eb}
-    .review-row{display:flex;align-items:center;gap:.5rem;padding:.6rem;border:1px solid var(--border);border-radius:.6rem;background:#fff;margin:.4rem 0;cursor:pointer}
+    .seg button{border:0;background:#fff;padding:.4rem .7rem;font-size:.85rem}
+    .seg button.active{background:#E8EEFF;color:#2237A5}
+    .selfbtn.active{background:#E8EEFF;border-color:#93c5fd;color:#2237A5}
+    .review-row{display:flex;align-items:center;gap:.5rem;padding:.8rem;border:1px solid var(--border);border-radius:.7rem;background:#fff;margin:.5rem 0;cursor:pointer}
     .review-row .label{min-width:10em;font-weight:700}
-    .chip{display:inline-block;padding:.25rem .6rem;border:1px solid var(--border);border-radius:999px;margin:.15rem;cursor:default}
-    .chip:hover{background:#f8fafc}
-    .help{font-size:.8rem;color:#666}
-    .details{border:1px dashed var(--border);border-radius:.6rem;padding:.6rem;margin:.35rem 0;background:#fcfcfc}
+    .chip{display:inline-block;padding:.25rem .6rem;border:1px solid var(--border);border-radius:999px;margin:.15rem}
+    .chip:hover{background:#F4F7FF}
+    .help{font-size:.8rem;color:#667085}
+    .details{border:1px dashed var(--border);border-radius:.65rem;padding:.7rem;margin:.45rem 0;background:#FAFCFF}
     .inline{display:flex;gap:.5rem;align-items:center}
     .hidden{display:none}
-    .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:50}
-    .modal{background:#fff;border-radius:12px;max-width:640px;width:100%;border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.2);padding:1rem}
+    .mask{position:fixed;inset:0;background:rgba(8,19,84,.4);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:50}
+    .modal{background:#fff;border-radius:14px;max-width:640px;width:100%;border:1px solid var(--border);
+      box-shadow:0 10px 30px rgba(8,19,84,.25);padding:1rem}
     .modal h3{margin:.2rem 0 .6rem}
     ol.guide{padding-left:1.2rem;margin:.5rem 0}
     ol.guide li{margin:.4rem 0}
@@ -98,6 +150,7 @@
 <div id="modal-root"></div>
 
 <script>
+/* === App logic (v9ベース＋サプリ風テーマ) === */
 (() => {
   const UA = navigator.userAgent || "";
   const IS_IPHONE = /iPhone|iPod/.test(UA) && "ontouchend" in document;
@@ -298,9 +351,10 @@
       if (!p.note) p.note = "";
       if (!p.subject) p.subject = "未分類";
       if (!p.importance) p.importance = "★中程度";
-      if (!p.selfStats) p.selfStats = {perfect:0, unsure:0, fail:0};
+      if (!p.selfStats) p.selfStats = {perfect:0,unsure:0,fail:0};
       if (typeof p.topic === "undefined") p.topic = "";
       if (typeof p.subtopic === "undefined") p.subtopic = "";
+      if (!Array.isArray(p.keywords)) p.keywords = [];
     });
   }
   const state = {
@@ -313,7 +367,6 @@
     currentSelf: 'all',
     currentProblemId: null,
     reviewQueue: null,
-    reviewFilters: {},
     reviewExpand: {}
   };
 
@@ -827,11 +880,11 @@
           <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div>
           <div class="section">
             <label>あなたの回答（ハイライト済み）</label>
-            <div style="white-space:pre-line;border:1px dashed #ccc;border-radius:.6rem;padding:.6rem;background:#fcfcfc">${escaped || "（未入力）"}</div>
+            <div style="white-space:pre-line;border:1px dashed #c7d2fe;border-radius:.6rem;padding:.75rem;background:#FAFCFF">${escaped || "（未入力）"}</div>
           </div>
           <div class="section">
             <strong>模範解答</strong>
-            <div style="white-space:pre-line;border:1px solid #dbeafe;background:#eff6ff;border-radius:.6rem;padding:.6rem">${modelEscaped}</div>
+            <div style="white-space:pre-line;border:1px solid #dbeafe;background:#EFF4FF;border-radius:.6rem;padding:.75rem">${modelEscaped}</div>
           </div>
           ${prob.note ? `<div class="section"><strong>補足情報</strong><div class="note">${escapeHtml(prob.note)}</div></div>` : ""}
           <div class="section">
@@ -904,9 +957,9 @@
 
     function detailsList(ids){
       if (!ids.length) return "<div class='muted small'>（対象の問題はありません）</div>";
-      return `<div class="details small">` + ids.map(id => {
+      return `<div class='details small'>` + ids.map(id => {
         const p = idToProb(id);
-        const tag = latestSelfTag(p);
+        const tag = (function(){const t = (p.history||[]).slice().reverse().find(x=>x.self);return t?t.self:null;})();
         const tagLabel = tag==='perfect'?'完璧':tag==='unsure'?'不安':tag==='fail'?'できない':'未評価';
         return `<div class="row" style="margin:.25rem 0">
           <div class="space">${escapeHtml(p.question)}</div>
@@ -1322,7 +1375,6 @@
   function attemptClose(){
     try{ window.close(); }catch(e){}
     try{ window.open('','_self'); window.close(); }catch(e){}
-    // iOS PWA/Safariでは閉じられないことが多いので案内を表示
     const root = document.getElementById('modal-root');
     root.innerHTML = `
       <div class="mask" role="dialog" aria-modal="true">
