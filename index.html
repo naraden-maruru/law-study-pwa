@@ -15,10 +15,11 @@
     header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);padding:.75rem 1rem;display:flex;gap:.5rem;align-items:center;z-index:20}
     header h1{font-size:1.05rem;margin:0;font-weight:700;line-height:1.2}
     nav{margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
-    nav button{border:1px solid var(--border);background:#fff;padding:.45rem .7rem;border-radius:.6rem;cursor:pointer;white-space:nowrap}
+    nav button{position:relative;border:1px solid var(--border);background:#fff;padding:.45rem .7rem;border-radius:.6rem;cursor:pointer;white-space:nowrap}
     nav button.active{border-color:var(--brand);color:#fff;background:#2563eb}
     nav button.danger{color:var(--bad);border-color:#fecaca;background:#fff}
     nav button.danger:hover{background:#fee2e2}
+    .badge{display:inline-flex; align-items:center; justify-content:center; height:1.2em; min-width:1.2em; padding:0 .35rem; margin-left:.4rem; border-radius:999px; background:#dc2626; color:#fff; font-size:.72rem; line-height:1; font-weight:700}
     main{max-width:980px;margin:0 auto;padding:1rem}
     .banner{position:sticky;top:52px;z-index:25;margin:0 auto;max-width:980px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:.6rem;padding:.6rem 1rem;display:flex;gap:.5rem;align-items:center}
     .banner.hidden{display:none}
@@ -43,7 +44,10 @@
     .danger:hover{background:#fee2e2}
     .note{background:#fff7ed;border:1px solid #fed7aa;border-radius:.6rem;padding:.6rem}
     mark{background:#fff59d;padding:0 .1rem;border-radius:.2rem}
+    mark.hit{background:#fff59d} /* 命中 */
+    mark.miss{background:#fecaca} /* 抜け */
     .kw{display:inline-block;margin:.1rem .2rem;padding:.15rem .4rem;border:1px dashed #bbb;border-radius:.4rem;background:#fafafa;font-size:.85rem}
+    .kw-miss{background:#fee2e2;border-color:#fecaca;color:#991b1b;font-weight:700}
     .score{font-weight:700}
     .score-okay{color:var(--good)}
     .score-mid{color:var(--mid)}
@@ -123,9 +127,9 @@
     return v;
   }
 
-  const VKEYS = ["lawStudyProblemsCache_v91ad2","lawStudyProblemsCache_v91ad","lawStudyProblemsCache_v91ac"];
+  const VKEYS = ["lawStudyProblemsCache_v91ad4","lawStudyProblemsCache_v91ad3","lawStudyProblemsCache_v91ad2"];
   const CACHE_KEY = VKEYS[0];
-  const UI_KEYS = ["lawStudyUI_v91ad2","lawStudyUI_v91ad","lawStudyUI_v91ac"];
+  const UI_KEYS = ["lawStudyUI_v91ad4","lawStudyUI_v91ad3","lawStudyUI_v91ad2"];
   const UI_KEY = UI_KEYS[0];
 
   const CFG_STABLE_KEY = "lawStudyCfg";
@@ -151,6 +155,7 @@
     if (!config.autoLocalSave) return;
     const payload = { updatedAt: new Date().toISOString(), problems };
     localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+    updateNavBadges();
   }
   function loadLocal(){
     for (const key of VKEYS){
@@ -163,7 +168,7 @@
     }
     return null;
   }
-  function clearLocal(){ localStorage.removeItem(CACHE_KEY); }
+  function clearLocal(){ localStorage.removeItem(CACHE_KEY); updateNavBadges(); }
 
   function saveUI(ui){ localStorage.setItem(UI_KEY, JSON.stringify(ui)); }
   function loadUI(){
@@ -349,6 +354,7 @@
       currentProblemId: state.currentProblemId,
       currentSelf: state.currentSelf
     });
+    updateNavBadges();
   }
 
   function latestSelfTag(p){
@@ -391,6 +397,34 @@
   function subtopicsFor(subj, topic){
     const list = problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic).map(p => (p.subtopic||"").trim()).filter(t=>t);
     return Array.from(new Set(list)).sort((a,b)=> a.localeCompare(b,'ja'));
+  }
+
+  // ====== 復習バッジ更新 ======
+  function getDueTodayCount(){
+    const t = todayStr();
+    const intervals = [1,3,7,14,30];
+    let cnt = 0;
+    state.problems.forEach(p => {
+      const last = lastAnswerYmd(p);
+      if (!last) return;
+      const d = daysBetween(t, last);
+      if (intervals.includes(d) || d > intervals[intervals.length-1]) cnt++;
+    });
+    return cnt;
+  }
+  function updateNavBadges(){
+    const btn = document.getElementById('nav-review');
+    if (!btn) return;
+    const n = getDueTodayCount();
+    const label = "今日の復習";
+    if (n > 0){
+      const shown = (n > 99 ? "99+" : String(n));
+      btn.innerHTML = label + `<span class="badge" title="${shown}件">${shown}</span>`;
+      btn.setAttribute('aria-label', `${label}（${shown}件）`);
+    }else{
+      btn.innerHTML = label;
+      btn.removeAttribute('aria-label');
+    }
   }
 
   function render(){
@@ -732,6 +766,7 @@
       state.problems = state.problems.filter(p=>p.id!==id);
       saveLocal(state.problems);
       scheduleFileSave();
+      updateNavBadges();
       renderList();
     };
   }
@@ -785,6 +820,8 @@
       const prob = state.problems.find(x=>x.id===state.currentProblemId);
       const total = (prob.keywords||[]).length;
       const matches = (prob.keywords||[]).filter(kw => txt.includes(kw));
+      const missing = (prob.keywords||[]).filter(kw => !txt.includes(kw));
+
       let score="✕", cls="score-bad", scoreDetail="";
       if (total===0){
         score="—"; cls=""; scoreDetail="（キーワード未設定のため採点なし）";
@@ -805,17 +842,24 @@
 
       saveLocal(state.problems);
       scheduleFileSave();
+      updateNavBadges();
 
+      function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+      // あなたの回答（命中キーワードをハイライト）
       let escaped = escapeHtml(txt);
       matches.forEach(kw=>{
-        const re = new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-        escaped = escaped.replace(re, `<mark>${kw}</mark>`);
+        const re = new RegExp(escReg(kw), 'g');
+        escaped = escaped.replace(re, `<mark class="hit">${kw}</mark>`);
       });
+
+      // 模範解答（命中は黄色、抜けはピンクでハイライト）
       let modelEscaped = escapeHtml(prob.example || "（登録なし）");
       (prob.keywords || []).forEach(kw=>{
         if (!kw) return;
-        const re = new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-        modelEscaped = modelEscaped.replace(re, `<mark>${kw}</mark>`);
+        const re = new RegExp(escReg(kw), 'g');
+        const has = matches.includes(kw);
+        modelEscaped = modelEscaped.replace(re, `<mark class="${has?'hit':'miss'}">${kw}</mark>`);
       });
 
       const currentSel = (function(){
@@ -832,12 +876,13 @@
         <div class="card">
           <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail}</div>
           <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div>
+          ${ total>0 ? `<div class="section"><strong>抜けていたキーワード</strong><div>${missing.length? missing.map(k=>`<span class='kw kw-miss'>${k}</span>`).join(' ') : "なし"}</div></div>` : ""}
           <div class="section">
-            <label>あなたの回答（ハイライト済み）</label>
+            <label>あなたの回答（命中キーワードをハイライト）</label>
             <div style="white-space:pre-line;border:1px dashed #ccc;border-radius:.6rem;padding:.6rem;background:#fcfcfc">${escaped || "（未入力）"}</div>
           </div>
           <div class="section">
-            <strong>模範解答</strong>
+            <strong>模範解答（命中=黄／抜け=桃）</strong>
             <div style="white-space:pre-line;border:1px solid #dbeafe;background:#eff6ff;border-radius:.6rem;padding:.6rem">${modelEscaped}</div>
           </div>
           ${prob.note ? `<div class="section"><strong>補足情報</strong><div class="note">${escapeHtml(prob.note)}</div></div>` : ""}
@@ -868,13 +913,7 @@
       if (tag==='fail') prob.selfStats.fail++;
       saveLocal(state.problems);
       scheduleFileSave();
-
-      const c = document.getElementById('selfBtns');
-      if (c){
-        c.querySelectorAll('.selfbtn').forEach(b=>b.classList.remove('active'));
-        const target = c.querySelector(`.selfbtn[data-tag="${tag}"]`);
-        if (target) target.classList.add('active');
-      }
+      updateNavBadges();
     };
   }
 
@@ -1030,9 +1069,10 @@
       const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : [];
       const note     = (document.getElementById('f-note').value||'').trim();
       if (!question) return showMsg('問題文を入力してください。');
-      state.problems.push({ id: Date.now()+int(1000* Math.random()), subject, topic, subtopic, importance, question, example, keywords, note, history:[], reviews:[], selfStats:{perfect:0,unsure:0,fail:0} });
+      state.problems.push({ id: Date.now()+Math.floor(Math.random()*1000), subject, topic, subtopic, importance, question, example, keywords, note, history:[], reviews:[], selfStats:{perfect:0,unsure:0,fail:0} });
       saveLocal(state.problems);
       scheduleFileSave();
+      updateNavBadges();
       document.getElementById('f-question').value='';
       document.getElementById('f-example').value='';
       document.getElementById('f-keywords').value='';
@@ -1119,6 +1159,7 @@
       Object.assign(prob, {subject, topic, subtopic, importance, question, example, keywords, note});
       saveLocal(state.problems);
       scheduleFileSave();
+      updateNavBadges();
       showMsg('保存しました。');
     };
     function showMsg(m){ document.getElementById('edit-msg').textContent = m; }
@@ -1129,6 +1170,7 @@
       state.problems = state.problems.filter(p=>p.id!==id);
       saveLocal(state.problems);
       scheduleFileSave();
+      updateNavBadges();
       state.view='list'; render();
     };
   }
@@ -1307,6 +1349,7 @@
         state.problems = data;
         saveLocal(state.problems);
         scheduleFileSave();
+        updateNavBadges();
         if (notify) banner("インポートしました。");
         setActive('subjects');
         if (after) after();
@@ -1331,7 +1374,6 @@
   function attemptClose(){
     try{ window.close(); }catch(e){}
     try{ window.open('','_self'); window.close(); }catch(e){}
-    // iOS PWA/Safariでは閉じられないことが多いので案内を表示
     const root = document.getElementById('modal-root');
     root.innerHTML = `
       <div class="mask" role="dialog" aria-modal="true">
@@ -1410,6 +1452,7 @@
     state.currentImportance = ui.currentImportance || 'all';
     state.currentSelf = ui.currentSelf || 'all';
     render();
+    updateNavBadges();
 
     if (IS_IPHONE && config.iosShowImportAtBoot){
       showIOSImportModal();
@@ -1418,11 +1461,12 @@
     document.addEventListener('visibilitychange', async ()=>{
       if (document.visibilityState === 'visible' && !fileHandle){
         await tryRestoreFileHandle(false);
+        updateNavBadges();
       }
     });
   })();
 
-  window.__reconnect = async ()=>{ await tryRestoreFileHandle(true); };
+  window.__reconnect = async ()=>{ await tryRestoreFileHandle(true); updateNavBadges(); };
   window.__pick = ()=>{ pickFile(); };
 })();</script>
 </main>
