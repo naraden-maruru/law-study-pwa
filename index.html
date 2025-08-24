@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>司法試験 論証タイピング</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="theme-color" content="#2563eb">
+  <style>
+    :root{--bg:#f9f9fb;--fg:#222;--card:#fff;--muted:#666;--border:#ddd;--brand:#2563eb;--good:#16a34a;--mid:#ca8a04;--low:#ea580c;--bad:#dc2626;}
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; margin:0; background:var(--bg); color:var(--fg)}
+    header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);padding:.75rem 1rem;display:flex;gap:.5rem;align-items:center;z-index:20}
+    header h1{font-size:1.05rem;margin:0;font-weight:700;line-height:1.2}
+    nav{margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap}
+    nav button{border:1px solid var(--border);background:#fff;padding:.45rem .7rem;border-radius:.6rem;cursor:pointer;white-space:nowrap}
+    nav button.active{border-color:var(--brand);color:#fff;background:#2563eb}
+    main{max-width:980px;margin:0 auto;padding:1rem}
+    .banner{position:sticky;top:52px;z-index:25;margin:0 auto;max-width:980px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:.6rem;padding:.6rem 1rem;display:flex;gap:.5rem;align-items:center}
+    .banner.hidden{display:none}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;margin:.65rem 0}
+    .section{margin-top:1rem}
+    .grid{display:grid;gap:.75rem}
+    @media(min-width:720px){.grid.two{grid-template-columns:1fr 1fr} .grid.three{grid-template-columns:1fr 1fr 1fr}}
+    label{font-size:.9rem;color:var(--muted)}
+    input,select,textarea,button{font:inherit}
+    input,select,textarea{width:100%;padding:.6rem;border:1px solid var(--border);border-radius:.6rem;background:#fff}
+    textarea{min-height:8rem;line-height:1.6}
+    button.primary{background:var(--brand);color:#fff;border:none;padding:.65rem 1rem;border-radius:.6rem;cursor:pointer}
+    button.ghost{background:#fff;border:1px solid var(--border);padding:.6rem 1rem;border-radius:.6rem;cursor:pointer}
+    .list-item{padding:.75rem;border:1px solid var(--border);border-radius:.6rem;background:#fff}
+    .muted{color:var(--muted)}
+    .pill{display:inline-block;padding:.15rem .5rem;border-radius:999px;border:1px solid var(--border);font-size:.8rem;background:#fff}
+    .flex{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+    .row{display:flex;gap:.5rem;align-items:center}
+    .row-sm{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+    .space{flex:1 1 auto}
+    .danger{color:var(--bad);border-color:#fecaca;background:#fff}
+    .danger:hover{background:#fee2e2}
+    .note{background:#fff7ed;border:1px solid #fed7aa;border-radius:.6rem;padding:.6rem}
+    mark{background:#fff59d;padding:0 .1rem;border-radius:.2rem}
+    .kw{display:inline-block;margin:.1rem .2rem;padding:.15rem .4rem;border:1px dashed #bbb;border-radius:.4rem;background:#fafafa;font-size:.85rem}
+    .score{font-weight:700}
+    .score-okay{color:var(--good)}
+    .score-mid{color:var(--mid)}
+    .score-low{color:var(--low)}
+    .score-bad{color:var(--bad)}
+    .small{font-size:.85rem}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
+    .stack-tight{display:flex;flex-direction:column;gap:.5rem}
+    .checkline{display:flex;align-items:center;gap:.45rem}
+    .nowrap{white-space:nowrap}
+    input[type="checkbox"]{width:auto; margin:0}
+    .seg{display:inline-flex;border:1px solid var(--border);border-radius:.5rem;overflow:hidden}
+    .seg button{border:0;background:#fff;padding:.35rem .6rem;font-size:.85rem}
+    .seg button.active{background:#eff6ff;color:#2563eb}
+    .selfbtn.active{background:#eff6ff;border-color:#93c5fd;color:#2563eb}
+    .review-row{display:flex;align-items:center;gap:.5rem;padding:.6rem;border:1px solid var(--border);border-radius:.6rem;background:#fff;margin:.4rem 0;cursor:pointer}
+    .review-row .label{min-width:10em;font-weight:700}
+    .chip{display:inline-block;padding:.25rem .6rem;border:1px solid var(--border);border-radius:999px;margin:.15rem;cursor:default}
+    .chip:hover{background:#f8fafc}
+    .help{font-size:.8rem;color:#666}
+    .details{border:1px dashed var(--border);border-radius:.6rem;padding:.6rem;margin:.35rem 0;background:#fcfcfc}
+    .inline{display:flex;gap:.5rem;align-items:center}
+    .hidden{display:none}
+
+    /* modal */
+    .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:50}
+    .modal{background:#fff;border-radius:12px;max-width:560px;width:100%;border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.2);padding:1rem}
+    .modal h3{margin:.2rem 0 .6rem}
+  </style>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(()=>{});
+      });
+    }
+  </script>
+</head>
+<body>
+<header>
+  <h1>司法試験 論証タイピング</h1>
+  <nav>
+    <button id="nav-subjects" class="active">科目一覧</button>
+    <button id="nav-review">今日の復習</button>
+    <button id="nav-add">問題追加</button>
+    <button id="nav-sync">設定/同期</button>
+  </nav>
+</header>
+
+<main id="app"></main>
+<div id="sys-banner" class="banner hidden"></div>
+<div id="modal-root"></div>
+
+<script>
+(() => {
+  // ---------- Env detection ----------
+  const UA = navigator.userAgent || "";
+  const IS_IOS = /iPhone|iPad|iPod/.test(UA) || (UA.includes("Macintosh") && "ontouchend" in document);
+  const IS_IPHONE = /iPhone|iPod/.test(UA) && "ontouchend" in document;
+  const IS_SAFARI = /^((?!chrome|android).)*safari/i.test(UA);
+
+  // ---------- Constants ----------
+  const CORE_SUBJECTS = ["憲法","行政法","民法","刑法","商法","民訴法","刑訴法"];
+  const ELECTIVE_SUBJECTS = ["労働法","倒産法","知的財産法","租税法","国際私法","国際公法","経済法","環境法"];
+  const ELECTIVE_GROUP = "__ELECTIVE__";
+  const IMPORTANCES = ["★重要","★中程度","★低め"];
+  const KEY_SPLIT = /[,\u3001\uFF0C\u3002\uFF0E]+/;
+
+  const subjectLabel = (s)=> s===ELECTIVE_GROUP ? "選択科目" : s;
+  function importanceLabel(v){
+    if (v === "★重要") return "⚫︎ 重要";
+    if (v === "★中程度") return "◆ 普通";
+    if (v === "★低め") return "▲ 低い";
+    return v;
+  }
+
+  // ---------- Local Cache & Config ----------
+  const VKEYS = ["lawStudyProblemsCache_v91x","lawStudyProblemsCache_v91w","lawStudyProblemsCache_v91v"];
+  const CACHE_KEY = VKEYS[0];
+  const UI_KEYS = ["lawStudyUI_v91x","lawStudyUI_v91w","lawStudyUI_v91v"];
+  const UI_KEY = UI_KEYS[0];
+
+  const CFG_STABLE_KEY = "lawStudyCfg";
+  const CFG_OLD_KEYS = ["lawStudyCfg_v91w","lawStudyCfg_v91v","lawStudyCfg_v91u"];
+  const config = loadConfig();
+  function loadConfig(){
+    let c = null;
+    try{ c = JSON.parse(localStorage.getItem(CFG_STABLE_KEY)); }catch{}
+    if (!c){
+      for (const k of CFG_OLD_KEYS){
+        try{ const v = JSON.parse(localStorage.getItem(k)); if (v){ c=v; break; } }catch{}
+      }
+    }
+    if (!c) c = {autoLocalSave:true, autoRestore:true, fileAutoSave:true, iosShowImportAtBoot:true};
+    if (typeof c.autoLocalSave === "undefined") c.autoLocalSave = true;
+    if (typeof c.autoRestore === "undefined") c.autoRestore = true;
+    if (typeof c.fileAutoSave === "undefined") c.fileAutoSave = true;
+    if (typeof c.iosShowImportAtBoot === "undefined") c.iosShowImportAtBoot = true;
+    return c;
+  }
+  function saveConfig(){ localStorage.setItem(CFG_STABLE_KEY, JSON.stringify(config)); }
+
+  function saveLocal(problems){
+    if (!config.autoLocalSave) return;
+    const payload = { updatedAt: new Date().toISOString(), problems };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+  }
+  function loadLocal(){
+    for (const key of VKEYS){
+      try{
+        const s = localStorage.getItem(key);
+        if (!s) continue;
+        const obj = JSON.parse(s);
+        if (obj && Array.isArray(obj.problems)) return obj;
+      }catch{}
+    }
+    return null;
+  }
+  function clearLocal(){ localStorage.removeItem(CACHE_KEY); }
+
+  function saveUI(ui){ localStorage.setItem(UI_KEY, JSON.stringify(ui)); }
+  function loadUI(){
+    for (const k of UI_KEYS){
+      try{
+        const s = localStorage.getItem(k);
+        if (s) return JSON.parse(s);
+      }catch{}
+    }
+    return {};
+  }
+
+  // ---------- IndexedDB for FileSystemHandle ----------
+  const DB_NAME = 'lawStudyFS';
+  const STORE = 'handles';
+  function idbOpen(){
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => { req.result.createObjectStore(STORE); };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function idbSet(key, val){
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put(val, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  async function idbGet(key){
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function idbDelete(key){
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).delete(key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  // ---------- File System Access (Mac Chrome/Edge) ----------
+  let fileHandle = null;
+  let fileSaveTimer = null;
+  const supportsFS = !!(window.showOpenFilePicker || window.showSaveFilePicker);
+
+  function banner(html){ const el=document.getElementById('sys-banner'); el.innerHTML=html; el.classList.remove('hidden'); }
+  function hideBanner(){ document.getElementById('sys-banner').classList.add('hidden'); }
+
+  async function pickFile(){
+    if (!supportsFS) { alert("このブラウザはファイル連携をサポートしていません。MacのChrome/Edgeをお使いください。"); return; }
+    try{
+      const [handle] = await window.showOpenFilePicker({
+        types: [{description:"JSON", accept: {"application/json": [".json"]}}],
+        excludeAcceptAllOption: true, multiple: false
+      });
+      let perm = await handle.queryPermission({mode:"readwrite"});
+      if (perm !== "granted") perm = await handle.requestPermission({mode:"readwrite"});
+      if (perm !== "granted") { alert("書き込み権限がありません。"); return; }
+      fileHandle = handle;
+      await idbSet('problems', handle);
+      await saveToFile(); // 初回に現データを書き出し（空でも可）
+      banner('iCloud Drive のファイルに接続しました。自動保存を開始します。');
+      setTimeout(hideBanner, 2000);
+      render();
+    }catch(e){ console.warn(e); }
+  }
+
+  async function tryRestoreFileHandle(autoPrompt=true){
+    if (!supportsFS) return false;
+    try{
+      const handle = await idbGet('problems');
+      if (!handle) return false;
+      let perm = await handle.queryPermission({mode:"readwrite"});
+      if (perm === "prompt" && autoPrompt){
+        perm = await handle.requestPermission({mode:"readwrite"});
+      }
+      if (perm === "granted"){
+        fileHandle = handle;
+        banner('同期ファイルに自動接続中…');
+        const ok = await loadFromFile();
+        if (ok){
+          banner('同期ファイルを読み込みました。');
+          setTimeout(hideBanner, 1500);
+          return true;
+        }
+      }
+    }catch(e){ console.warn("restore handle failed:", e); }
+    return false;
+  }
+
+  async function loadFromFile(){
+    if (!fileHandle) return false;
+    try{
+      const file = await fileHandle.getFile();
+      const text = await file.text();
+      const data = text ? JSON.parse(text) : [];
+      if (!Array.isArray(data)) throw new Error("JSONは配列ではありません");
+      sanitizeProblems(data);
+      state.problems = data;
+      saveLocal(state.problems); // ローカルにもバックアップ
+      render(); // 画面更新
+      return true;
+    }catch(e){
+      console.warn("ファイル読込失敗:", e);
+      banner('problems.json の読み込みに失敗しました: '+ e.message);
+      return false;
+    }
+  }
+
+  async function saveToFile(){
+    if (!fileHandle) return;
+    try{
+      const writable = await fileHandle.createWritable();
+      await writable.write(JSON.stringify(state.problems, null, 2));
+      await writable.close();
+    }catch(e){ console.warn("ファイル保存に失敗:", e); }
+  }
+  function scheduleFileSave(){
+    if (!fileHandle) return;
+    if (fileSaveTimer) clearTimeout(fileSaveTimer);
+    fileSaveTimer = setTimeout(saveToFile, 200);
+  }
+
+  // ---------- Data Model ----------
+  function sanitizeProblems(arr){
+    if (!Array.isArray(arr)) throw new Error("不正なデータ形式");
+    arr.forEach(p => {
+      if (!Array.isArray(p.history)) p.history = [];
+      if (!Array.isArray(p.reviews)) p.reviews = [];
+      if (!p.example) p.example = "";
+      if (!p.note) p.note = "";
+      if (!p.subject) p.subject = "未分類";
+      if (!p.importance) p.importance = "★中程度";
+      if (!p.selfStats) p.selfStats = {perfect:0, unsure:0, fail:0};
+      if (typeof p.topic === "undefined") p.topic = "";
+      if (typeof p.subtopic === "undefined") p.subtopic = "";
+    });
+  }
+  const state = {
+    view: 'subjects',
+    problems: [],
+    currentSubject: null,
+    currentTopic: 'all',
+    currentSubtopic: 'all',
+    currentImportance: 'all',
+    currentSelf: 'all',
+    currentProblemId: null,
+    reviewQueue: null,
+    reviewFilters: {},
+    reviewExpand: {}
+  };
+
+  // ---------- Navigation ----------
+  const $app = document.getElementById('app');
+  document.getElementById('nav-subjects').onclick = () => { setActive('subjects') };
+  document.getElementById('nav-review').onclick   = () => { setActive('review') };
+  document.getElementById('nav-add').onclick      = () => { setActive('add') };
+  document.getElementById('nav-sync').onclick     = () => { setActive('sync') };
+
+  function setActive(view){
+    state.view = view;
+    if (view !== 'quiz') state.reviewQueue = null;
+    render();
+    document.querySelectorAll('header nav button').forEach(b => b.classList.remove('active'));
+    if (view==='subjects' || view==='topics' || view==='subtopics' || view==='list') document.getElementById('nav-subjects').classList.add('active');
+    if (view==='review'  ) document.getElementById('nav-review').classList.add('active');
+    if (view==='add'     ) document.getElementById('nav-add').classList.add('active');
+    if (view==='sync'    ) document.getElementById('nav-sync').classList.add('active');
+    saveUI({
+      currentSubject: state.currentSubject,
+      currentTopic: state.currentTopic,
+      currentSubtopic: state.currentSubtopic,
+      currentImportance: state.currentImportance,
+      currentProblemId: state.currentProblemId,
+      currentSelf: state.currentSelf
+    });
+  }
+
+  // ---------- Helpers ----------
+  function latestSelfTag(p){
+    if (!p || !Array.isArray(p.history) || p.history.length===0) return null;
+    for (let i=p.history.length-1;i>=0;i--){
+      if (p.history[i] && p.history[i].self) return p.history[i].self;
+    }
+    return null;
+  }
+  function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+  function daysBetween(a,b){
+    const A = new Date(a+"T00:00:00Z");
+    const B = new Date(b+"T00:00:00Z");
+    return Math.round((A-B)/(1000*60*60*24));
+  }
+  function escapeHtml(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function isoPlusDays(days){ const d=new Date(); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
+  function idToProb(id){ return state.problems.find(p=>p.id===id); }
+  function shuffleIds(ids){ const a=ids.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+  function meetsFilters(p){
+    const impOk = (state.currentImportance==='all') || (p.importance===state.currentImportance);
+    const tag = latestSelfTag(p);
+    const selfOk = (state.currentSelf==='all') || (tag===state.currentSelf);
+    return impOk && selfOk;
+  }
+  function problemsBySubjectFiltered(subj){
+    let arr;
+    if (subj==="__ELECTIVE__"){
+      arr = state.problems.filter(p => p.subject==="__ELECTIVE__" || ["労働法","倒産法","知的財産法","租税法","国際私法","国際公法","経済法","環境法"].includes(p.subject));
+    } else {
+      arr = state.problems.filter(p => p.subject===subj);
+    }
+    return arr.filter(meetsFilters);
+  }
+  function topicsForSubject(subj){
+    const list = (problemsBySubjectFiltered(subj)).map(p => (p.topic||"").trim()).filter(t=>t);
+    return Array.from(new Set(list)).sort((a,b)=> a.localeCompare(b,'ja'));
+  }
+  function subtopicsFor(subj, topic){
+    const list = problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic).map(p => (p.subtopic||"").trim()).filter(t=>t);
+    return Array.from(new Set(list)).sort((a,b)=> a.localeCompare(b,'ja'));
+  }
+
+  // ---------- Render ----------
+  function render(){
+    if (state.view === 'subjects') return renderSubjects();
+    if (state.view === 'topics')   return renderTopics();
+    if (state.view === 'subtopics')return renderSubtopics();
+    if (state.view === 'list')     return renderList();
+    if (state.view === 'quiz')     return renderQuiz();
+    if (state.view === 'add')      return renderAdd();
+    if (state.view === 'review')   return renderReview();
+    if (state.view === 'edit')     return renderEdit();
+    if (state.view === 'sync')     return renderSync();
+  }
+
+  // ------- Filter bar (only on Topics) -------
+  function filterBarHTML(){
+    const impOpts = `
+      <option value="all" ${state.currentImportance==='all'?'selected':''}>すべて</option>
+      ${IMPORTANCES.map(im=>`<option value="${im}" ${state.currentImportance===im?'selected':''}>${importanceLabel(im)}</option>`).join('')}
+    `;
+    const selfOpts = `
+      <option value="all" ${state.currentSelf==='all'?'selected':''}>すべて</option>
+      <option value="perfect" ${state.currentSelf==='perfect'?'selected':''}>完璧</option>
+      <option value="unsure" ${state.currentSelf==='unsure'?'selected':''}>不安</option>
+      <option value="fail" ${state.currentSelf==='fail'?'selected':''}>できない</option>
+    `;
+    return `
+      <div class="section flex" style="gap:.75rem;align-items:center">
+        <label class="small">重要度：</label>
+        <select onchange="__setImp(this.value)">${impOpts}</select>
+        <label class="small">自己評価：</label>
+        <select onchange="__setSelf(this.value)">${selfOpts}</select>
+        <div class="space"></div>
+        <button class="ghost" onclick="__resetFilters()">リセット</button>
+      </div>
+    `;
+  }
+  window.__setImp = (v)=>{ state.currentImportance=v; render(); };
+  window.__setSelf = (v)=>{ state.currentSelf=v; render(); };
+  window.__resetFilters = ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); };
+
+  // Subjects (root)
+  function rawCountBySubject(name){
+    return state.problems.filter(p => (name==="__ELECTIVE__"
+      ? (p.subject==="__ELECTIVE__" || ["労働法","倒産法","知的財産法","租税法","国際私法","国際公法","経済法","環境法"].includes(p.subject))
+      : p.subject===name)).length;
+  }
+  function renderSubjects(){
+    const coreHtml = CORE_SUBJECTS.map(s=>`
+      <div class="list-item" style="cursor:pointer" onclick="__selectSubject('${s}')">
+        <div class="flex">
+          <strong>${s}</strong>
+          <span class="pill">${rawCountBySubject(s)} 問</span>
+        </div>
+      </div>`).join('');
+
+    const electiveHtml = `
+      <div class="list-item" style="cursor:pointer" onclick="__selectElective()">
+        <div class="flex">
+          <strong>選択科目</strong>
+          <span class="pill">${rawCountBySubject("__ELECTIVE__")} 問</span>
+        </div>
+      </div>
+    `;
+
+    $app.innerHTML = `
+      <div class="card">
+        <h2>科目を選んでください</h2>
+        <div class="section">
+          <h3>必修科目</h3>
+          <div class="grid three section">
+            ${coreHtml || '<div class="muted">（未登録でも選択できます）</div>'}
+          </div>
+        </div>
+        <div class="section">
+          <h3>選択科目</h3>
+          <div class="grid three section">
+            ${electiveHtml}
+          </div>
+        </div>
+      </div>
+    `;
+    window.__selectSubject = (s)=>{ state.currentSubject = s; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); };
+    window.__selectElective = ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); };
+  }
+
+  // Topics
+  function topicCount(subj, topic){
+    return problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic).length;
+  }
+  function unclassifiedTopicCount(subj){
+    return problemsBySubjectFiltered(subj).filter(p => !p.topic).length;
+  }
+  function renderTopics(){
+    const subj = state.currentSubject;
+    if (!subj){ setActive('subjects'); return; }
+    const topics = topicsForSubject(subj);
+    const list = topics.filter(t=>t).map(t=>`
+      <div class="list-item" style="cursor:pointer" onclick="__selectTopic('${t.replace(/'/g,"\\'")}')">
+        <div class="flex">
+          <strong>${t}</strong>
+          <span class="pill">${topicCount(subj, t)} 件</span>
+          <span class="space"></span>
+          <span class="small">連続演習：</span>
+          <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\\'")}', false)">順番</button>
+          <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\\'")}', true)">ランダム</button>
+        </div>
+      </div>
+    `).join('');
+
+    const subjectCount = problemsBySubjectFiltered(subj).length;
+
+    $app.innerHTML = `
+      <div class="card">
+        <div class="flex">
+          <button class="ghost" onclick="__backSubjects()">← 科目一覧</button>
+          <h2 style="margin:0 .5rem">科目：${subjectLabel(subj)}（${subjectCount} 件）</h2>
+        </div>
+        ${filterBarHTML()}
+        <div class="section">
+          <div class="list-item">
+            <div class="flex">
+              <div style="cursor:pointer" onclick="__selectTopic('all')">
+                <strong>（この科目の全て）</strong>
+                <span class="pill">${subjectCount} 件</span>
+              </div>
+              <span class="space"></span>
+              <span class="small">連続演習：</span>
+              <button class="ghost" onclick="__startSubjectAll(false)">順番</button>
+              <button class="ghost" onclick="__startSubjectAll(true)">ランダム</button>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <h3>分野</h3>
+          <div class="grid three">
+            ${list || '<div class="muted">（この条件に一致する分野はありません）</div>'}
+          </div>
+        </div>
+        ${unclassifiedTopicCount(subj)>0 ? `
+        <div class="section">
+          <h3>未分類の分野</h3>
+          <div class="list-item">
+            <div class="flex">
+              <div style="cursor:pointer" onclick="__selectTopic('')">
+                <strong>未分類</strong>
+                <span class="pill">${unclassifiedTopicCount(subj)} 件</span>
+              </div>
+              <span class="space"></span>
+              <span class="small">連続演習：</span>
+              <button class="ghost" onclick="__startTopic('', false)">順番</button>
+              <button class="ghost" onclick="event.stopPropagation();__startTopic('', true)">ランダム</button>
+            </div>
+          </div>
+        </div>` : ''}
+      </div>
+    `;
+    window.__backSubjects = ()=> setActive('subjects');
+    window.__selectTopic = (t)=>{
+      state.currentTopic = t;
+      state.currentSubtopic = 'all';
+      state.view = (t==='all') ? 'list' : 'subtopics';
+      render();
+    };
+    window.__startSubjectAll = (rnd)=>{
+      const ids = problemsBySubjectFiltered(subj).map(p=>p.id);
+      startQueue(ids, rnd);
+    };
+    window.__startTopic = (topic, rnd)=>{
+      const ids = problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic).map(p=>p.id);
+      startQueue(ids, rnd);
+    };
+  }
+
+  // Subtopics / List / Quiz / Review / Add / Edit / Sync (same behavior with save hooks)
+  function subtopicCount(subj, topic, subtopic){
+    return problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic && (p.subtopic||"")===subtopic).length;
+  }
+  function unclassifiedSubtopicCount(subj, topic){
+    return problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic && !p.subtopic).length;
+  }
+  function renderSubtopics(){
+    const subj = state.currentSubject;
+    const topic = state.currentTopic;
+    if (!subj) { setActive('subjects'); return; }
+    if (topic==='all'){ state.view='list'; render(); return; }
+
+    const subs = subtopicsFor(subj, topic);
+    const list = subs.map(st=>`
+      <div class="list-item" style="cursor:pointer" onclick="__selectSubtopic('${st.replace(/'/g,"\\'")}')">
+        <div class="flex">
+          <strong>${st}</strong>
+          <span class="pill">${subtopicCount(subj, topic, st)} 件</span>
+          <span class="space"></span>
+          <span class="small">連続演習：</span>
+          <button class="ghost" onclick="event.stopPropagation();__startSubtopic('${st.replace(/'/g,"\\'")}', false)">順番</button>
+          <button class="ghost" onclick="event.stopPropagation();__startSubtopic('${st.replace(/'/g,"\\'")}', true)">ランダム</button>
+        </div>
+      </div>
+    `).join('');
+
+    const topicAll = problemsBySubjectFiltered(subj).filter(p=>(p.topic||"")===topic).length;
+
+    $app.innerHTML = `
+      <div class="card">
+        <div class="flex">
+          <button class="ghost" onclick="__backTopics()">← 分野一覧</button>
+          <button class="ghost" onclick="__backSubjects()">← 科目一覧</button>
+          <h2 style="margin:0 .5rem">科目：${subjectLabel(subj)} / 分野：${topic}（${topicAll} 件）</h2>
+        </div>
+        <div class="section">
+          <div class="list-item">
+            <div class="flex">
+              <div style="cursor:pointer" onclick="__selectSubtopic('all')">
+                <strong>（この分野の全て）</strong>
+                <span class="pill">${topicAll} 件</span>
+              </div>
+              <span class="space"></span>
+              <span class="small">連続演習：</span>
+              <button class="ghost" onclick="__startTopicAll(false)">順番</button>
+              <button class="ghost" onclick="__startTopicAll(true)">ランダム</button>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <h3>小分類</h3>
+          <div class="grid three">
+            ${list || '<div class="muted">（この条件に一致する小分類はありません）</div>'}
+          </div>
+        </div>
+        ${unclassifiedSubtopicCount(subj, topic)>0 ? `
+        <div class="section">
+          <h3>未分類の小分類</h3>
+          <div class="list-item">
+            <div class="flex">
+              <div style="cursor:pointer" onclick="__selectSubtopic('')">
+                <strong>未分類</strong>
+                <span class="pill">${unclassifiedSubtopicCount(subj, topic)} 件</span>
+              </div>
+              <span class="space"></span>
+              <span class="small">連続演習：</span>
+              <button class="ghost" onclick="__startSubtopic('', false)">順番</button>
+              <button class="ghost" onclick="__startSubtopic('', true)">ランダム</button>
+            </div>
+          </div>
+        </div>` : ''}
+      </div>
+    `;
+    window.__backSubjects = () => setActive('subjects');
+    window.__backTopics = () => { state.view='topics'; render(); };
+    window.__selectSubtopic = (st)=>{ state.currentSubtopic = st; state.view='list'; render(); };
+    window.__startTopicAll = (rnd)=>{
+      const ids = problemsBySubjectFiltered(subj).filter(p=>(p.topic||"")===topic).map(p=>p.id);
+      startQueue(ids, rnd);
+    };
+    window.__startSubtopic = (st, rnd)=>{
+      const ids = problemsBySubjectFiltered(subj).filter(p => (p.topic||"")===topic && (p.subtopic||"")===st).map(p=>p.id);
+      startQueue(ids, rnd);
+    };
+  }
+
+  function startQueue(ids, randomize){
+    const q = (randomize ? shuffleIds(ids) : ids.slice());
+    if (!q.length) return;
+    state.reviewQueue = q;
+    state.currentProblemId = q[0];
+    state.view='quiz';
+    render();
+  }
+
+  function filtered(){
+    let arr = problemsBySubjectFiltered(state.currentSubject);
+    if (state.currentTopic !== 'all'){
+      arr = arr.filter(p => (p.topic||"") === state.currentTopic);
+    }
+    if (state.currentSubtopic !== 'all'){
+      arr = arr.filter(p => (p.subtopic||"") === state.currentSubtopic);
+    }
+    return arr;
+  }
+  function renderList(){
+    const list = filtered();
+    const topicLabel =
+      state.currentTopic==='all' ? '（全て）' :
+      state.currentTopic==='' ? '未分類' : state.currentTopic;
+    const subLabel =
+      state.currentSubtopic==='all' ? '（全て）' :
+      state.currentSubtopic==='' ? '未分類' : state.currentSubtopic;
+
+    const ids = list.map(p=>p.id);
+    const disabled = ids.length===0? 'disabled':'';
+
+    $app.innerHTML = `
+      <div class="card">
+        <div class="flex">
+          ${state.currentTopic!=='all' ? `<button class="ghost" onclick="__backSubtopics()">← 小分類一覧</button>` : ''}
+          <button class="ghost" onclick="__backTopics()">← 分野一覧</button>
+          <button class="ghost" onclick="__backSubjects()">← 科目一覧</button>
+          <h2 style="margin:0 .5rem">科目：${subjectLabel(state.currentSubject)} / 分野：${topicLabel} / 小分類：${subLabel}（${list.length} 件）</h2>
+        </div>
+
+        <div class="section flex">
+          <strong>この一覧の全問題を連続演習：</strong>
+          <button class="ghost" ${disabled} onclick="__startAll(false)">順番</button>
+          <button class="ghost" ${disabled} onclick="__startAll(true)">ランダム</button>
+        </div>
+
+        <div class="section">
+          ${list.length===0 ? '<div class="muted">この条件の問題はありません。</div>' :
+            list.map(p=>{
+              const tag = latestSelfTag(p);
+              const tagLabel = tag==='perfect'?'完璧':tag==='unsure'?'不安':tag==='fail'?'できない':'未評価';
+              const tagBadge = tag ? `<span class="pill">${tagLabel}</span>` : '<span class="pill">未評価</span>';
+              return `
+              <div class="list-item">
+                <div class="row">
+                  <div class="space"><strong>${p.question}</strong></div>
+                  <div class="pill">${importanceLabel(p.importance)}</div>
+                  ${tagBadge}
+                </div>
+                <div class="section flex">
+                  <button class="primary" onclick="__startQuiz(${p.id})">この問題を解く</button>
+                  <button class="ghost" onclick="__editProblem(${p.id})">編集</button>
+                  <button class="ghost danger" onclick="__deleteProblem(${p.id})">削除</button>
+                </div>
+              </div>
+              `;
+            }).join('')
+          }
+        </div>
+      </div>
+    `;
+    window.__backSubjects = () => setActive('subjects');
+    window.__backTopics = () => { state.view='topics'; render(); };
+    window.__backSubtopics = () => { state.view='subtopics'; render(); };
+    window.__startAll = (rnd)=>{ startQueue(ids, rnd); };
+    window.__startQuiz = (id)=>{ state.reviewQueue=null; state.currentProblemId = id; state.view='quiz'; render(); };
+    window.__editProblem = (id)=>{ state.currentProblemId = id; state.view='edit'; render(); };
+    window.__deleteProblem = (id)=>{
+      const target = state.problems.find(p=>p.id===id);
+      if (!target) return;
+      if (!confirm(`次の問題を削除します。よろしいですか？\n\n「${target.question}」`)) return;
+      state.problems = state.problems.filter(p=>p.id!==id);
+      saveLocal(state.problems);
+      scheduleFileSave();
+      renderList();
+    };
+  }
+
+  function idsForNav(){
+    if (Array.isArray(state.reviewQueue) && state.reviewQueue.length){
+      return state.reviewQueue.slice();
+    }
+    return filtered().map(p=>p.id);
+  }
+  function navNextId(){ const ids = idsForNav(); const i = ids.indexOf(state.currentProblemId); return (i>=0 && i<ids.length-1) ? ids[i+1] : null; }
+  function navPrevId(){ const ids = idsForNav(); const i = ids.indexOf(state.currentProblemId); return (i>0) ? ids[i-1] : null; }
+
+  function renderQuiz(){
+    const p = state.problems.find(x=>x.id===state.currentProblemId);
+    if (!p) { setActive('subjects'); return; }
+    const prevExists = !!navPrevId();
+    const nextExists = !!navNextId();
+    $app.innerHTML = `
+      <div class="card">
+        <div class="flex">
+          <button class="ghost" onclick="__backList()">← 問題一覧</button>
+          <h2 style="margin:0 .5rem">Q: ${p.question}</h2>
+        </div>
+        <div class="section">
+          <label>あなたの回答</label>
+          <textarea id="answer" placeholder=""></textarea>
+          <div class="section flex">
+            ${prevExists ? `<button class="ghost" onclick="__prev()">◀ 前の問題へ</button>` : ""}
+            <button class="primary" onclick="__grade()">採点する</button>
+            ${nextExists ? `<button class="ghost" onclick="__next()">次の問題へ ▶</button>` : ""}
+          </div>
+        </div>
+        <div id="result" class="section"></div>
+      </div>
+    `;
+    window.__backList = ()=>{ state.view='list'; state.reviewQueue=null; render(); };
+    window.__prev = ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; renderQuiz(); } else showNoPrev(); };
+    window.__next = ()=>{ const id=navNextId(); if (id){ state.currentProblemId=id; renderQuiz(); } else showNoNext(); };
+    window.__goHome = ()=> setActive('subjects');
+
+    function showNoPrev(){
+      document.getElementById('result').innerHTML = `<div class="card"><div class="muted">前の問題はありません。</div><div class="section flex"><button class="ghost" onclick="__goHome()">トップへ戻る</button></div></div>`;
+    }
+    function showNoNext(){
+      document.getElementById('result').innerHTML = `<div class="card"><div class="muted">キュー内の問題を解き終えました。</div><div class="section flex"><button class="ghost" onclick="__goHome()">トップへ戻る</button><button class="ghost" onclick="setActive('review')">復習ダッシュボードに戻る</button></div></div>`;
+    }
+
+    window.__grade = ()=>{
+      const txt = (document.getElementById('answer').value || '').trim();
+      const prob = state.problems.find(x=>x.id===state.currentProblemId);
+      const total = (prob.keywords||[]).length;
+      const matches = (prob.keywords||[]).filter(kw => txt.includes(kw));
+      let score="✕", cls="score-bad", scoreDetail="";
+      if (total===0){
+        score="—"; cls=""; scoreDetail="（キーワード未設定のため採点なし）";
+      }else{
+        const ratio = matches.length / total;
+        if (ratio===1){ score="◎"; cls="score-okay"; }
+        else if (ratio>=0.6){ score="○"; cls="score-mid"; }
+        else if (ratio>0){ score="△"; cls="score-low"; }
+        scoreDetail = `（${matches.length} / ${total}）`;
+      }
+
+      prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, self:null});
+      const t = todayStr();
+      prob.reviews = (prob.reviews || []).filter(d=>d>t);
+      const nexts = [1,3,7,14,30].map(isoPlusDays);
+      const set = new Set([...(prob.reviews||[]), ...nexts]);
+      prob.reviews = Array.from(set).sort();
+      saveLocal(state.problems);
+      scheduleFileSave();
+
+      // highlight
+      let escaped = escapeHtml(txt);
+      matches.forEach(kw=>{
+        const re = new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+        escaped = escaped.replace(re, `<mark>${kw}</mark>`);
+      });
+      let modelEscaped = escapeHtml(prob.example || "（登録なし）");
+      (prob.keywords || []).forEach(kw=>{
+        if (!kw) return;
+        const re = new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+        modelEscaped = modelEscaped.replace(re, `<mark>${kw}</mark>`);
+      });
+
+      // 直近の自己評価反映
+      const currentSel = (function(){
+        for(let i=prob.history.length-1;i>=0;i--){
+          if (prob.history[i].self) return prob.history[i].self;
+        }
+        return null;
+      })();
+
+      const prev2 = !!navPrevId();
+      const next2 = !!navNextId();
+      const result = document.getElementById('result');
+      result.innerHTML = `
+        <div class="card">
+          <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail}</div>
+          <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div>
+          <div class="section">
+            <label>あなたの回答（ハイライト済み）</label>
+            <div style="white-space:pre-line;border:1px dashed #ccc;border-radius:.6rem;padding:.6rem;background:#fcfcfc">${escaped || "（未入力）"}</div>
+          </div>
+          <div class="section">
+            <strong>模範解答</strong>
+            <div style="white-space:pre-line;border:1px solid #dbeafe;background:#eff6ff;border-radius:.6rem;padding:.6rem">${modelEscaped}</div>
+          </div>
+          ${prob.note ? `<div class="section"><strong>補足情報</strong><div class="note">${escapeHtml(prob.note)}</div></div>` : ""}
+          <div class="section">
+            <strong>自己評価：</strong>
+            <div class="flex" id="selfBtns" style="margin-top:.5rem">
+              <button class="ghost selfbtn ${currentSel==='perfect'?'active':''}" data-tag="perfect" onclick="__selfMark('perfect')">完璧</button>
+              <button class="ghost selfbtn ${currentSel==='unsure'?'active':''}" data-tag="unsure" onclick="__selfMark('unsure')">不安</button>
+              <button class="ghost selfbtn ${currentSel==='fail'?'active':''}" data-tag="fail" onclick="__selfMark('fail')">できない</button>
+            </div>
+          </div>
+          <div class="section flex">
+            <button class="ghost" onclick="__goHome()">トップへ戻る</button>
+            ${prev2 ? `<button class="ghost" onclick="__prev()">◀ 前の問題へ</button>` : ''}
+            ${next2 ? `<button class="primary" onclick="__next()">次の問題へ ▶</button>` : '<span class="muted">（キューの最後です）</span>'}
+          </div>
+        </div>
+      `;
+    };
+
+    window.__selfMark = (tag)=>{
+      const prob = state.problems.find(x=>x.id===state.currentProblemId);
+      const last = prob.history[prob.history.length-1];
+      if (last) last.self = tag;
+      prob.selfStats = prob.selfStats || {perfect:0,unsure:0,fail:0};
+      if (tag==='perfect') prob.selfStats.perfect++;
+      if (tag==='unsure') prob.selfStats.unsure++;
+      if (tag==='fail') prob.selfStats.fail++;
+      saveLocal(state.problems);
+      scheduleFileSave();
+
+      const c = document.getElementById('selfBtns');
+      if (c){
+        c.querySelectorAll('.selfbtn').forEach(b=>b.classList.remove('active'));
+        const target = c.querySelector(`.selfbtn[data-tag="${tag}"]`);
+        if (target) target.classList.add('active');
+      }
+    };
+  }
+
+  function renderReview(){
+    const t = todayStr();
+    const labels = ["今日","1日後","3日後","7日後","14日後","1ヶ月後"];
+    const buckets = Object.fromEntries(labels.map(l=>[l,0]));
+    const mapIds = Object.fromEntries(labels.map(l=>[l,[]]));
+
+    state.problems.forEach(p => {
+      const hasPastOrToday = (p.reviews||[]).some(d => d <= t);
+      if (hasPastOrToday){ buckets["今日"]++; mapIds["今日"].push(p.id); return; }
+      const future = (p.reviews||[]).filter(d => d > t).sort();
+      if (future.length){
+        const delta = daysBetween(future[0], t);
+        const label = delta===1?"1日後"
+                    : delta===3?"3日後"
+                    : delta===7?"7日後"
+                    : delta===14?"14日後"
+                    : delta===30?"1ヶ月後"
+                    : null;
+        if (label){ buckets[label]++; mapIds[label].push(p.id); }
+      }
+    });
+
+    const weakUnsure = state.problems.filter(p => latestSelfTag(p)==='unsure').map(p=>p.id);
+    const weakFail   = state.problems.filter(p => latestSelfTag(p)==='fail').map(p=>p.id);
+
+    function filterBySelf(ids, key){
+      const sel = state.reviewFilters[key] || 'all';
+      if (sel==='all') return ids.slice();
+      return ids.filter(id => latestSelfTag(idToProb(id))===sel);
+    }
+
+    function detailsList(ids){
+      if (!ids.length) return "<div class='muted small'>（対象の問題はありません）</div>";
+      return `<div class="details small">` + ids.map(id => {
+        const p = idToProb(id);
+        const tag = latestSelfTag(p);
+        const tagLabel = tag==='perfect'?'完璧':tag==='unsure'?'不安':tag==='fail'?'できない':'未評価';
+        return `<div class="row" style="margin:.25rem 0">
+          <div class="space">${escapeHtml(p.question)}</div>
+          <span class="pill">${importanceLabel(p.importance)}</span>
+          <span class="pill">${tagLabel}</span>
+          <button class="ghost" onclick="event.stopPropagation();__startQueue([${id}], false)">解く</button>
+        </div>`;
+      }).join('') + `</div>`;
+    }
+
+    function segHTML(key){
+      const sel = state.reviewFilters[key] || 'all';
+      const mk = (v, label) => `<button class="${sel===v?'active':''}" onclick="event.stopPropagation();__setReviewFilter('${key}','${v}')">${label}</button>`;
+      return `<div class="seg" aria-label="表示切替">${mk('all','すべて')}${mk('perfect','完璧')}${mk('unsure','不安')}${mk('fail','できない')}</div>`;
+    }
+
+    function row(label, key, baseIds, withSeg=true){
+      const ids = withSeg ? filterBySelf(baseIds, key) : baseIds.slice();
+      const count = ids.length;
+      const dis = count===0 ? 'disabled' : '';
+      const expanded = !!state.reviewExpand[key];
+      const idsJson = JSON.stringify(ids);
+      return `
+        <div class="review-row" onclick="__toggleExpand('${key}')">
+          <div class="label">${label}</div>
+          <div class="space"><span class="pill">${count} 件</span></div>
+          ${withSeg ? segHTML(key) : ''}
+          <button class="ghost" ${dis} onclick="event.stopPropagation();__startQueue(${idsJson}, false)">順番</button>
+          <button class="ghost" ${dis} onclick="event.stopPropagation();__startQueue(${idsJson}, true)">ランダム</button>
+        </div>
+        <div ${expanded? '':'style="display:none"'} id="detail-${key}">
+          ${detailsList(ids)}
+        </div>
+      `;
+    }
+
+    $app.innerHTML = `
+      <div class="card">
+        <h2>復習ダッシュボード（忘却曲線）</h2>
+        <div class="muted small">行をタップすると、その日の対象問題を確認できます。</div>
+        <div class="section">
+          ${row("今日","today", mapIds["今日"], true)}
+          ${row("1日後","d1", mapIds["1日後"], true)}
+          ${row("3日後","d3", mapIds["3日後"], true)}
+          ${row("7日後","d7", mapIds["7日後"], true)}
+          ${row("14日後","d14", mapIds["14日後"], true)}
+          ${row("1ヶ月後","d30", mapIds["1ヶ月後"], true)}
+        </div>
+        <div class="section">
+          <h3>自己評価まとめ</h3>
+          ${row("不安だけ","weakU", weakUnsure, false)}
+          ${row("できないだけ","weakF", weakFail, false)}
+        </div>
+      </div>
+    `;
+
+    window.__startQueue = (ids, rnd)=> startQueue(ids, rnd);
+    window.__setReviewFilter = (key, val)=>{ state.reviewFilters[key]=val; renderReview(); };
+    window.__toggleExpand = (key)=>{ state.reviewExpand[key] = !state.reviewExpand[key]; renderReview(); };
+  }
+
+  // Add / Edit / Sync
+  function buildTopicSelectHTML(subject, currentValue){
+    const topics = topicsForSubject(subject);
+    if (topics.length === 0) {
+      return `
+        <input id="f-topic-new" placeholder="新しい分野名を入力（未分類可）" value="${escapeHtml(currentValue||'')}">
+        <div class="help">※ まだ登録された分野がありません。必要なら入力してください（空でも可）。</div>`;
+    }
+    const opts = ['<option value="">（未分類）</option>']
+      .concat(topics.map(t=>`<option value="${t.replace(/"/g,'&quot;')}" ${currentValue===t?'selected':''}>${t}</option>`))
+      .concat([`<option value="__NEW__">（新規作成…）</option>`])
+      .join('');
+    return `
+      <select id="f-topic">${opts}</select>
+      <div class="inline ${currentValue && !topics.includes(currentValue)?'':'hidden'}" id="f-topic-new-wrap">
+        <input id="f-topic-new" placeholder="新しい分野名" value="${escapeHtml(currentValue||'')}">
+      </div>`;
+  }
+  function buildSubtopicSelectHTML(subject, topic, currentValue){
+    const subs = subtopicsFor(subject, topic);
+    if (subs.length === 0) {
+      return `
+        <input id="f-subtopic-new" placeholder="新しい小分類名を入力（未分類可）" value="${escapeHtml(currentValue||'')}">
+        <div class="help">※ この分野には登録された小分類がありません。必要なら入力してください（空でも可）。</div>`;
+    }
+    const opts = ['<option value="">（未分類）</option>']
+      .concat(subs.map(t=>`<option value="${t.replace(/"/g,'&quot;')}" ${currentValue===t?'selected':''}>${t}</option>`))
+      .concat([`<option value="__NEW__">（新規作成…）</option>`])
+      .join('');
+    return `
+      <select id="f-subtopic">${opts}</select>
+      <div class="inline ${currentValue && !subs.includes(currentValue)?'':'hidden'}" id="f-subtopic-new-wrap">
+        <input id="f-subtopic-new" placeholder="新しい小分類名" value="${escapeHtml(currentValue||'')}">
+      </div>`;
+  }
+
+  function renderAdd(){
+    const subjectOptions = `
+      <optgroup label="必修科目">
+        ${CORE_SUBJECTS.map(s=>`<option>${s}</option>`).join('')}
+      </optgroup>
+      <optgroup label="選択科目">
+        <option value="__ELECTIVE__">選択科目</option>
+      </optgroup>
+    `;
+    const defaultSubject = state.currentSubject || CORE_SUBJECTS[0];
+    $app.innerHTML = `
+      <div class="card">
+        <h2>新しい問題を追加</h2>
+        <div class="grid two">
+          <div>
+            <label>科目</label>
+            <select id="f-subject">${subjectOptions}</select>
+          </div>
+          <div>
+            <label>重要度</label>
+            <select id="f-importance">${IMPORTANCES.map(im=>`<option value="${im}">${importanceLabel(im)}</option>`).join('')}</select>
+          </div>
+        </div>
+
+        <div class="section">
+          <label>分野</label>
+          <div id="f-topic-area"></div>
+        </div>
+        <div class="section">
+          <label>小分類</label>
+          <div id="f-subtopic-area"></div>
+        </div>
+
+        <div class="section">
+          <label>問題文</label>
+          <textarea id="f-question" placeholder=""></textarea>
+        </div>
+        <div class="section">
+          <label>模範解答</label>
+          <textarea id="f-example" placeholder=""></textarea>
+        </div>
+        <div class="section">
+          <label>重要キーワード（カンマ/句点区切り・任意）</label>
+          <input id="f-keywords" placeholder="">
+        </div>
+        <div class="section">
+          <label>補足情報（採点には影響しないメモ）</label>
+          <textarea id="f-note" placeholder=""></textarea>
+        </div>
+        <div class="section flex">
+          <button class="primary" onclick="__addSubmit()">追加する</button>
+        </div>
+        <div id="add-msg" class="section muted small"></div>
+      </div>
+    `;
+    const sel = document.getElementById('f-subject');
+    sel.value = defaultSubject;
+
+    function mountTopic(){
+      document.getElementById('f-topic-area').innerHTML = buildTopicSelectHTML(sel.value, '');
+      bindTopicHandlers();
+      mountSubtopic();
+    }
+    function currentTopicValue(){
+      const tSel = document.getElementById('f-topic');
+      if (!tSel) return (document.getElementById('f-topic-new')?.value||'').trim();
+      if (tSel.value === "__NEW__") return (document.getElementById('f-topic-new')?.value||'').trim();
+      return tSel.value;
+    }
+    function mountSubtopic(){
+      const topicVal = currentTopicValue();
+      document.getElementById('f-subtopic-area').innerHTML = buildSubtopicSelectHTML(sel.value, topicVal, '');
+      bindSubtopicHandlers();
+    }
+    function bindTopicHandlers(){
+      const tSel = document.getElementById('f-topic');
+      const tNewWrap = document.getElementById('f-topic-new-wrap');
+      if (tSel){
+        tSel.addEventListener('change', ()=>{
+          if (tSel.value === "__NEW__"){
+            if (tNewWrap) tNewWrap.classList.remove('hidden');
+          }else{
+            if (tNewWrap) tNewWrap.classList.add('hidden');
+          }
+          mountSubtopic();
+        });
+      }
+    }
+    function bindSubtopicHandlers(){
+      const sSel = document.getElementById('f-subtopic');
+      const sNewWrap = document.getElementById('f-subtopic-new-wrap');
+      if (sSel){
+        sSel.addEventListener('change', ()=>{
+          if (sSel.value === "__NEW__"){
+            if (sNewWrap) sNewWrap.classList.remove('hidden');
+          }else{
+            if (sNewWrap) sNewWrap.classList.add('hidden');
+          }
+        });
+      }
+    }
+
+    sel.addEventListener('change', ()=>{ mountTopic(); });
+    mountTopic();
+
+    window.__addSubmit = ()=>{
+      const subject = document.getElementById('f-subject').value;
+      // topic
+      let topic = '';
+      const tSel = document.getElementById('f-topic');
+      if (tSel){
+        topic = (tSel.value==="__NEW__") ? (document.getElementById('f-topic-new').value||'').trim() : tSel.value;
+      }else{
+        topic = (document.getElementById('f-topic-new').value||'').trim();
+      }
+      // subtopic
+      let subtopic = '';
+      const sSel = document.getElementById('f-subtopic');
+      if (sSel){
+        subtopic = (sSel.value==="__NEW__") ? (document.getElementById('f-subtopic-new').value||'').trim() : sSel.value;
+      }else{
+        subtopic = (document.getElementById('f-subtopic-new').value||'').trim();
+      }
+      const importance = document.getElementById('f-importance').value;
+      const question = (document.getElementById('f-question').value||'').trim();
+      const example  = (document.getElementById('f-example').value||'').trim();
+      const keywordsRaw = (document.getElementById('f-keywords').value||'');
+      const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : [];
+      const note     = (document.getElementById('f-note').value||'').trim();
+      if (!question) return showMsg('問題文を入力してください。');
+      state.problems.push({ id: Date.now()+Math.floor(Math.random()*1000), subject, topic, subtopic, importance, question, example, keywords, note, history:[], reviews:[], selfStats:{perfect:0,unsure:0,fail:0} });
+      saveLocal(state.problems);
+      scheduleFileSave();
+      document.getElementById('f-question').value='';
+      document.getElementById('f-example').value='';
+      document.getElementById('f-keywords').value='';
+      document.getElementById('f-note').value='';
+      showMsg('追加しました。');
+    };
+    function showMsg(m){ document.getElementById('add-msg').textContent = m; }
+  }
+
+  function buildTopicSelectEditHTML(subject, currentValue){
+    const topics = topicsForSubject(subject);
+    if (topics.length === 0) {
+      return `
+        <input id="e-topic-new" placeholder="新しい分野名を入力（未分類可）" value="${escapeHtml(currentValue||'')}">
+        <div class="help">※ まだ登録された分野がありません。必要なら入力してください（空でも可）。</div>`;
+    }
+    const opts = ['<option value="">（未分類）</option>']
+      .concat(topics.map(t=>`<option value="${t.replace(/"/g,'&quot;')}" ${currentValue===t?'selected':''}>${t}</option>`))
+      .concat([`<option value="__NEW__">（新規作成…）</option>`])
+      .join('');
+    const needNew = currentValue && !topics.includes(currentValue);
+    return `
+      <select id="e-topic">${opts}</select>
+      <div class="inline ${needNew?'':''} ${needNew?'':'hidden'}" id="e-topic-new-wrap">
+        <input id="e-topic-new" placeholder="新しい分野名" value="${escapeHtml(currentValue||'')}">
+      </div>`;
+  }
+  function buildSubtopicSelectEditHTML(subject, topic, currentValue){
+    const subs = subtopicsFor(subject, topic);
+    if (subs.length === 0) {
+      return `
+        <input id="e-subtopic-new" placeholder="新しい小分類名を入力（未分類可）" value="${escapeHtml(currentValue||'')}">
+        <div class="help">※ この分野には登録された小分類がありません。必要なら入力してください（空でも可）。</div>`;
+    }
+    const opts = ['<option value="">（未分類）</option>']
+      .concat(subs.map(t=>`<option value="${t.replace(/"/g,'&quot;')}" ${currentValue===t?'selected':''}>${t}</option>`))
+      .concat([`<option value="__NEW__">（新規作成…）</option>`])
+      .join('');
+    const needNew = currentValue && !subs.includes(currentValue);
+    return `
+      <select id="e-subtopic">${opts}</select>
+      <div class="inline ${needNew?'':'hidden'}" id="e-subtopic-new-wrap">
+        <input id="e-subtopic-new" placeholder="新しい小分類名" value="${escapeHtml(currentValue||'')}">
+      </div>`;
+  }
+
+  function renderEdit(){
+    const prob = state.problems.find(x=>x.id===state.currentProblemId);
+    if (!prob){ setActive('list'); return; }
+    const subjectOptions = `
+      <optgroup label="必修科目">
+        ${CORE_SUBJECTS.map(s=>`<option ${prob.subject===s?'selected':''}>${s}</option>`).join('')}
+      </optgroup>
+      <optgroup label="選択科目">
+        <option value="__ELECTIVE__" ${prob.subject==='__ELECTIVE__'?'selected':''}>選択科目</option>
+        ${ELECTIVE_SUBJECTS.map(s=>`<option ${prob.subject===s?'selected':''}>${s}</option>`).join('')}
+      </optgroup>
+    `;
+    $app.innerHTML = `
+      <div class="card">
+        <div class="flex">
+          <button class="ghost" onclick="__backList()">← 問題一覧</button>
+          <h2 style="margin:0 .5rem">問題の編集</h2>
+        </div>
+        <div class="grid two section">
+          <div>
+            <label>科目</label>
+            <select id="e-subject">${subjectOptions}</select>
+          </div>
+          <div>
+            <label>重要度</label>
+            <select id="e-importance">
+              ${IMPORTANCES.map(im=>`<option value="${im}" ${prob.importance===im?'selected':''}>${importanceLabel(im)}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="section">
+          <label>分野</label>
+          <div id="e-topic-area"></div>
+        </div>
+        <div class="section">
+          <label>小分類</label>
+          <div id="e-subtopic-area"></div>
+        </div>
+        <div class="section">
+          <label>問題文</label>
+          <textarea id="e-question">${escapeHtml(prob.question)}</textarea>
+        </div>
+        <div class="section">
+          <label>模範解答</label>
+          <textarea id="e-example">${escapeHtml(prob.example)}</textarea>
+        </div>
+        <div class="section">
+          <label>重要キーワード（カンマ/句点区切り・任意）</label>
+          <input id="e-keywords" value="${escapeHtml((prob.keywords||[]).join('、'))}">
+        </div>
+        <div class="section">
+          <label>補足情報（採点には影響しないメモ）</label>
+          <textarea id="e-note">${escapeHtml(prob.note||'')}</textarea>
+        </div>
+        <div class="section flex">
+          <button class="primary" onclick="__saveEdit()">保存する</button>
+          <button class="ghost danger" onclick="__deleteProblem(${prob.id})">削除</button>
+        </div>
+        <div id="edit-msg" class="section muted small"></div>
+      </div>
+    `;
+    const sel = document.getElementById('e-subject');
+    function mountTopic(){
+      document.getElementById('e-topic-area').innerHTML = buildTopicSelectEditHTML(sel.value, prob.topic||'');
+      bindTopicHandlers();
+      mountSubtopic();
+    }
+    function currentTopicValue(){
+      const tSel = document.getElementById('e-topic');
+      if (!tSel) return (document.getElementById('e-topic-new')?.value||'').trim();
+      if (tSel.value === "__NEW__") return (document.getElementById('e-topic-new')?.value||'').trim();
+      return tSel.value;
+    }
+    function mountSubtopic(){
+      const topicVal = currentTopicValue();
+      document.getElementById('e-subtopic-area').innerHTML = buildSubtopicSelectEditHTML(sel.value, topicVal, prob.subtopic||'');
+      bindSubtopicHandlers();
+    }
+    function bindTopicHandlers(){
+      const tSel = document.getElementById('e-topic');
+      const tNewWrap = document.getElementById('e-topic-new-wrap');
+      if (tSel){
+        tSel.addEventListener('change', ()=>{
+          if (tSel.value === "__NEW__"){
+            if (tNewWrap) tNewWrap.classList.remove('hidden');
+          }else{
+            if (tNewWrap) tNewWrap.classList.add('hidden');
+          }
+          mountSubtopic();
+        });
+      }
+    }
+    function bindSubtopicHandlers(){
+      const sSel = document.getElementById('e-subtopic');
+      const sNewWrap = document.getElementById('e-subtopic-new-wrap');
+      if (sSel){
+        sSel.addEventListener('change', ()=>{
+          if (sSel.value === "__NEW__"){
+            if (sNewWrap) sNewWrap.classList.remove('hidden');
+          }else{
+            if (sNewWrap) sNewWrap.classList.add('hidden');
+          }
+        });
+      }
+    }
+    sel.addEventListener('change', mountTopic);
+    mountTopic();
+
+    window.__backList = ()=>{ state.view='list'; render(); };
+    window.__saveEdit = ()=>{
+      const subject = document.getElementById('e-subject').value;
+      let topic = '';
+      const tSel = document.getElementById('e-topic');
+      if (tSel){
+        topic = (tSel.value==="__NEW__") ? (document.getElementById('e-topic-new').value||'').trim() : tSel.value;
+      }else{
+        topic = (document.getElementById('e-topic-new').value||'').trim();
+      }
+      let subtopic = '';
+      const sSel = document.getElementById('e-subtopic');
+      if (sSel){
+        subtopic = (sSel.value==="__NEW__") ? (document.getElementById('e-subtopic-new').value||'').trim() : sSel.value;
+      }else{
+        subtopic = (document.getElementById('e-subtopic-new').value||'').trim();
+      }
+      const importance = document.getElementById('e-importance').value;
+      const question = (document.getElementById('e-question').value||'').trim();
+      const example  = (document.getElementById('e-example').value||'').trim();
+      const keywordsRaw = (document.getElementById('e-keywords').value||'');
+      const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : [];
+      const note     = (document.getElementById('e-note').value||'').trim();
+      if (!question) return showMsg('問題文を入力してください。');
+      Object.assign(prob, {subject, topic, subtopic, importance, question, example, keywords, note});
+      saveLocal(state.problems);
+      scheduleFileSave();
+      showMsg('保存しました。');
+    };
+    function showMsg(m){ document.getElementById('edit-msg').textContent = m; }
+    window.__deleteProblem = (id)=>{
+      const target = state.problems.find(p=>p.id===id);
+      if (!target) return;
+      if (!confirm(`この問題を削除します。よろしいですか？\n\n「${target.question}」`)) return;
+      state.problems = state.problems.filter(p=>p.id!==id);
+      saveLocal(state.problems);
+      scheduleFileSave();
+      state.view='list'; render();
+    };
+  }
+
+  function renderSync(){
+    $app.innerHTML = `
+      <div class="card">
+        <h2>設定 / 同期</h2>
+
+        <h3 class="section">A. 端末ローカル保存（iPhone/PC共通）</h3>
+        <div class="section stack-tight">
+          <label class="checkline small nowrap"><input type="checkbox" id="cfg-local"> 端末に自動保存（ローカルキャッシュ）</label>
+          <label class="checkline small nowrap"><input type="checkbox" id="cfg-restore"> 起動時に自動復元</label>
+          <label class="checkline small nowrap"><input type="checkbox" id="cfg-ios-import"> iPhone起動時にインポート案内を表示</label>
+          <div class="row-sm">
+            <button class="ghost" id="btn-save-cfg">設定を保存</button>
+            <button class="ghost danger" id="btn-clear">ローカルキャッシュを消去</button>
+          </div>
+          <div class="muted small">※ iPhoneは端末ローカルに自動保存。必要時にインポートをご利用ください。</div>
+        </div>
+
+        <h3 class="section">B. iCloud Drive の JSON と自動連携（Mac Chrome/Edge）</h3>
+        <div class="section">
+          <div class="row-sm">
+            <button class="primary" id="btn-pick" ${supportsFS?'':'disabled'}>ファイルを開く（problems.json）</button>
+            <button class="ghost" id="btn-reconnect" ${supportsFS?'':'disabled'}>前回のファイルに再接続</button>
+            <button class="ghost" id="btn-load" ${supportsFS?'':'disabled'}>ファイルから読み込む（上書き）</button>
+            <button class="ghost danger" id="btn-disconnect" ${supportsFS?'':'disabled'}>接続解除</button>
+          </div>
+          <div class="muted small" style="margin-top:.5rem">※ 接続中は操作の度に自動保存。起動時は可能なら自動で読み込みます。</div>
+        </div>
+
+        <h3 class="section">C. 手動インポート/エクスポート（iPhone 等）</h3>
+        <div class="section">
+          <div class="row-sm">
+            <input class="full" type="file" id="file" accept="application/json" />
+            <button class="ghost" id="btn-import">インポート</button>
+            <button class="ghost" id="btn-export">エクスポート</button>
+          </div>
+        </div>
+      </div>
+    `;
+    const chkLocal   = document.getElementById('cfg-local');
+    const chkRestore = document.getElementById('cfg-restore');
+    const chkIOSImp  = document.getElementById('cfg-ios-import');
+    if (chkLocal)   chkLocal.checked   = !!config.autoLocalSave;
+    if (chkRestore) chkRestore.checked = !!config.autoRestore;
+    if (chkIOSImp)  chkIOSImp.checked  = !!config.iosShowImportAtBoot;
+
+    if (chkLocal)   chkLocal.addEventListener('change',  e => { config.autoLocalSave = e.target.checked; });
+    if (chkRestore) chkRestore.addEventListener('change',e => { config.autoRestore = e.target.checked; });
+    if (chkIOSImp)  chkIOSImp.addEventListener('change',e => { config.iosShowImportAtBoot = e.target.checked; });
+
+    const btnSaveCfg = document.getElementById('btn-save-cfg');
+    const btnClear   = document.getElementById('btn-clear');
+    const btnImport  = document.getElementById('btn-import');
+    const btnExport  = document.getElementById('btn-export');
+    const btnPick    = document.getElementById('btn-pick');
+    const btnLoad    = document.getElementById('btn-load');
+    const btnReconnect = document.getElementById('btn-reconnect');
+    const btnDisconnect= document.getElementById('btn-disconnect');
+
+    if (btnSaveCfg) btnSaveCfg.onclick = ()=>{ saveConfig(); alert("設定を保存しました。"); };
+    if (btnClear) btnClear.onclick = ()=>{
+      clearLocal();
+      alert("ローカルキャッシュを消去しました。");
+    };
+    if (btnImport) btnImport.onclick = ()=>{
+      const f = document.getElementById('file').files[0];
+      if (!f) return alert("JSONファイルを選択してください。");
+      handleImportFile(f, true);
+    };
+    if (btnExport) btnExport.onclick = ()=>{
+      const blob = new Blob([JSON.stringify(state.problems, null, 2)], {type: "application/json"});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = "problems.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+    if (btnPick) btnPick.onclick = pickFile;
+    if (btnLoad) btnLoad.onclick = ()=>{ if (!fileHandle) return alert("まず『ファイルを開く』で接続してください。"); loadFromFile(); };
+    if (btnReconnect) btnReconnect.onclick = async ()=>{
+      const ok = await tryRestoreFileHandle(true);
+      alert(ok ? "前回のファイルに再接続し、読み込みました。" : "前回のファイルを見つけるか権限を得られませんでした。『ファイルを開く』を押してください。");
+    };
+    if (btnDisconnect) btnDisconnect.onclick = async ()=>{
+      await idbDelete('problems');
+      fileHandle = null;
+      alert("ファイルの接続情報を削除しました。");
+    };
+  }
+
+  // ---------- iPhone Import Modal ----------
+  function showIOSImportModal(){
+    const root = document.getElementById('modal-root');
+    root.innerHTML = `
+      <div class="mask" role="dialog" aria-modal="true">
+        <div class="modal">
+          <h3>iCloud Drive の problems.json をインポート</h3>
+          <div class="small muted">iPhoneでは外部ファイルへの自動保存ができないため、必要に応じてJSONを読み込んで開始できます。</div>
+          <div class="section">
+            <input type="file" id="ios-file" accept="application/json" />
+          </div>
+          <div class="section flex">
+            <button class="primary" id="ios-do-import">インポートして開始</button>
+            <button class="ghost" id="ios-skip">スキップ</button>
+            <div class="space"></div>
+            <label class="checkline small nowrap"><input type="checkbox" id="ios-dontshow"> 次回から表示しない</label>
+          </div>
+        </div>
+      </div>
+    `;
+    document.getElementById('ios-do-import').onclick = ()=>{
+      const f = document.getElementById('ios-file').files[0];
+      if (!f) return alert("JSONファイルを選択してください。");
+      handleImportFile(f, true, ()=>{ root.innerHTML = ""; });
+      const dont = document.getElementById('ios-dontshow').checked;
+      if (dont){ config.iosShowImportAtBoot = false; saveConfig(); }
+    };
+    document.getElementById('ios-skip').onclick = ()=>{
+      const dont = document.getElementById('ios-dontshow').checked;
+      if (dont){ config.iosShowImportAtBoot = false; saveConfig(); }
+      root.innerHTML = "";
+    };
+  }
+
+  function handleImportFile(file, notify=true, after){
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const data = JSON.parse(reader.result);
+        sanitizeProblems(data);
+        state.problems = data;
+        saveLocal(state.problems);
+        scheduleFileSave();
+        if (notify) banner("インポートしました。");
+        setActive('subjects');
+        if (after) after();
+      }catch(e){ alert("JSONの解析に失敗: " + e.message); }
+    };
+    reader.readAsText(file, "utf-8");
+  }
+
+  // ---------- Boot ----------
+  (async function boot(){
+    // 1) Mac Chrome/Edge: 可能なら iCloud Drive ファイルから自動復元
+    let loaded = false;
+    if (await tryRestoreFileHandle(true)){
+      loaded = true;
+    } else {
+      if (supportsFS){
+        banner(`iCloud Drive の <span class="mono">problems.json</span> に自動接続できませんでした。
+          <button class="ghost" onclick="__reconnect()">再接続</button>
+          <button class="ghost" onclick="__pick()">別ファイルを選ぶ</button>`);
+      }
+    }
+    // 2) それが無理な場合はローカルから復元
+    if (!loaded && config.autoRestore){
+      const cached = loadLocal();
+      if (cached && Array.isArray(cached.problems)) {
+        try {
+          sanitizeProblems(cached.problems);
+          state.problems = cached.problems;
+          loaded = true;
+        } catch(e) {}
+      }
+    }
+    if (!loaded){
+      state.problems = [];
+    }
+    // 起動時ビュー
+    state.view = 'subjects';
+    const ui = loadUI() || {};
+    state.currentImportance = ui.currentImportance || 'all';
+    state.currentSelf = ui.currentSelf || 'all';
+    render();
+
+    // 3) iPhoneのみ：起動直後にインポート案内ポップアップ
+    if (IS_IPHONE && config.iosShowImportAtBoot){
+      showIOSImportModal();
+    }
+
+    // フォーカス復帰時にも自動再接続（Mac）
+    document.addEventListener('visibilitychange', async ()=>{
+      if (document.visibilityState === 'visible' && !fileHandle){
+        await tryRestoreFileHandle(false);
+      }
+    });
+  })();
+
+  // expose for banner buttons
+  window.__reconnect = async ()=>{ await tryRestoreFileHandle(true); };
+  window.__pick = ()=>{ pickFile(); };
+})();</script>
+</main>
+</body>
+</html>
