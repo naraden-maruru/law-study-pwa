@@ -102,6 +102,126 @@ button.active{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand) inset}
 #modal-root .modal .flex{display:flex;gap:.5rem;align-items:center}
 #modal-root .modal .space{flex:1}
 
+
+/* =====================
+   Minimal White/Blue UI
+   ===================== */
+:root{
+  --bg:#f6f8fc;
+  --ink:#0b1220;
+  --ink-2:#475569;
+  --panel:#ffffff;
+  --line:#e6eaf2;
+  --accent:#2563eb;
+  --accent-ink:#1e40af;
+  --accent-soft:#eff6ff;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Source Han Sans JP",Meiryo,Arial,sans-serif;
+  letter-spacing:.01em; color:var(--ink); background:var(--bg);
+}
+/* App bar */
+header{
+  position:sticky; top:0; z-index:40;
+  backdrop-filter:saturate(180%) blur(8px);
+  -webkit-backdrop-filter:saturate(180%) blur(8px);
+  background:rgba(255,255,255,.9);
+  border-bottom:1px solid var(--line);
+  padding:.55rem .9rem;
+}
+header .brand{font-weight:800; font-size:.98rem; color:var(--accent-ink); margin-right:.6rem}
+header nav{display:flex; gap:.4rem; align-items:center; flex-wrap:wrap}
+header nav button{
+  appearance:none; border:1px solid var(--line); background:#fff; color:var(--ink);
+  padding:.42rem .66rem; border-radius:.6rem; font-weight:700; cursor:pointer;
+  transition:border-color .15s ease, background .15s ease, color .15s ease;
+}
+header nav button:hover{border-color:#d7def0}
+header nav button.active{background:var(--accent); color:#fff; border-color:var(--accent)}
+#nav-exit{border-color:#d7def0}
+#nav-exit:hover{background:var(--accent-soft)}
+/* Global input mode as segmented control */
+#global-inputmode{
+  margin-left:.6rem; border:1px solid var(--line); background:#fff; border-radius:.6rem; padding:.2rem;
+}
+#global-inputmode .small{display:none}
+#global-inputmode button{
+  border:0; background:transparent; padding:.42rem .66rem; border-radius:.5rem; font-weight:800; color:var(--ink-2)
+}
+#global-inputmode button.active{background:var(--accent-soft); color:var(--accent-ink)}
+/* Content shells */
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:1rem; margin:1rem 0;
+  box-shadow:0 1px 0 rgba(2,6,23,.03);
+}
+.list-item{background:#fff; border:1px solid var(--line); border-radius:10px; padding:.85rem}
+.section{margin-top:.75rem}
+.flex{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap}
+.grid.three{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:.75rem}
+@media (max-width: 860px){ .grid.three{grid-template-columns:1fr 1fr} }
+@media (max-width: 560px){ .grid.three{grid-template-columns:1fr} }
+h2{font-size:1.15rem; margin:.1rem 0 .5rem 0}
+h3{font-size:1rem; margin:.1rem 0 .35rem 0; color:#0f172a}
+/* Controls */
+button.primary{background:var(--accent); border:1px solid var(--accent); color:#fff; border-radius:.6rem; padding:.58rem 1rem; font-weight:800}
+button.primary:hover{filter:brightness(.98)}
+button.ghost{background:#fff; border:1px solid var(--line); border-radius:.6rem; padding:.54rem .9rem; font-weight:700}
+button.ghost:hover{border-color:#d7def0}
+.pill{background:#fff; border:1px solid var(--line); border-radius:999px; padding:.2rem .6rem; font-weight:700}
+.badge{background:var(--accent); color:#fff; border-radius:999px; padding:.12rem .45rem; font-weight:800; font-size:.72rem}
+input,select,textarea{background:#fff; border:1px solid var(--line); border-radius:.6rem; padding:.6rem; width:100%}
+input:focus,select:focus,textarea:focus{outline:none; border-color:#c7d8ff; box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+/* Keyword highlight */
+mark.hit{background:#fde68a}
+mark.miss{background:#e0ecff}
+/* iPhone compact */
+html.iphone header{padding:.48rem .7rem}
+html.iphone header nav{gap:.35rem; overflow:auto; -webkit-overflow-scrolling:touch}
+html.iphone header nav::-webkit-scrollbar{display:none}
+html.iphone #global-inputmode{margin-left:.4rem}
+/* Collapsible on iPhone */
+html.iphone.nav-collapsed header nav, html.iphone.nav-collapsed #global-inputmode{display:none !important}
+#nav-toggle{
+  display:none;
+  margin-left:.4rem; font-size:.9rem; font-weight:800; padding:.4rem .66rem; border-radius:.6rem;
+  border:1px solid var(--line); background:#fff; color:var(--ink);
+}
+html.iphone #nav-toggle{display:inline-block}
+/* Cleanup legacy visuals */
+.app-side-title{display:none}
+.danger{color:var(--accent-ink)!important; border-color:#d7def0!important; background:#fff!important}
+.danger:hover{background:var(--accent-soft)!important}
+/* Review mode back-to-list hide */
+.review-today .back-to-list{display:none !important}
+
+
+/* =====================
+   Review Page Normalize
+   ===================== */
+.review-today .card{padding:1rem; border-radius:12px}
+/* Typography scale */
+.review-today h2{font-size:1.05rem; font-weight:800; margin:.1rem 0 .6rem 0}
+.review-today h3{font-size:.98rem; font-weight:700; margin:.2rem 0 .4rem 0}
+.review-today .small,.review-today .muted, .review-today small{font-size:.82rem; color:var(--ink-2)}
+/* Controls unification */
+.review-today button{line-height:1; border-radius:.6rem}
+.review-today button.primary{min-height:42px; padding:.6rem 1rem; font-size:.95rem; font-weight:800}
+.review-today button.ghost{min-height:42px; padding:.56rem .9rem; font-size:.93rem; font-weight:700}
+html.iphone .review-today button.primary,
+html.iphone .review-today button.ghost{min-height:44px; font-size:16px}
+/* Answer input */
+.review-today textarea{font-size:16px; line-height:1.5; min-height:180px}
+/* Action rows */
+.review-today .actions, .review-today .action-row, .review-today .controls{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap}
+/* Rating group (できた/普通/できない) */
+.review-today .rating-group{display:grid; grid-template-columns:1fr 1fr 1fr; gap:.5rem; margin-top:.6rem}
+.review-today .rating-group .rating-btn{min-height:42px; font-weight:800}
+/* Footer hints */
+.review-today .hint{font-size:.8rem; color:var(--ink-2); margin-top:.45rem}
+
 </style>
   <script>
     // Optional: disable SW if ?nosw in URL
@@ -211,11 +331,63 @@ window.__markBackButtons = function(){
     }catch(_){}
   }, true);
 })();
+
+// Minimal: iPhone detection + collapsible nav
+(function(){
+  try{
+    var UA = navigator.userAgent || "";
+    var IS_IPHONE = /iPhone|iPod/.test(UA) && ('ontouchend' in document);
+    if (!IS_IPHONE) return;
+    document.documentElement.classList.add('iphone');
+    var hdr = document.querySelector('header'); if(!hdr) return;
+    if (!document.getElementById('nav-toggle')){
+      var btn=document.createElement('button'); btn.id='nav-toggle'; btn.type='button'; btn.textContent='メニュー';
+      var brand = hdr.querySelector('h1, .brand');
+      if (brand && brand.nextSibling){ brand.parentNode.insertBefore(btn, brand.nextSibling); } else { hdr.appendChild(btn); }
+      var collapsed=true;
+      var apply=function(){ document.documentElement.classList.toggle('nav-collapsed', collapsed); btn.textContent=collapsed?'メニュー':'隠す'; btn.setAttribute('aria-expanded', String(!collapsed)); };
+      apply();
+      btn.addEventListener('click', function(){ collapsed=!collapsed; apply(); });
+    }
+  }catch(_){}
+})();
+
+
+// --- Normalize review UI elements (rating buttons grouping) ---
+(function(){
+  function normalizeReview(){
+    if (!document.documentElement.classList.contains('review-today')) return;
+    var scope = document.querySelector('.card') || document;
+    // Find evaluation buttons by text
+    var btns = Array.from(scope.querySelectorAll('button')).filter(function(b){
+      var t=(b.textContent||'').trim();
+      return /^(できた|普通|できない|完璧|不安)$/.test(t);
+    });
+    if (btns.length >= 3){
+      btns.forEach(function(b){ b.classList.add('rating-btn'); });
+      // If not already grouped, wrap them
+      if (!btns[0].parentElement.classList.contains('rating-group')){
+        var wrap = document.createElement('div');
+        wrap.className = 'rating-group';
+        var parent = btns[0].parentElement;
+        parent.insertBefore(wrap, btns[0]);
+        btns.forEach(function(b){ wrap.appendChild(b); });
+      }
+    }
+  }
+  window.addEventListener('load', normalizeReview);
+  if (typeof window.render==='function' && !window.render.__reviewNorm){
+    var orig = window.render;
+    window.render = function(){ var r = orig.apply(this, arguments); try{ normalizeReview(); }catch(e){}; return r; };
+    window.render.__reviewNorm = true;
+  }
+})();
+
 </script>
 </head>
 <body>
 <header>
-  <h1>司法試験 論証タイピング</h1>
+  <h1 class=\"brand\">司法試験 論証タイピング</h1>
   <nav>
     <button id="nav-subjects" class="active">科目一覧</button>
     <button id="nav-review">今日の復習</button>
