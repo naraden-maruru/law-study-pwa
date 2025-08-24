@@ -90,6 +90,7 @@ button.active{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand) inset}
 .list-actions{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
 .list-title{display:block;margin-bottom:.4rem}
 
+.review-today .back-to-list{display:none !important}
 </style>
   <script>
     // Optional: disable SW if ?nosw in URL
@@ -123,7 +124,7 @@ function setInputMode(m){
   try{ localStorage.setItem('rt_inputMode', mode); }catch(_){}
   try{ if (typeof saveConfig==='function') saveConfig(); }catch(_){}
   try{ updateInputModeUI(); }catch(_){}
-  try{ render(); ensureIOSImportBanner(); }catch(_){}
+  try{ render(); }catch(_){}
 }
 window.__setInputMode = setInputMode;
 
@@ -169,6 +170,36 @@ function buildClozeNumbered(text, keywords){
   return out!==text ? out : null;
 }
 
+
+// --- Back-to-list auto marker for review mode ---
+// --- Back-to-list auto marker for review mode (relaxed contains('問題一覧')) ---
+window.__markBackButtons = function(){
+  try{
+    var nodes = document.querySelectorAll('button, a');
+    nodes.forEach(function(el){
+      var t = (el.textContent||'').replace(/\s+/g,'');
+      if (t.indexOf('問題一覧') !== -1){
+        el.classList.add('back-to-list');
+      }
+    });
+  }catch(_){}
+};
+
+// --- Toggle review-today class by top-nav clicks ---
+(function(){
+  document.addEventListener('click', function(ev){
+    try{
+      var el = ev.target.closest('a,button');
+      if(!el) return;
+      var t = (el.textContent||'').replace(/\s+/g,'');
+      if (t.indexOf('今日の復習') !== -1){
+        document.documentElement.classList.add('review-today');
+      } else if (t.indexOf('科目一覧') !== -1 || t.indexOf('問題一覧') !== -1 || t.indexOf('分野一覧') !== -1){
+        document.documentElement.classList.remove('review-today');
+      }
+    }catch(_){}
+  }, true);
+})();
 </script>
 </head>
 <body>
@@ -209,7 +240,7 @@ function buildClozeNumbered(text, keywords){
   window.addEventListener('unhandledrejection', e => showError(e.reason || e));
 
   const UA = navigator.userAgent || "";
-  const IS_IPHONE = (/iPhone|iPod/.test(UA) && 'ontouchend' in document) || /iPhone/.test(UA);
+  const IS_IPHONE = /iPhone|iPod/.test(UA) && "ontouchend" in document;
 
   const CORE_SUBJECTS = ["憲法","行政法","民法","刑法","商法","民訴法","刑訴法"];
   const ELECTIVE_SUBJECTS = ["労働法","倒産法","知的財産法","租税法","国際私法","国際公法","経済法","環境法"];
@@ -382,7 +413,7 @@ function buildClozeNumbered(text, keywords){
       await saveToFile();
       banner('iCloud Drive のファイルに接続しました。自動保存を開始します。');
       setTimeout(hideBanner, 2000);
-      render(); ensureIOSImportBanner();
+      render();
     }catch(e){ console.warn(e); }
   }
 
@@ -420,7 +451,7 @@ function buildClozeNumbered(text, keywords){
       state.problems = data;
       reindex();
       saveLocal(state.problems, sessionsState.logs);
-      render(); ensureIOSImportBanner();
+      render();
       return true;
     }catch(e){
       console.warn("ファイル読込失敗:", e);
@@ -562,13 +593,12 @@ function buildClozeNumbered(text, keywords){
   document.getElementById('nav-add').onclick      = () => { setActive('add') };
   document.getElementById('nav-sync').onclick     = () => { setActive('sync') };
   document.getElementById('nav-exit').onclick     = () => { __exitFlow(); };
-  document.getElementById('nav-exit').addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); __exitFlow(); }, {passive:true});
   if (!IS_IPHONE) { document.getElementById('nav-exit').style.display = 'none'; }
 
   function setActive(view){
     state.view = view;
     if (view !== 'quiz') { state.reviewQueue = null; endSession(); stopTimer(); }
-    render(); ensureIOSImportBanner();
+    render();
     document.querySelectorAll('header nav button').forEach(b => b.classList.remove('active'));
     if (view==='subjects' || view==='topics' || view==='subtopics' || view==='list') document.getElementById('nav-subjects').classList.add('active');
     if (view==='review'  ) document.getElementById('nav-review').classList.add('active');
@@ -757,7 +787,9 @@ function buildClozeNumbered(text, keywords){
       if (state.view === 'review')   return renderReview();
       if (state.view === 'edit')     return renderEdit();
       if (state.view === 'sync')     return renderSync();
-    }catch(e){ showError(e); }
+      try{ __markBackButtons(); }catch(_){}
+}
+catch(e){ showError(e); }
   }
 
   function filterBarHTML(){
@@ -784,22 +816,23 @@ function buildClozeNumbered(text, keywords){
       </div>
     `;
   }
-  window.__setImp = (v)=>{ state.currentImportance=v; render(); ensureIOSImportBanner(); };
-  window.__setSelf = (v)=>{ state.currentSelf=v; render(); ensureIOSImportBanner(); };
-  window.__resetFilters = ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); ensureIOSImportBanner(); };
+  window.__setImp = (v)=>{ state.currentImportance=v; render(); };
+  window.__setSelf = (v)=>{ state.currentSelf=v; render(); };
+  window.__resetFilters = ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); };
 
   function rawCountBySubject(name){ return idsBySubject(name).length; }
-function countBySubjectFiltered(name){
+function rawCountBySubject(name){
   const ids = idsBySubject(name);
   return ids.map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length;
 }
 
   function renderSubjects(){
+  const _subjectRawCount = (name)=> idsBySubject(name).length;
     const coreHtml = CORE_SUBJECTS.map(s=>`
       <div class="list-item" style="cursor:pointer" onclick="__selectSubject('${s}')">
         <div class="flex">
           <strong>${s}</strong>
-          <span class="pill">${countBySubjectFiltered(s)} 問</span>
+          <span class="pill">${rawCountBySubject(s)} 問</span>
           <span class="space"></span>
           <!-- インタリーブ模試は分野一覧の行で提供 -->
         </div>
@@ -809,7 +842,7 @@ function countBySubjectFiltered(name){
       <div class="list-item" style="cursor:pointer" onclick="__selectElective()">
         <div class="flex">
           <strong>選択科目</strong>
-          <span class="pill">${countBySubjectFiltered("__ELECTIVE__")} 問</span>
+          <span class="pill">${rawCountBySubject("__ELECTIVE__")} 問</span>
           <span class="space"></span>
         </div>
       </div>
@@ -832,12 +865,12 @@ function countBySubjectFiltered(name){
         </div>
       </div>
     `;
-    window.__selectSubject = (s)=>{ state.currentSubject = s; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); ensureIOSImportBanner(); };
-    window.__selectElective = ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); ensureIOSImportBanner(); };
+    window.__selectSubject = (s)=>{ state.currentSubject = s; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); };
+    window.__selectElective = ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; state.view='topics'; render(); };
   }
 
-  function topicCount(subj, topic){ return idsByTopic(subj, topic).length; }
-  function unclassifiedTopicCount(subj){ return idsByTopic(subj, "").length; }
+  function topicCount(subj, topic){ return idsByTopic(subj, topic).map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length; }
+  function unclassifiedTopicCount(subj){ return idsByTopic(subj, "").map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length; }
 
   function getSubjectCount(){
     const inp = document.getElementById('count-subject');
@@ -922,9 +955,11 @@ function countBySubjectFiltered(name){
       state.currentTopic = t;
       state.currentSubtopic = 'all';
       state.view = (t==='all') ? 'list' : 'subtopics';
-      render(); ensureIOSImportBanner();
+      render();
     };
     window.__startSubjectAll = (rnd)=>{
+  try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
+  try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
       let ids = idsBySubject(subj);
       const n = getSubjectCount();
       ids = pickWithLimit(ids, n, rnd);
@@ -933,6 +968,8 @@ function countBySubjectFiltered(name){
 
 
     window.__startTopic = (topic, rnd)=>{
+  try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
+  try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
       let ids = idsByTopic(subj, topic);
       const n = getSubjectCount();
       ids = pickWithLimit(ids, n, rnd);
@@ -942,13 +979,13 @@ function countBySubjectFiltered(name){
 
   }
 
-  function subtopicCount(subj, topic, subtopic){ return idsBySubtopic(subj, topic, subtopic).length; }
-  function unclassifiedSubtopicCount(subj, topic){ return idsBySubtopic(subj, topic, "").length; }
+  function subtopicCount(subj, topic, subtopic){ return idsBySubtopic(subj, topic, subtopic).map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length; }
+  function unclassifiedSubtopicCount(subj, topic){ return idsBySubtopic(subj, topic, "").map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length; }
   function renderSubtopics(){
     const subj = state.currentSubject;
     const topic = state.currentTopic;
     if (!subj) { setActive('subjects'); return; }
-    if (topic==='all'){ state.view='list'; render(); ensureIOSImportBanner(); return; }
+    if (topic==='all'){ state.view='list'; render(); return; }
 
     const subs = subtopicsFor(subj, topic);
     const list = subs.map(st=>`
@@ -964,7 +1001,7 @@ function countBySubjectFiltered(name){
       </div>
     `).join('');
 
-    const topicAll = idsByTopic(subj, topic).length;
+    const topicAll = idsByTopic(subj, topic).map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length;
 
     $app.innerHTML = `
       <div class="card">
@@ -1008,9 +1045,11 @@ function countBySubjectFiltered(name){
       </div>
     `;
     window.__backSubjects = () => setActive('subjects');
-    window.__backTopics = () => { state.view='topics'; render(); ensureIOSImportBanner(); };
-    window.__selectSubtopic = (st)=>{ state.currentSubtopic = st; state.view='list'; render(); ensureIOSImportBanner(); };
+    window.__backTopics = () => { state.view='topics'; render(); };
+    window.__selectSubtopic = (st)=>{ state.currentSubtopic = st; state.view='list'; render(); };
     window.__startTopicAll = (rnd)=>{
+  try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
+  try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
       let ids = idsByTopic(subj, topic);
       const n = getSubjectCount();
       ids = pickWithLimit(ids, n, rnd);
@@ -1018,6 +1057,8 @@ function countBySubjectFiltered(name){
     };
 
     window.__startSubtopic = (st, rnd)=>{
+  try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
+  try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
       let ids = idsBySubtopic(subj, topic, st);
       const n = getSubjectCount();
       ids = pickWithLimit(ids, n, rnd);
@@ -1033,7 +1074,7 @@ function countBySubjectFiltered(name){
     state.currentProblemId = q[0];
     startSession(q, randomize, mode||null);
     state.view='quiz';
-    render(); ensureIOSImportBanner();
+    render();
   }
 
   function renderList(){
@@ -1091,17 +1132,19 @@ function countBySubjectFiltered(name){
       </div>
     `;
     window.__backSubjects = () => setActive('subjects');
-    window.__backTopics = () => { state.view='topics'; render(); ensureIOSImportBanner(); };
-    window.__backSubtopics = () => { state.view='subtopics'; render(); ensureIOSImportBanner(); };
+    window.__backTopics = () => { state.view='topics'; render(); };
+    window.__backSubtopics = () => { state.view='subtopics'; render(); };
     window.__startAll = (rnd)=>{
+  try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
+  try{ document.documentElement.classList.remove('review-today'); }catch(_){ }
       let base = ids.slice();
       const n = getSubjectCount();
       const chosen = pickWithLimit(base, n, rnd);
       startQueue(chosen, false);
     };
 
-    window.__startQuiz = (id)=>{ state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); state.view='quiz'; render(); ensureIOSImportBanner(); };
-    window.__editProblem = (id)=>{ state.currentProblemId = id; state.view='edit'; render(); ensureIOSImportBanner(); };
+    window.__startQuiz = (id)=>{ state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); state.view='quiz'; render(); };
+    window.__editProblem = (id)=>{ state.currentProblemId = id; state.view='edit'; render(); };
     window.__deleteProblem = (id)=>{
       const target = state.problems.find(p=>p.id===id);
       if (!target) return;
@@ -1135,7 +1178,7 @@ function countBySubjectFiltered(name){
     $app.innerHTML = `
       <div class="card">
         <div class="flex">
-          <button class="ghost" onclick="__backList()">← 問題一覧</button>
+          <button class="back-to-list ghost" onclick="__backList()">← 問題一覧</button>
           <h2 style="margin:0 .5rem">Q: ${p.question}</h2>
           <div class="space"></div>
           <div class="small">タイマー：<span id="timer" class="timer">00:00</span></div><div class="small muted" style="margin-left:.75rem">入力モード：${getInputMode()==="cloze"?"穴埋め":"全文"}</div>
@@ -1165,7 +1208,7 @@ ${(function(){
       </div>
     `;
     startTimer();
-    window.__backList = ()=>{ state.view='list'; state.reviewQueue=null; endSession(); stopTimer(); render(); ensureIOSImportBanner(); };
+    window.__backList = ()=>{ state.view='list'; state.reviewQueue=null; endSession(); stopTimer(); render(); };
     window.__prev = ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; renderQuiz(); } else showNoPrev(); };
     window.__next = ()=>{ const id=navNextId(); if (id){ state.currentProblemId=id; renderQuiz(); } else showNoNext(); };
     window.__goHome = ()=> { endSession(); stopTimer(); setActive('subjects'); };
@@ -1538,7 +1581,7 @@ ${(function(){
     $app.innerHTML = `
       <div class="card">
         <div class="flex">
-          <button class="ghost" onclick="__backList()">← 問題一覧</button>
+          <button class="back-to-list ghost" onclick="__backList()">← 問題一覧</button>
           <h2 style="margin:0 .5rem">問題の編集</h2>
         </div>
         <div class="grid two section">
@@ -1584,7 +1627,7 @@ ${(function(){
         <div id="edit-msg" class="section muted small"></div>
       </div>
     `;
-    window.__backList = ()=>{ state.view='list'; render(); ensureIOSImportBanner(); };
+    window.__backList = ()=>{ state.view='list'; render(); };
     window.__saveEdit = ()=>{
       const subject = document.getElementById('e-subject').value;
       const topic = (document.getElementById('e-topic').value||'').trim();
@@ -1613,7 +1656,7 @@ ${(function(){
       saveLocal(state.problems, sessionsState.logs);
       scheduleFileSave();
       updateNavBadges();
-      state.view='list'; render(); ensureIOSImportBanner();
+      state.view='list'; render();
     };
   }
 
@@ -1889,14 +1932,11 @@ ${(function(){
     document.getElementById('exit-cancel').onclick = ()=>{ root.innerHTML = ""; };
   }
   window.__exitFlow = ()=>{
-    if (!IS_IPHONE){
+    if (IS_IPHONE){
+      showIOSExitFlow();
+    }else{
       alert("終了ボタンはiPhone用です。PCでは設定/同期からエクスポートしてください。");
-      return;
     }
-    try{
-      if (config && config.iosShowExportGuide){ showIOSExitFlow(); }
-      else { doExportNow(); setTimeout(attemptClose, 500); }
-    }catch(_){ showIOSExitFlow(); }
   };
 
   // ====== コマンドパレット（⌘K / Ctrl+K） ======
@@ -1942,8 +1982,8 @@ ${(function(){
     q.oninput = search;
     q.onkeydown = (e)=>{ if (e.key==='Enter'){ const first = listEl.querySelector('button'); if (first){ first.click(); } } };
     setTimeout(()=>{ q.focus(); search(); }, 0);
-    window.__palStart = (id)=>{ root.innerHTML = ""; state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); state.view='quiz'; render(); ensureIOSImportBanner(); };
-    window.__palEdit = (id)=>{ root.innerHTML = ""; state.currentProblemId=id; state.view='edit'; render(); ensureIOSImportBanner(); };
+    window.__palStart = (id)=>{ root.innerHTML = ""; state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); state.view='quiz'; render(); };
+    window.__palEdit = (id)=>{ root.innerHTML = ""; state.currentProblemId=id; state.view='edit'; render(); };
     window.__closePalette = ()=>{ root.innerHTML = ""; };
   }
 
@@ -2002,12 +2042,11 @@ ${(function(){
       const ui = loadUI() || {};
       state.currentImportance = ui.currentImportance || 'all';
       state.currentSelf = ui.currentSelf || 'all';
-      render(); ensureIOSImportBanner();
+      render();
       updateNavBadges();
 
-      if (IS_IPHONE){
-        const hasAny = Array.isArray(state.problems) && state.problems.length>0;
-        if (!hasAny || config.iosShowImportAtBoot){ showIOSImportModal(); }
+      if (IS_IPHONE && config.iosShowImportAtBoot){
+        showIOSImportModal();
       }
 
       document.addEventListener('visibilitychange', async ()=>{
