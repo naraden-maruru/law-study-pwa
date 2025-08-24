@@ -147,6 +147,18 @@ html.iphone #mobile-menu.open{display:block}
 html.iphone #mobile-menu .item{display:block; padding:10px 12px; font-size:15px; border-bottom:1px solid #eee; text-align:left; width:100%; background:#fff}
 html.iphone #mobile-menu .item:last-child{border-bottom:none}
 
+
+/* ===== iPhone: icon toolbar & single mode toggle ===== */
+html.iphone header nav{display:none !important}
+html.iphone #global-inputmode{display:none !important}
+html.iphone #nav-icons{display:flex; gap:10px; align-items:center; padding:6px 4px}
+html.iphone #nav-icons .ico{width:34px; height:34px; border-radius:10px; border:1px solid var(--border,#ddd); background:#fff; display:inline-flex; align-items:center; justify-content:center}
+html.iphone #nav-icons .ico.danger{border-color:#f2b5b5; color:#b80000; background:#fff5f5}
+html.iphone #mode-toggle{height:34px; padding:0 10px; border-radius:10px; border:1px solid var(--border,#ddd); background:#fff; font-size:13px}
+html.iphone .app-side-title{display:none !important}
+html.iphone #mobile-menu-btn, html.iphone #mobile-menu{display:none !important}
+html.iphone button{writing-mode:horizontal-tb !important}
+
 </style>
   <script>
     // Optional: disable SW if ?nosw in URL
@@ -302,6 +314,44 @@ function leaveSolving(){ try{ document.documentElement.classList.remove('solving
   }
 })();
 
+
+// --- iPhone icon toolbar wiring ---
+(function(){
+  try{
+    if (typeof IS_IPHONE==='undefined' || !IS_IPHONE) return;
+    function clickById(id){ const el=document.getElementById(id); if(el && typeof el.click==='function') el.click(); }
+    const map = {'icon-subjects':'nav-subjects','icon-review':'nav-review','icon-add':'nav-add','icon-settings':'nav-settings','icon-exit':'nav-exit'};
+    Object.keys(map).forEach(k=>{ const b=document.getElementById(k); if(b){ b.addEventListener('click', ()=> clickById(map[k])); } });
+    const modeBtn = document.getElementById('mode-toggle');
+    function updateModeToggleLabel(){
+      try{
+        const mode = (window.state && state.inputMode) || 'full';
+        const label = (mode==='cloze' ? '穴埋め' : '全文入力');
+        if(modeBtn){ modeBtn.textContent = label; modeBtn.dataset.mode = mode; }
+      }catch(_){}
+    }
+    window.__updateModeToggleLabel = updateModeToggleLabel;
+    if(modeBtn){
+      modeBtn.addEventListener('click', ()=>{
+        try{
+          const cur = (window.state && state.inputMode) || 'full';
+          const next = (cur==='cloze' ? 'full' : 'cloze');
+          const targetId = (next==='cloze' ? 'btn-mode-cloze' : 'btn-mode-full');
+          const t = document.getElementById(targetId);
+          if(t && typeof t.click==='function') t.click();
+          setTimeout(updateModeToggleLabel, 50);
+        }catch(_){}
+      });
+    }
+    // label sync
+    setTimeout(updateModeToggleLabel, 0);
+    if (typeof window.render === 'function'){
+      const _r = window.render;
+      window.render = function(){ _r(); try{ updateModeToggleLabel(); }catch(_){ } };
+    }
+  }catch(_){}
+})();
+
 </script>
 </head>
 <body>
@@ -314,6 +364,25 @@ function leaveSolving(){ try{ document.documentElement.classList.remove('solving
     <button id="nav-sync">設定/同期</button>
     <button id="nav-exit" class="danger" title="エクスポートして終了">終了</button>
   </nav>
+<div id="nav-icons" class="iphone-only" aria-label="モバイルナビ">
+  <button id="icon-subjects" class="ico" title="科目一覧" aria-label="科目一覧">
+    <svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+  </button>
+  <button id="icon-review" class="ico" title="今日の復習" aria-label="今日の復習">
+    <svg width="20" height="20" viewBox="0 0 24 24"><path d="M7 3v4M17 3v4M3 9h18M5 12h14M5 16h10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  </button>
+  <button id="icon-add" class="ico" title="問題追加" aria-label="問題追加">
+    <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  </button>
+  <button id="icon-settings" class="ico" title="設定/同期" aria-label="設定/同期">
+    <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a7.96 7.96 0 0 0 .1-2 7.96 7.96 0 0 0-.1-2l2.1-1.6-2-3.4-2.5 1a8.3 8.3 0 0 0-3.4-2l-.4-2.7h-4l-.4 2.7a8.3 8.3 0 0 0-3.4 2l-2.5-1-2 3.4L4.6 11a7.96 7.96 0 0 0-.1 2 7.96 7.96 0 0 0 .1 2L2.5 16.6l2 3.4 2.5-1a8.3 8.3 0 0 0 3.4 2l.4 2.7h4l.4-2.7a8.3 8.3 0 0 0 3.4-2l2.5 1 2-3.4-2.1-1.6Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+  </button>
+  <button id="icon-exit" class="ico danger" title="終了" aria-label="終了">
+    <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6 7a8 8 0 1 0 12 0" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+  </button>
+  <button id="mode-toggle" class="mode-toggle" aria-label="入力モード切替">—</button>
+</div>
+
 <button id="mobile-menu-btn" aria-label="メニュー">☰</button>
 <div id="mobile-menu" role="menu">
   <button class="item" id="mnu-subjects">科目一覧</button>
