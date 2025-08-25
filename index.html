@@ -566,6 +566,12 @@ html:not(.iphone) #iphone-exit{ display:none !important; }
 /* Only show on subjects page via a runtime toggle class */
 html.iphone:not(.subjects-active) #iphone-exit{ display:none !important; }
 
+
+/* === iPhone-only Exit Button visibility harden === */
+#iphone-exit{ z-index: 10000 !important; display:none; }
+html.iphone #iphone-exit{ display:flex !important; }
+html.iphone:not(.subjects-active) #iphone-exit{ display:none !important; }
+
 </style>
   <script>
     // Optional: disable SW if ?nosw in URL
@@ -959,6 +965,86 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
   });
 })();
 
+
+// --- Ultra-robust iPhone detector (adds html.iphone) ---
+(function(){
+  try{
+    var UA = navigator.userAgent||"";
+    var plat = navigator.platform||"";
+    var isiPhoneUA = /iPhone|iPod/i.test(UA);
+    var isiOSLike = /\bCPU.*OS\b/i.test(UA);
+    var touch = 'ontouchstart' in window;
+    var smallScreen = Math.min(screen.width, screen.height) <= 430;
+    var isStandalone = (window.navigator.standalone === true);
+    var isiPhone = isiPhoneUA || (isiOSLike && touch && smallScreen);
+    if (isiPhone) document.documentElement.classList.add('iphone');
+  }catch(e){}
+})();
+
+// --- Subjects page detector: multi-signal + observer ---
+(function(){
+  function isVisible(el){
+    if (!el) return false;
+    var rect = el.getBoundingClientRect();
+    return !!(rect.width && rect.height);
+  }
+  function findSubjectsPanel(){
+    var cands = [
+      '#subjects', '#subjects-page', '#page-subjects', '[data-page="subjects"]', '.page-subjects'
+    ];
+    for (var i=0;i<cands.length;i++){
+      var el = document.querySelector(cands[i]);
+      if (isVisible(el)) return el;
+    }
+    var hs = Array.from(document.querySelectorAll('h1,h2,h3')).filter(function(h){
+      return /科目(一覧)?/.test(h.textContent||'');
+    });
+    for (var j=0;j<hs.length;j++){
+      if (isVisible(hs[j])) return hs[j];
+    }
+    return null;
+  }
+  function navStateIsSubjects(){
+    var navBtn = document.querySelector('#nav-subjects');
+    if (navBtn && (navBtn.classList.contains('active') || navBtn.getAttribute('aria-current')==='page' || navBtn.getAttribute('aria-selected')==='true')) return true;
+    var r = document.querySelector('#rail .nav button[data-nav="subjects"]');
+    if (r && r.classList.contains('active')) return true;
+    var t = document.querySelector('#tabbar .item[data-nav="subjects"]');
+    if (t && t.classList.contains('active')) return true;
+    return false;
+  }
+  function setSubjectsActive(on){
+    document.documentElement.classList.toggle('subjects-active', !!on);
+  }
+  function recompute(){
+    var byHash = /subjects/i.test(location.hash||"");
+    var byPanel = !!findSubjectsPanel();
+    var byNav = navStateIsSubjects();
+    setSubjectsActive(byHash || byPanel || byNav);
+  }
+  window.addEventListener('hashchange', recompute);
+  window.addEventListener('app:nav', function(e){ if (e.detail && e.detail.key){ recompute(); }});
+  window.addEventListener('load', function(){
+    recompute();
+    setTimeout(recompute, 250);
+    setTimeout(recompute, 800);
+    var mo = new MutationObserver(function(){ recompute(); });
+    mo.observe(document.documentElement, {childList:true, subtree:true});
+    var sub = document.getElementById('nav-subjects');
+    if (sub) sub.addEventListener('click', function(){ setTimeout(recompute, 0); });
+  });
+  var btn = document.getElementById('iphone-exit');
+  if (btn && !btn.__exitbound){
+    btn.__exitbound = true;
+    btn.addEventListener('click', function(){
+      var exitBtn = document.querySelector('#nav-exit');
+      if (exitBtn){ exitBtn.click(); return; }
+      window.dispatchEvent(new CustomEvent('app:nav', {detail:{key:'exit'}}));
+      if (window.navigateToPage) window.navigateToPage('exit');
+      if (window.route) window.route('exit');
+    });
+  }
+})();
 </script>
 </head>
 
