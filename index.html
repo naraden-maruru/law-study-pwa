@@ -45,7 +45,7 @@
     .note{background:#fff7ed;border:1px solid #fed7aa;border-radius:.6rem;padding:.6rem}
     mark{background:#fff59d;padding:0 .1rem;border-radius:.2rem}
     mark.hit{background:#fff59d}
-    mark.miss{background:#fecaca}
+    mark.miss{ background:#ffd1e6 }
     .kw{display:inline-block;margin:.1rem .2rem;padding:.15rem .4rem;border:1px dashed #bbb;border-radius:.4rem;background:#fafafa;font-size:.85rem}
     .kw-miss{background:#fee2e2;border-color:#fecaca;color:#991b1b;font-weight:700}
     .score{font-weight:700}
@@ -176,9 +176,7 @@ input,select,textarea{background:#fff; border:1px solid var(--line); border-radi
 input:focus,select:focus,textarea:focus{outline:none; border-color:#c7d8ff; box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 /* Keyword highlight */
 mark.hit{background:#fde68a}
-mark.miss{background:#e0ecff}
-/* iPhone compact */
-html.iphone header{padding:.48rem .7rem}
+mark.miss{ background:#ffd1e6 }
 html.iphone header nav{gap:.35rem; overflow:auto; -webkit-overflow-scrolling:touch}
 html.iphone header nav::-webkit-scrollbar{display:none}
 html.iphone #global-inputmode{margin-left:.4rem}
@@ -221,6 +219,318 @@ html.iphone .review-today button.ghost{min-height:44px; font-size:16px}
 .review-today .rating-group .rating-btn{min-height:42px; font-weight:800}
 /* Footer hints */
 .review-today .hint{font-size:.8rem; color:var(--ink-2); margin-top:.45rem}
+
+
+/* ======================================================
+   SIGNATURE UI (Product-grade, Minimal, Blue Monochrome)
+   ====================================================== */
+:root{
+  --bg:#f7f9fc;
+  --panel:#ffffff;
+  --ink:#0a1020;
+  --ink-2:#475569;
+  --line:#e7ecf3;
+  --accent:#2563eb;
+  --accent-ink:#163995;
+  --accent-soft:#eef4ff;
+  --ok:#16a34a;
+  --warn:#eab308;
+  --err:#ef4444;
+  --radius-lg:14px;
+  --radius-md:10px;
+  --radius-sm:8px;
+  --shadow-sm:0 1px 0 rgba(2,6,23,.04);
+  --shadow-md:0 8px 30px rgba(2,6,23,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0b1220;
+    --panel:#0f172a;
+    --ink:#e5eaf3;
+    --ink-2:#a7b0c3;
+    --line:#1e293b;
+    --accent:#3b82f6;
+    --accent-ink:#93c5fd;
+    --accent-soft:#0b1b3a;
+  }
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+               "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Source Han Sans JP", Meiryo, Arial, sans-serif;
+  color:var(--ink); background:var(--bg); letter-spacing:.01em;
+}
+/* ---------- App Shell ---------- */
+header{
+  position:sticky; top:0; z-index:50;
+  background:rgba(255,255,255,.86);
+  -webkit-backdrop-filter:saturate(180%) blur(8px);
+  backdrop-filter:saturate(180%) blur(8px);
+  border-bottom:1px solid var(--line);
+  padding:.7rem .9rem;
+  box-shadow:var(--shadow-sm);
+}
+@media (prefers-color-scheme: dark){ header{ background:rgba(15,23,42,.75);} }
+header .brand{
+  display:flex; align-items:center; gap:.6rem;
+  font-weight:900; font-size:1rem; color:var(--accent-ink);
+}
+header .brand .dot{width:.7rem; height:.7rem; border-radius:999px; background:var(--accent); box-shadow:0 0 0 4px var(--accent-soft)}
+header nav{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-left:auto}
+/* Unify nav buttons */
+header nav button{
+  appearance:none; cursor:pointer;
+  height:38px; padding:0 .8rem;
+  border-radius:var(--radius-md);
+  border:1px solid var(--line);
+  background:var(--panel); color:var(--ink); font-weight:800;
+  transition: all .15s ease;
+}
+header nav button:hover{border-color:#cfd8e6}
+header nav button.active{background:var(--accent); color:#fff; border-color:var(--accent)}
+#nav-exit{border-color:#cfd8e6}
+#nav-exit:hover{background:var(--accent-soft)}
+/* Global input mode (segmented) */
+#global-inputmode{
+  display:flex; align-items:center; gap:.4rem;
+  border:1px solid var(--line); background:var(--panel);
+  border-radius:var(--radius-md); padding:.2rem;
+  margin-left:.6rem;
+}
+#global-inputmode .small{display:none}
+#btn-mode-full,#btn-mode-cloze{
+  height:36px; padding:0 .8rem; border-radius:10px; border:0; background:transparent; font-weight:900; color:var(--ink-2)
+}
+#btn-mode-full.active,#btn-mode-cloze.active{ background:var(--accent-soft); color:var(--accent-ink) }
+/* iPhone: collapsible */
+#nav-toggle{display:none}
+html.iphone #nav-toggle{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:36px; padding:0 .8rem; border-radius:var(--radius-md);
+  border:1px solid var(--line); background:var(--panel); font-weight:900; margin-left:.5rem;
+}
+html.iphone.nav-collapsed header nav, html.iphone.nav-collapsed #global-inputmode{display:none !important}
+/* ---------- Layout ---------- */
+.container, main, #app, .page{max-width:1080px; margin:0 auto; padding:0 12px}
+.section{margin-top:1rem}
+.card{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius-lg); padding:1rem; box-shadow:var(--shadow-sm);
+}
+.list-item{border:1px solid var(--line); background:var(--panel); border-radius:var(--radius-md); padding:.9rem}
+hr{border:none; border-top:1px solid var(--line); margin:1rem 0}
+/* ---------- Typography ---------- */
+h1{font-size:1.15rem; margin:0}
+h2{font-size:1.1rem; margin:.1rem 0 .6rem 0; font-weight:900}
+h3{font-size:1rem; margin:.2rem 0 .4rem 0; font-weight:800; color:var(--ink)}
+small,.muted{font-size:.84rem; color:var(--ink-2)}
+/* ---------- Controls ---------- */
+button{line-height:1; border-radius:var(--radius-md)}
+button.primary{
+  height:42px; padding:0 1rem; font-weight:900;
+  background:var(--accent); color:#fff; border:1px solid var(--accent);
+}
+button.primary:hover{filter:brightness(.98)}
+button.ghost{ height:42px; padding:0 .95rem; font-weight:800; border:1px solid var(--line); background:var(--panel) }
+button.ghost:hover{ border-color:#cfd8e6 }
+button.subtle{ height:36px; padding:0 .8rem; font-weight:800; border:1px dashed var(--line); background:transparent }
+.badge{ display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:22px; padding:0 .5rem;
+  border-radius:999px; background:var(--accent); color:#fff; font-weight:900; font-size:.75rem }
+.pill{ display:inline-flex; align-items:center; padding:.22rem .6rem; border:1px solid var(--line); border-radius:999px; background:var(--panel); font-weight:800 }
+/* Inputs */
+input, select, textarea{ width:100%; background:var(--panel); color:var(--ink); border:1px solid var(--line);
+  border-radius:var(--radius-md); padding:.66rem; }
+input:focus, select:focus, textarea:focus{ outline:none; box-shadow:0 0 0 3px rgba(37,99,235,.12); border-color:#bfd3ff }
+textarea{ font-size:16px; line-height:1.55 }
+/* ---------- Special: Review Today ---------- */
+.review-today .card{ padding:1rem }
+.review-today h2{ font-size:1.06rem }
+.review-today .controls, .review-today .actions{ display:flex; gap:.6rem; flex-wrap:wrap; align-items:center }
+.review-today .rating-group{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:.5rem; margin-top:.6rem }
+.review-today .rating-group .rating-btn{ height:42px; font-weight:900 }
+html.iphone .review-today .rating-group .rating-btn{ height:44px; font-size:16px }
+/* Hide list back in review flow */
+.review-today .back-to-list{ display:none !important }
+/* Keyword emphasize */
+mark.hit{ background:#fde68a }
+mark.miss{ background:#ffd1e6 }
+/* ---------- Mini helpers ---------- */
+.grid.three{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.8rem }
+@media (max-width: 900px){ .grid.three{ grid-template-columns:repeat(2,minmax(0,1fr)) } }
+@media (max-width: 580px){ .grid.three{ grid-template-columns:1fr } }
+.spacer{flex:1}
+.stack > * + *{ margin-top:.6rem }
+/* ---------- Cleanup legacy ---------- */
+.app-side-title{ display:none }
+.vertical-label{ writing-mode: initial !important }
+
+
+/* ==================================================
+   HOSHINO-INSPIRED THEME (Navy × Gold × Ivory)
+   ================================================== */
+:root{
+  --bg:#f7f5ef;         /* ivory */
+  --panel:#ffffff;
+  --ink:#161a24;        /* deep ink */
+  --ink-2:#4b5563;      /* muted */
+  --line:#e6e0d4;       /* warm line */
+  --accent:#0e2240;     /* deep navy */
+  --accent-2:#b4883b;   /* warm gold */
+  --accent-soft:#eef2f8;
+  --radius-lg:14px;
+  --radius-md:10px;
+  --shadow-md:0 12px 40px rgba(10,17,30,.08);
+}
+body{ background:var(--bg); color:var(--ink) }
+h1,h2,h3{ font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Source Han Serif", Georgia, "Times New Roman", serif; letter-spacing:.02em }
+header{
+  background:rgba(255,255,255,.88);
+  border-bottom:1px solid var(--line);
+}
+header .brand{ color:var(--accent); font-weight:900; letter-spacing:.02em }
+header .brand .mon{ 
+  width:28px; height:28px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg, var(--accent), #0b1932);
+  color:#fff; font-weight:900; font-size:.9rem; box-shadow:0 0 0 4px rgba(14,34,64,.12)
+}
+header nav button{ border-color:var(--line); background:#fff }
+header nav button.active{ background:var(--accent); border-color:var(--accent); color:#fff }
+#nav-exit:hover{ background:rgba(180,136,59,.08) }
+/* Segmented */
+#global-inputmode{ border-color:var(--line); background:#fff }
+#btn-mode-full.active,#btn-mode-cloze.active{ background:rgba(14,34,64,.09); color:var(--accent) }
+/* Cards */
+.card{
+  border:1px solid var(--line);
+  background:linear-gradient(180deg, #fff 0%, #fffdf9 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+.list-item{ border:1px solid var(--line); border-radius:12px; background:#fff }
+/* Buttons */
+button.primary{
+  background:linear-gradient(180deg, #143057 0%, #0e2240 100%);
+  border:1px solid #0e2240; color:#fff;
+}
+button.primary:hover{ filter:brightness(.98) }
+button.ghost{ border:1px solid var(--line); background:#fff }
+button.ghost:hover{ border-color:#d9cfbf }
+.badge{ background:var(--accent-2) }
+.pill{ border-color:var(--line) }
+/* Inputs */
+input,select,textarea{ background:#fff; border:1px solid var(--line) }
+input:focus,select:focus,textarea:focus{ border-color:#c9b58f; box-shadow:0 0 0 3px rgba(180,136,59,.18) }
+/* Hero overlay */
+#hero{
+  position:fixed; inset:0; z-index:60; display:none;
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(180,136,59,.16), transparent 60%),
+    radial-gradient(900px 500px at -10% 100%, rgba(14,34,64,.18), transparent 55%),
+    linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.86));
+  backdrop-filter: blur(8px) saturate(120%);
+}
+#hero .wrap{ max-width:1080px; margin:0 auto; padding:48px 16px; display:grid; gap:28px }
+#hero .badge{ background:var(--accent); color:#fff; font-weight:900 }
+#hero h1{ font-size:1.8rem; line-height:1.2; margin:.4rem 0; color:var(--accent) }
+#hero p{ font-size:1rem; color:var(--ink-2) }
+#hero .cta{ display:flex; gap:.8rem; flex-wrap:wrap; align-items:center }
+#hero .cta .start{ font-size:1rem; height:46px; padding:0 1.1rem; border-radius:12px }
+#hero .cta .secondary{ height:44px; padding:0 .95rem; border-radius:12px }
+@media (max-width:560px){
+  #hero h1{ font-size:1.4rem }
+}
+/* iPhone bottom spacer for safe-area when needed */
+@supports (padding-bottom: env(safe-area-inset-bottom)){
+  html.iphone body{ padding-bottom: calc(env(safe-area-inset-bottom) / 2) }
+}
+
+
+/* ================== RAIL & TABBAR LAYOUT ================== */
+header nav{ display:none !important }
+#global-inputmode{ display:none !important }
+
+#rail{
+  position:fixed; left:0; top:0; bottom:0; width:240px;
+  background:linear-gradient(180deg,#0e2240 0%, #0a1830 100%); color:#eaf2ff;
+  border-right:1px solid rgba(255,255,255,.08);
+  display:none; flex-direction:column; padding:16px 14px; gap:10px; z-index:49;
+}
+#rail .logo{ display:flex; align-items:center; gap:10px; font-weight:900; letter-spacing:.02em; color:#fff; }
+#rail .logo .mon{ width:30px; height:30px; border-radius:999px; background:#b4883b; color:#0e2240;
+  display:inline-flex; align-items:center; justify-content:center; font-weight:900 }
+#rail .nav{ display:flex; flex-direction:column; gap:8px; margin-top:10px }
+#rail .nav button{
+  display:flex; align-items:center; gap:10px;
+  height:42px; padding:0 12px; border-radius:10px;
+  background:transparent; color:#eaf2ff; border:1px solid rgba(255,255,255,.08);
+  font-weight:800; cursor:pointer; transition:background .15s ease, border-color .15s ease;
+}
+#rail .nav button:hover{ background:rgba(255,255,255,.06) }
+#rail .nav button.active{ background:#b4883b; color:#0e2240; border-color:#b4883b }
+#rail .spacer{ flex:1 }
+#rail .mode{ border-top:1px solid rgba(255,255,255,.08); padding-top:10px; display:grid; gap:8px }
+#rail .mode .seg{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+#rail .mode .seg button{ height:36px; border-radius:9px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:#fff; font-weight:900 }
+#rail .mode .seg button.active{ background:#fff; color:#0e2240 }
+
+@media(min-width: 1000px){
+  #rail{ display:flex }
+  body{ padding-left:240px }
+  header{ left:240px; position:sticky }
+}
+
+#tabbar{
+  position:fixed; left:0; right:0; bottom:0; height:60px; background:#0e2240; color:#eaf2ff;
+  border-top:1px solid rgba(255,255,255,.08); display:none; align-items:center; justify-content:space-around; z-index:60;
+}
+#tabbar .item{ display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center; width:20% }
+#tabbar .item button{ background:transparent; border:0; color:#eaf2ff; font-weight:800 }
+#tabbar .item .ico{ width:22px; height:22px; opacity:.9 }
+#tabbar .item.active button{ color:#fff }
+#tabbar .item.active .ico{ opacity:1 }
+#mode-fab{
+  position:fixed; right:12px; bottom:72px; width:46px; height:46px; border-radius:999px;
+  background:#b4883b; color:#0e2240; display:none; align-items:center; justify-content:center; font-weight:900; z-index:61;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+}
+@media(max-width: 999px){
+  #tabbar{ display:flex }
+  #mode-fab{ display:flex }
+  body{ padding-bottom:68px }
+  header{ display:none }
+}
+
+.container, main, #app, .page{ padding-top:12px; padding-bottom:12px }
+
+
+/* ================= LUXURY TYPOGRAPHY ================= */
+html,body{-webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale}
+body{
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Source Han Sans JP", "Yu Gothic",
+               Meiryo, Arial, sans-serif;
+  letter-spacing:.01em;
+}
+h1,h2,h3{
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Source Han Serif JP",
+               Georgia, "Times New Roman", serif;
+  font-weight:700; letter-spacing:.02em;
+}
+/* Soften bold UI elements */
+header .brand, header nav button, .pill, .badge, button{ font-weight:600 }
+button.primary{ font-weight:700 }
+small,.muted{ letter-spacing:.01em }
+
+
+/* ===== Refined sizing/weights for clarity ===== */
+#rail .nav button{ height:40px; padding:0 12px; font-size:.95rem; }
+#rail .mode .seg button{ height:34px; font-size:.9rem }
+#tabbar .item button{ font-size:.8rem; font-weight:700 }
+#tabbar .item .ico{ width:20px; height:20px }
+h2{ font-size:1.08rem }
+h3{ font-size:.98rem }
 
 </style>
   <script>
@@ -383,11 +693,186 @@ window.__markBackButtons = function(){
   }
 })();
 
+// Robust iPhone detector + collapsible nav
+(function(){
+  try{
+    var UA = navigator.userAgent||"";
+    var IS_IPHONE = /iPhone|iPod/.test(UA) && ('ontouchend' in document);
+    if (IS_IPHONE) document.documentElement.classList.add('iphone');
+    if (!IS_IPHONE) return;
+    var hdr = document.querySelector('header'); if(!hdr) return;
+    var brand = hdr.querySelector('.brand, h1');
+    if (!document.getElementById('nav-toggle')){
+      var btn=document.createElement('button');
+      btn.id='nav-toggle'; btn.type='button'; btn.textContent='メニュー';
+      (brand && brand.parentNode) ? brand.parentNode.insertBefore(btn, brand.nextSibling) : hdr.appendChild(btn);
+      var collapsed = true;
+      var apply = function(){ document.documentElement.classList.toggle('nav-collapsed', collapsed);
+        btn.textContent = collapsed ? 'メニュー' : '隠す'; btn.setAttribute('aria-expanded', String(!collapsed));
+      };
+      apply();
+      btn.addEventListener('click', function(){ collapsed=!collapsed; apply(); });
+    }
+  }catch(e){}
+})();
+// Normalize review page: group rating buttons
+(function(){
+  function normalizeReview(){
+    if (!document.documentElement.classList.contains('review-today')) return;
+    var scope = document.querySelector('.card') || document;
+    var btns = Array.from(scope.querySelectorAll('button')).filter(function(b){
+      var t=(b.textContent||'').trim();
+      return /^(できた|普通|できない|完璧|不安)$/.test(t);
+    });
+    if (btns.length >= 3){
+      btns.forEach(function(b){ b.classList.add('rating-btn'); });
+      if (!btns[0].parentElement.classList.contains('rating-group')){
+        var wrap = document.createElement('div'); wrap.className='rating-group';
+        var parent = btns[0].parentElement; parent.insertBefore(wrap, btns[0]);
+        btns.forEach(function(b){ wrap.appendChild(b); });
+      }
+    }
+  }
+  window.addEventListener('load', normalizeReview);
+  if (typeof window.render==='function' && !window.render.__reviewNorm){
+    var orig = window.render;
+    window.render = function(){ var r=orig.apply(this, arguments); try{ normalizeReview(); }catch(_){ } return r; };
+    window.render.__reviewNorm = true;
+  }
+})();
+
+
+
+
+// --- Robust rail/tabbar navigation & mode wiring (with stronger SETTINGS fallback) ---
+(function(){
+  function tryClick(el){ if(!el) return false; el.click(); return true; }
+  function qs(sel){ return document.querySelector(sel); }
+  function qsa(sel){ return Array.from(document.querySelectorAll(sel)); }
+  function notInChrome(el){ return el && !el.closest('#rail') && !el.closest('#tabbar'); }
+
+  function findAndClickSettings(){
+    if (tryClick(qs('#nav-settings'))) return true;
+    if (tryClick(qs('#nav-sync'))) return true;
+    if (tryClick(qs('#open-settings'))) return true;
+    if (tryClick(qs('#btn-settings'))) return true;
+    if (tryClick(qs('#settings-button'))) return true;
+    var cand = qsa('[data-nav="settings"], [data-page="settings"], a[href*="#settings"], button[name="settings"]').find(notInChrome);
+    if (tryClick(cand)) return true;
+    var cand2 = qsa('button, a').find(function(el){
+      if (!notInChrome(el)) return false;
+      var t=(el.textContent||'').trim();
+      return /設定|同期/.test(t);
+    });
+    if (tryClick(cand2)) return true;
+    if (typeof window.openSettings==='function'){ window.openSettings(); return true; }
+    if (typeof window.showSettings==='function'){ window.showSettings(); return true; }
+    if (typeof window.navigateToSettings==='function'){ window.navigateToSettings(); return true; }
+    location.hash = '#settings';
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    return false;
+  }
+
+  function navTo(key){
+    if (key==='settings'){ return findAndClickSettings(); }
+    var map = {subjects:'#nav-subjects', review:'#nav-review', add:'#nav-add', exit:'#nav-exit'};
+    var id = map[key]; if (id && qs(id)) return tryClick(qs(id));
+    var hashMap = {subjects:'#subjects', review:'#review', add:'#add'};
+    if (hashMap[key]){ location.hash = hashMap[key]; window.dispatchEvent(new HashChangeEvent('hashchange')); return true; }
+    if (window.navigateToPage) { window.navigateToPage(key); return true; }
+    if (window.route) { window.route(key); return true; }
+    window.dispatchEvent(new CustomEvent('app:nav', {detail:{key}}));
+    return false;
+  }
+
+  function setActive(key){
+    qsa('#rail .nav button, #tabbar .item').forEach(function(n){ n.classList.remove('active'); });
+    var r = qs('#rail .nav button[data-nav="'+key+'"]'); if (r) r.classList.add('active');
+    var t = qs('#tabbar .item[data-nav="'+key+'"]'); if (t) t.classList.add('active');
+  }
+
+  function modeTo(which){
+    if (which==='full'){
+      if (!tryClick(qs('#btn-mode-full'))){ window.APP_INPUT_MODE='full'; window.dispatchEvent(new CustomEvent('app:mode',{detail:{mode:'full'}})); }
+    } else {
+      if (!tryClick(qs('#btn-mode-cloze'))){ window.APP_INPUT_MODE='cloze'; window.dispatchEvent(new CustomEvent('app:mode',{detail:{mode:'cloze'}})); }
+    }
+    var f = qs('#rail-mode-full'); var c = qs('#rail-mode-cloze');
+    if (f&&c){ if (which==='full'){ f.classList.add('active'); c.classList.remove('active'); } else { c.classList.add('active'); f.classList.remove('active'); } }
+  }
+
+  function bindNav(){
+    qsa('#rail .nav button, #tabbar .item').forEach(function(n){
+      if (n.__bound) return;
+      n.__bound = true;
+      n.addEventListener('click', function(){
+        var key = n.getAttribute('data-nav');
+        if (!key) return;
+        navTo(key); setActive(key);
+      });
+    });
+    var mFull = qs('#rail-mode-full'), mCloze = qs('#rail-mode-cloze');
+    if (mFull && !mFull.__bound){ mFull.__bound=true; mFull.addEventListener('click', function(){ modeTo('full'); }); }
+    if (mCloze && !mCloze.__bound){ mCloze.__bound=true; mCloze.addEventListener('click', function(){ modeTo('cloze'); }); }
+    var fab = qs('#mode-fab');
+    if (fab && !fab.__bound){
+      fab.__bound=true;
+      fab.addEventListener('click', function(){
+        var isFull = qs('#rail-mode-full')?.classList.contains('active');
+        modeTo(isFull ? 'cloze' : 'full');
+        fab.textContent = isFull ? 'Aa' : '___';
+      });
+    }
+  }
+
+  var obs = new MutationObserver(bindNav);
+  obs.observe(document.documentElement, {childList:true, subtree:true});
+
+  window.addEventListener('load', function(){
+    bindNav();
+    setTimeout(function(){ navTo('subjects'); setActive('subjects'); }, 0);
+    var fullActive = qs('#btn-mode-full')?.classList.contains('active');
+    modeTo(fullActive ? 'full' : 'cloze');
+  });
+})();
 </script>
 </head>
+
 <body>
+</div>
+
+<!-- Left Rail (Desktop) -->
+<aside id="rail" aria-label="メインナビ">
+  <div class="logo"><span class="mon">法</span><span>論証タイピング</span></div>
+  <div class="nav">
+    <button data-nav="subjects"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M4 19h16v2H4zM4 3h8a4 4 0 0 1 4 4v10H4z"/><path d="M16 7h4v10h-4z"/></svg>科目</button>
+    <button data-nav="review"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 4h18v2H3zM3 10h18v2H3zM3 16h12v2H3z"/></svg>復習</button>
+    <button data-nav="add"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg>追加</button>
+    <button data-nav="settings"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58-1.92-3.32-2.4.97a7.34 7.34 0 0 0-1.62-.94l-.36-2.54h-3.84l-.36 2.54c-.57.22-1.12.53-1.62.94l-2.4-.97-1.92 3.32L4.86 11.06c-.03.31-.05.62-.05.94 0 .32.02.63.05.94l-2.03 1.58 1.92 3.32 2.4-.97c.5.41 1.05.72 1.62.94l.36 2.54h3.84l.36-2.54c.57-.22 1.12-.53 1.62-.94l2.4.97 1.92-3.32-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg>設定</button>
+    <button data-nav="exit"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg>終了</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="mode">
+    <small>入力モード</small>
+    <div class="seg">
+      <button id="rail-mode-full">全文</button>
+      <button id="rail-mode-cloze">穴埋め</button>
+    </div>
+  </div>
+</aside>
+
+<!-- Bottom Tabbar (Mobile) -->
+<nav id="tabbar" aria-label="タブバー">
+  <div class="item" data-nav="subjects"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4zM4 3h8a4 4 0 0 1 4 4v10H4z"/><path d="M16 7h4v10h-4z"/></svg><button>科目</button></div>
+  <div class="item" data-nav="review"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v2H3zM3 10h18v2H3zM3 16h12v2H3z"/></svg><button>復習</button></div>
+  <div class="item" data-nav="add"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg><button>追加</button></div>
+  <div class="item" data-nav="settings"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58-1.92-3.32-2.4.97a7.34 7.34 0 0 0-1.62-.94l-.36-2.54h-3.84l-.36 2.54c-.57.22-1.12.53-1.62.94l-2.4-.97-1.92 3.32L4.86 11.06c-.03.31-.05.62-.05.94 0 .32.02.63.05.94l-2.03 1.58 1.92 3.32 2.4-.97c.5.41 1.05.72 1.62.94l.36 2.54h3.84l.36-2.54c.57-.22 1.12-.53 1.62-.94l2.4.97 1.92-3.32-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg><button>設定</button></div>
+  <div class="item" data-nav="exit"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg><button>終了</button></div>
+</nav>
+<button id="mode-fab" title="入力モード切替">Aa</button>
+
 <header>
-  <h1 class=\"brand\">司法試験 論証タイピング</h1>
+  <h1 class="brand" class=\"brand\"><span class="dot"></span>司法試験 論証タイピング</h1>
   <nav>
     <button id="nav-subjects" class="active">科目一覧</button>
     <button id="nav-review">今日の復習</button>
