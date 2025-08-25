@@ -810,7 +810,7 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
       fab.addEventListener('click', function(){
         var isFull = document.getElementById('rail-mode-full')?.classList.contains('active');
         modeTo(isFull ? 'cloze' : 'full');
-        fab.textContent = isFull ? 'Aa' : '___';
+        fab.textContent = isFull ? '穴' : '全';
       });
     }
   }
@@ -834,6 +834,32 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
       if (exitBtn){ exitBtn.style.display = 'none'; }
     }
   }catch(_){}
+})();
+
+
+// --- Safety binder for tabbar Exit on iPhone ---
+(function(){
+  function bindOnce(){
+    var items = document.querySelectorAll('#tabbar .item');
+    items.forEach(function(n){
+      if (n.__bound2) return;
+      n.__bound2 = true;
+      n.addEventListener('click', function(){
+        var key = n.getAttribute('data-nav');
+        if (!key) return;
+        window.dispatchEvent(new CustomEvent('app:nav', {detail:{key}}));
+        var id = (key==='exit') ? '#nav-exit' :
+                 (key==='subjects') ? '#nav-subjects' :
+                 (key==='review') ? '#nav-review' :
+                 (key==='add') ? '#nav-add' :
+                 (key==='settings') ? '#nav-settings' : null;
+        if (id){ var el=document.querySelector(id); if (el) el.click(); }
+      });
+    });
+  }
+  window.addEventListener('load', bindOnce);
+  var mo = new MutationObserver(bindOnce);
+  mo.observe(document.documentElement, {childList:true, subtree:true});
 })();
 
 </script>
@@ -870,7 +896,7 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
   <div class="item" data-nav="settings"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58-1.92-3.32-2.4.97a7.34 7.34 0 0 0-1.62-.94l-.36-2.54h-3.84l-.36 2.54c-.57.22-1.12.53-1.62.94l-2.4-.97-1.92 3.32L4.86 11.06c-.03.31-.05.62-.05.94 0 .32.02.63.05.94l-2.03 1.58 1.92 3.32 2.4-.97c.5.41 1.05.72 1.62.94l.36 2.54h3.84l.36-2.54c.57-.22 1.12-.53 1.62-.94l2.4.97 1.92-3.32-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg><button>設定</button></div>
   <div class="item" data-nav="exit"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg><button>終了</button></div>
 </nav>
-<button id="mode-fab" title="入力モード切替">Aa</button>
+<button id="mode-fab" aria-label="入力モード切替（全/穴）" title="入力モード切替">全</button>
 
 <header>
   <h1 class="brand" class=\"brand\"><span class="dot"></span>司法試験 論証タイピング</h1>
