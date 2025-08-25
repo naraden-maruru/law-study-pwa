@@ -862,6 +862,77 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
   mo.observe(document.documentElement, {childList:true, subtree:true});
 })();
 
+
+// --- Device policy: show/hide Exit buttons properly ---
+(function(){
+  try{
+    var UA = navigator.userAgent||"";
+    var isIPhone = /iPhone|iPod/.test(UA);
+    var isMac = /Macintosh|Mac OS X/.test(UA) && !isIPhone && !/iPad/.test(UA);
+    if (isIPhone) document.documentElement.classList.add('iphone');
+    if (isMac) document.documentElement.classList.add('mac');
+
+    // Sidebar Exit: hide on mac
+    var sbExit = document.querySelector('#rail .nav button[data-nav="exit"]');
+    if (sbExit && isMac){ sbExit.style.display = 'none'; }
+    if (sbExit && !isMac){ sbExit.style.display = ''; }
+
+    // Tabbar Exit: show on iPhone, hide on mac
+    var tb = document.getElementById('tabbar');
+    if (tb){
+      var tbExit = tb.querySelector('.item[data-nav="exit"]');
+      if (!tbExit && isIPhone){
+        var div = document.createElement('div');
+        div.className='item'; div.setAttribute('data-nav','exit');
+        div.innerHTML = '<svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg><button>終了</button>';
+        tb.appendChild(div);
+      }
+      tbExit = tb.querySelector('.item[data-nav="exit"]');
+      if (tbExit){
+        tbExit.style.display = isMac ? 'none' : '';
+      }
+    }
+  }catch(e){ console.warn('Device policy error', e); }
+})();
+
+
+// --- Limit subject selector in add/edit to only '選択科目' ---
+(function(){
+  var ELECTIVES = ['労働法','倒産法','租税法','経済法','知的財産法','国際私法','国際公法','環境法','選択科目'];
+  function cleanseSelect(sel){
+    if (!sel || sel.tagName!=='SELECT') return false;
+    var hasElective = false;
+    Array.from(sel.options).forEach(function(o){
+      if (ELECTIVES.indexOf((o.text||o.value||'').trim())>=0) hasElective = true;
+    });
+    if (!hasElective) return false;
+    var keep = '選択科目';
+    sel.innerHTML = '';
+    var opt = document.createElement('option'); opt.value = keep; opt.textContent = keep;
+    sel.appendChild(opt);
+    sel.value = keep;
+    sel.setAttribute('data-only-elective','1');
+    return true;
+  }
+  function run(scope){
+    scope = scope || document;
+    var selects = scope.querySelectorAll('select[name*="subject"], select[id*="subject"], select[data-field*="subject"], select, .field-subject select');
+    selects.forEach(function(sel){
+      var near = sel.closest('label, .field, .form-row, .input-group');
+      var nearText = (near?near.textContent:'') || '';
+      var hasTerm = /科目/.test(nearText);
+      if (!hasTerm){
+        var anyElect = Array.from(sel.options||[]).some(function(o){ return ELECTIVES.indexOf((o.text||o.value||'').trim())>=0; });
+        if (!anyElect) return;
+      }
+      cleanseSelect(sel);
+    });
+  }
+  var mo = new MutationObserver(function(){ run(); });
+  mo.observe(document.documentElement, {childList:true, subtree:true});
+  window.addEventListener('load', function(){ run(); });
+  window.addEventListener('app:nav', function(){ setTimeout(run,0); });
+})();
 </script>
 </head>
 
