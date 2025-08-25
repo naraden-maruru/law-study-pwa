@@ -543,6 +543,15 @@ mark.miss, .kw-miss, .highlight-miss{
   box-shadow:0 0 0 1px rgba(255, 105, 180, .15) inset;
 }
 
+
+/* === Exit visibility policy ===
+   - Sidebar(#rail): never show Exit.
+   - Tabbar(#tabbar): show Exit ONLY on iPhone (html.iphone).
+*/
+#rail .nav button[data-nav="exit"]{ display:none !important; }
+#tabbar .item[data-nav="exit"]{ display:none !important; }
+html.iphone #tabbar .item[data-nav="exit"]{ display:flex !important; }
+
 </style>
   <script>
     // Optional: disable SW if ?nosw in URL
@@ -824,19 +833,6 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
   });
 })();
 
-// --- Hide Exit in sidebar on macOS ---
-(function(){
-  try{
-    var UA = navigator.userAgent||"";
-    var isMac = /Macintosh|Mac OS X/.test(UA) && !/Mobile|iPhone|iPad|iPod/.test(UA);
-    if (isMac){
-      var exitBtn = document.querySelector('#rail .nav button[data-nav="exit"]');
-      if (exitBtn){ exitBtn.style.display = 'none'; }
-    }
-  }catch(_){}
-})();
-
-
 // --- Safety binder for tabbar Exit on iPhone ---
 (function(){
   function bindOnce(){
@@ -863,75 +859,58 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
 })();
 
 
-// --- Device policy: show/hide Exit buttons properly ---
+// === Normalize subject select for edit/add: keep "選択科目" only (no individual elective laws) ===
+(function(){
+  var BAD_DETAIL = new Set(["労働法","倒産法","知的財産法","国際私法","国際公法","租税法","環境法","経済法","金融商品取引法","情報法","国際取引法","独禁法"]);
+  var ELECTIVE = "選択科目";
+  function ensureElectiveOption(select){
+    var has = Array.from(select.options).some(function(o){ return (o.text||"").trim()===ELECTIVE || (o.value||"").trim()===ELECTIVE; });
+    if (!has){
+      var opt = document.createElement('option');
+      opt.value = ELECTIVE; opt.textContent = ELECTIVE;
+      select.appendChild(opt);
+    }
+  }
+  function normalizeSubjectSelect(select){
+    if (!select || select.__normalizedElective) return;
+    var before = select.value;
+    Array.from(select.options).forEach(function(opt){
+      var t = (opt.text||"").trim(); var v = (opt.value||"").trim();
+      if (BAD_DETAIL.has(t) || BAD_DETAIL.has(v)){
+        opt.remove();
+      }
+    });
+    ensureElectiveOption(select);
+    var exists = Array.from(select.options).some(function(o){ return o.value===before; });
+    if (!exists && BAD_DETAIL.has(before)){ select.value = ELECTIVE; }
+    select.__normalizedElective = true;
+  }
+  function scan(){
+    var selects = document.querySelectorAll('select');
+    selects.forEach(function(sel){
+      var id = (sel.id||"") + " " + (sel.name||"");
+      var isSubject = /subject|科目/.test(id);
+      if (!isSubject){
+        var label = sel.closest('label')?.textContent || sel.parentElement?.querySelector('label')?.textContent || "";
+        if (/科目/.test(label)) isSubject = true;
+      }
+      if (isSubject) normalizeSubjectSelect(sel);
+    });
+  }
+  var mo = new MutationObserver(function(){ scan(); });
+  mo.observe(document.documentElement, {childList:true, subtree:true});
+  window.addEventListener('load', scan);
+  setTimeout(scan, 300);
+  setTimeout(scan, 1000);
+})();
+
+// --- Robust iPhone detector (adds html.iphone) ---
 (function(){
   try{
     var UA = navigator.userAgent||"";
-    var isIPhone = /iPhone|iPod/.test(UA);
-    var isMac = /Macintosh|Mac OS X/.test(UA) && !isIPhone && !/iPad/.test(UA);
-    if (isIPhone) document.documentElement.classList.add('iphone');
-    if (isMac) document.documentElement.classList.add('mac');
-
-    // Sidebar Exit: hide on mac
-    var sbExit = document.querySelector('#rail .nav button[data-nav="exit"]');
-    if (sbExit && isMac){ sbExit.style.display = 'none'; }
-    if (sbExit && !isMac){ sbExit.style.display = ''; }
-
-    // Tabbar Exit: show on iPhone, hide on mac
-    var tb = document.getElementById('tabbar');
-    if (tb){
-      var tbExit = tb.querySelector('.item[data-nav="exit"]');
-      if (!tbExit && isIPhone){
-        var div = document.createElement('div');
-        div.className='item'; div.setAttribute('data-nav','exit');
-        div.innerHTML = '<svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg><button>終了</button>';
-        tb.appendChild(div);
-      }
-      tbExit = tb.querySelector('.item[data-nav="exit"]');
-      if (tbExit){
-        tbExit.style.display = isMac ? 'none' : '';
-      }
-    }
-  }catch(e){ console.warn('Device policy error', e); }
-})();
-
-
-// --- Limit subject selector in add/edit to only '選択科目' ---
-(function(){
-  var ELECTIVES = ['労働法','倒産法','租税法','経済法','知的財産法','国際私法','国際公法','環境法','選択科目'];
-  function cleanseSelect(sel){
-    if (!sel || sel.tagName!=='SELECT') return false;
-    var hasElective = false;
-    Array.from(sel.options).forEach(function(o){
-      if (ELECTIVES.indexOf((o.text||o.value||'').trim())>=0) hasElective = true;
-    });
-    if (!hasElective) return false;
-    var keep = '選択科目';
-    sel.innerHTML = '';
-    var opt = document.createElement('option'); opt.value = keep; opt.textContent = keep;
-    sel.appendChild(opt);
-    sel.value = keep;
-    sel.setAttribute('data-only-elective','1');
-    return true;
-  }
-  function run(scope){
-    scope = scope || document;
-    var selects = scope.querySelectorAll('select[name*="subject"], select[id*="subject"], select[data-field*="subject"], select, .field-subject select');
-    selects.forEach(function(sel){
-      var near = sel.closest('label, .field, .form-row, .input-group');
-      var nearText = (near?near.textContent:'') || '';
-      var hasTerm = /科目/.test(nearText);
-      if (!hasTerm){
-        var anyElect = Array.from(sel.options||[]).some(function(o){ return ELECTIVES.indexOf((o.text||o.value||'').trim())>=0; });
-        if (!anyElect) return;
-      }
-      cleanseSelect(sel);
-    });
-  }
-  var mo = new MutationObserver(function(){ run(); });
-  mo.observe(document.documentElement, {childList:true, subtree:true});
-  window.addEventListener('load', function(){ run(); });
-  window.addEventListener('app:nav', function(){ setTimeout(run,0); });
+    var isiPhone = /iPhone/.test(UA);
+    if (isiPhone) document.documentElement.classList.add('iphone');
+  }catch(e){}
 })();
 </script>
 </head>
