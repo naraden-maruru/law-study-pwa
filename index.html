@@ -572,6 +572,55 @@ html.iphone:not(.subjects-active) #iphone-exit{ display:none !important; }
 html.iphone #iphone-exit{ display:flex !important; }
 html.iphone:not(.subjects-active) #iphone-exit{ display:none !important; }
 
+
+/* bridged answer visual hint (subtle) */
+.bridged-answer{ outline: 1px dashed rgba(180,136,59,.35); outline-offset: 2px; }
+
+
+/* === Unified Answer UI (Full & Cloze) === */
+.cloze input, .cloze-blank input, .blanks input, .answer-blanks input,
+input.cloze, input[data-cloze], [data-role="cloze"] input {
+  font: inherit; line-height: 1.4;
+  padding: 10px 12px; border-radius: 10px;
+  border: 1px solid rgba(0,0,0,.12); background: #fff;
+  box-shadow: 0 1px 0 rgba(0,0,0,.02);
+}
+.cloze input:focus, .cloze-blank input:focus, .blanks input:focus, .answer-blanks input:focus,
+input.cloze:focus, input[data-cloze]:focus, [data-role="cloze"] input:focus{
+  outline: none; border-color: #6ea8fe; box-shadow: 0 0 0 3px rgba(110,168,254,.25);
+}
+.your-answer-view{
+  margin-top: 8px; padding: 10px 12px;
+  border-radius: 10px; background: #fafafa; border: 1px dashed rgba(0,0,0,.08);
+  color: #222;
+}
+.badge-answered{ background:#e6f4ea; color:#1e7f3b; border:1px solid #b7e1c1; padding:2px 8px; border-radius:999px; font-size:.8rem; }
+.badge-empty, .badge-unanswered{ background:#fff2f2; color:#a23434; border:1px solid #f3c4c4; padding:2px 8px; border-radius:999px; font-size:.8rem; }
+
+
+/* your-answer-view baseline spacing */
+.your-answer-view{ white-space:pre-wrap; margin-top:6px; }
+
+
+/* === Cloze V2 styles === */
+#clozeV2-blind{
+  padding:12px 14px; background:#f6f8fb; border:1px solid #e5ebf5; border-radius:12px; margin-bottom:10px; line-height:1.8;
+}
+#clozeV2-result{ margin-top:14px; padding:12px 14px; background:#fff; border:1px solid #eee; border-radius:12px; }
+#clozeV2-result .head{ font-weight:700; margin-bottom:8px; }
+#clozeV2-result .row{ display:flex; align-items:center; gap:10px; padding:4px 0; border-bottom:1px dashed #eee; }
+#clozeV2-result .row:last-child{ border-bottom:0; }
+#clozeV2-result .row .no{ width:44px; font-weight:700; color:#446; }
+#clozeV2-result .row.ok .word{ background:#e6f4ea; color:#17633a; }
+#clozeV2-result .row.ng .word{ background:#ffe8ef; color:#b12a5b; }
+#clozeV2-result .row .word{ padding:2px 6px; border-radius:6px; }
+#clozeV2-result .row .state{ margin-left:auto; font-weight:900; }
+#clozeV2-result .model .label{ margin-top:8px; font-weight:700; color:#334; }
+#clozeV2-result .model .body{ padding:10px 12px; background:#fafafa; border:1px dashed #e5e5e5; border-radius:10px; white-space:pre-wrap; }
+.keylist{ margin-bottom:8px; color:#556; font-size:.9rem; }
+.keylist .kw{ margin-right:8px; display:inline-flex; gap:4px; align-items:center; }
+.keylist .kw b{ color:#334; }
+
 </style>
   <script>
     // Optional: disable SW if ?nosw in URL
@@ -1045,6 +1094,572 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
     });
   }
 })();
+
+// === Cloze→Full bridge before grading (capture) ===
+(function(){
+  function isClozeMode(){
+    try{
+      if (window.APP_INPUT_MODE==='cloze') return true;
+      if (document.getElementById('btn-mode-cloze')?.classList.contains('active')) return true;
+      if (document.getElementById('rail-mode-cloze')?.classList.contains('active')) return true;
+    }catch(_){}
+    return false;
+  }
+  function collectClozeValues(){
+    var sels = [
+      'input.cloze','input[data-cloze]','input[name^="cloze"]','.cloze input','.cloze-blank input',
+      'input[data-blank]','[data-cloze-index] input','input[name^="blank"]'
+    ];
+    var nodes = [];
+    sels.forEach(function(s){ document.querySelectorAll(s).forEach(function(n){ if(nodes.indexOf(n)<0) nodes.push(n); }); });
+    var vals = nodes.map(function(n){ return (n.value||'').trim(); }).filter(function(v){ return v.length>0; });
+    return vals;
+  }
+  function bridgeToAnswerField(vals){
+    var agg = vals.join(' ').trim();
+    // write into likely "answer" inputs/textarea so existing grading sees it
+    var candidates = Array.from(document.querySelectorAll('textarea, input[type="text"], input[type="search"]'));
+    candidates.forEach(function(el){
+      var id = (el.id||'').toLowerCase();
+      var name = (el.name||'').toLowerCase();
+      var ph = (el.getAttribute('placeholder')||'').toLowerCase();
+      if (id.includes('answer') || name.includes('answer') || ph.includes('回答') || id.includes('response') || name.includes('response')){
+        try{
+          el.value = agg;
+          el.dispatchEvent(new Event('input', {bubbles:true}));
+          el.dispatchEvent(new Event('change', {bubbles:true}));
+        }catch(_){}
+      }
+    });
+    // Also set a global as a final fallback
+    try{ window.USER_ANSWER_TEXT = agg; }catch(_){}
+  }
+  function isGradeButton(target){
+    if (!target) return false;
+    return !!target.closest('#grade, #grade-button, [data-action="grade"], button.grade, .btn-grade, [data-btn="grade"]');
+  }
+  function onCapture(e){
+    var t = e.target;
+    if (!isGradeButton(t)) return;
+    if (!isClozeMode()) return;
+    var vals = collectClozeValues();
+    if (vals.length===0) return; // truly未入力ならそのまま
+    bridgeToAnswerField(vals);
+  }
+  window.addEventListener('click', onCapture, true); // capture phase: run BEFORE other handlers
+})();
+
+// === Cloze bridge++ : wider selectors, submit/enter, and "あなたの回答"ビュー更新 ===
+(function(){
+  function isClozeMode(){
+    try{
+      if (window.APP_INPUT_MODE==='cloze') return true;
+      if (document.getElementById('btn-mode-cloze')?.classList.contains('active')) return true;
+      if (document.getElementById('rail-mode-cloze')?.classList.contains('active')) return true;
+      if (document.querySelector('.cloze, .cloze-blank, .blanks, [data-role="cloze"], [data-mode="cloze"]')) return true;
+    }catch(_){}
+    return false;
+  }
+  function visible(n){
+    if (!n) return false;
+    var s = window.getComputedStyle(n);
+    if (s.display==='none' || s.visibility==='hidden' || s.opacity==='0') return false;
+    var r = n.getBoundingClientRect();
+    return r.width>0 && r.height>0;
+  }
+  function collectClozeValues(){
+    var roots = Array.from(document.querySelectorAll('.cloze, .cloze-blank, .blanks, .answer-blanks, [data-role="cloze"], [data-mode="cloze"], [data-blanks]'));
+    if (roots.length===0){ roots = [document.body]; }
+    var sels = [
+      'input.cloze','input[data-cloze]','input[name^="cloze"]',
+      '.cloze input','.cloze-blank input','.blanks input','.answer-blanks input',
+      'input[data-blank]','[data-cloze-index] input','input[name^="blank"]',
+      'input[data-answer-index]','input[data-slot]','input[data-key]','input[data-num]','input[data-role="cloze"]'
+    ];
+    var nodes = [];
+    roots.forEach(function(root){
+      sels.forEach(function(s){
+        root.querySelectorAll(s).forEach(function(n){
+          if (nodes.indexOf(n)<0 && visible(n)) nodes.push(n);
+        });
+      });
+    });
+    var vals = nodes.map(function(n){ return (n.value||'').trim(); }).filter(function(v){ return v.length>0; });
+    return vals;
+  }
+  function writeToAnswerTargets(text){
+    var targets = [
+      '#userAnswer','#answer','#answerText','#answer-text','#answer_input','#answerField',
+      'textarea[name="answer"]','textarea[name="userAnswer"]','input[name="answer"]','input[name="userAnswer"]',
+      '.answer-input','#your-answer-input'
+    ];
+    var wrote=false;
+    targets.forEach(function(sel){
+      var el = document.querySelector(sel);
+      if (!el) return;
+      try{
+        el.value = text;
+        el.textContent = text;
+        el.setAttribute('data-bridge','1');
+        el.dispatchEvent(new Event('input', {bubbles:true}));
+        el.dispatchEvent(new Event('change', {bubbles:true}));
+        wrote=true;
+      }catch(_){}
+    });
+    window.USER_ANSWER_TEXT = text;
+    return wrote;
+  }
+  function updateYourAnswerView(text){
+    var candidates = Array.from(document.querySelectorAll('section, article, .card, .panel, .box, div'));
+    candidates = candidates.filter(function(el){
+      var t = (el.textContent||'').slice(0, 300);
+      return /あなたの回答/.test(t);
+    });
+    candidates.forEach(function(el){
+      var view = el.querySelector('#your-answer, .your-answer, [data-user-answer], .answer-view');
+      if (!view){
+        var poss = Array.from(el.querySelectorAll('textarea, pre, .content, .body, p, div')).find(function(n){
+          var tx=(n.textContent||'').trim();
+          return tx==='' || /未入力/.test(tx);
+        });
+        view = poss || el;
+      }
+      try{
+        view.textContent = text;
+        view.classList.add('bridged-answer');
+      }catch(_){}
+    });
+  }
+  function aggregateAndBridge(){
+    if (!isClozeMode()) return false;
+    var vals = collectClozeValues();
+    var agg = vals.join(' ').trim();
+    if (agg.length===0) return false;
+    writeToAnswerTargets(agg);
+    updateYourAnswerView(agg);
+    return true;
+  }
+  function isGradeButton(target){
+    if (!target) return false;
+    return !!target.closest('#grade, #grade-button, [data-action="grade"], button.grade, .btn-grade, [data-btn="grade"], button[type="submit"]');
+  }
+  window.addEventListener('click', function(e){
+    if (isGradeButton(e.target)) aggregateAndBridge();
+  }, true);
+  window.addEventListener('keydown', function(e){
+    if (e.key==='Enter' && (e.metaKey || e.ctrlKey || e.shiftKey || !e.isComposing)){
+      if (document.activeElement && document.activeElement.closest('.cloze, .cloze-blank, .blanks, [data-role="cloze"], [data-mode="cloze"]')){
+        aggregateAndBridge();
+      }
+    }
+  }, true);
+  window.addEventListener('submit', function(e){ aggregateAndBridge(); }, true);
+})();
+
+// === Single-Source Answer Engine (unifies Full & Cloze) ===
+(function(){
+  function resolveMaster(){
+    var sels = [
+      '#answer','#userAnswer','#answerText','#answer-text','#answer_input','#answerField',
+      'textarea[name="answer"]','textarea[name="userAnswer"]','.answer-input','textarea[data-role="answer"]'
+    ];
+    for (var i=0;i<sels.length;i++){
+      var el = document.querySelector(sels[i]);
+      if (el) return el;
+    }
+    var hidden = document.createElement('textarea');
+    hidden.id = 'bridge-answer';
+    hidden.style.position='absolute'; hidden.style.left='-9999px'; hidden.style.top='-9999px';
+    document.body.appendChild(hidden);
+    return hidden;
+  }
+  var MASTER = resolveMaster();
+  function setMaster(val){
+    if (typeof val !== 'string') val = (val==null?'':String(val));
+    MASTER.value = val;
+    MASTER.textContent = val;
+    MASTER.setAttribute('data-bridged','1');
+    MASTER.dispatchEvent(new Event('input', {bubbles:true}));
+    MASTER.dispatchEvent(new Event('change', {bubbles:true}));
+    var mirrors = [
+      '#answer','#userAnswer','#answerText','#answer-text','#answer_input','#answerField',
+      'textarea[name="answer"]','textarea[name="userAnswer"]','.answer-input','textarea[data-role="answer"]'
+    ];
+    mirrors.forEach(function(sel){
+      var el = document.querySelector(sel);
+      if (!el || el===MASTER) return;
+      try{ el.value = val; el.textContent = val;
+        el.dispatchEvent(new Event('input', {bubbles:true}));
+        el.dispatchEvent(new Event('change', {bubbles:true}));
+      }catch(_){}
+    });
+    updateYourAnswerView(val);
+    markAnswered(val.trim().length>0);
+  }
+  function parseIndex(n){
+    var d = n.dataset||{};
+    var cands = [d.index,d.clozeIndex,d.answerIndex,d.num,d.slot,d.key];
+    for (var i=0;i<cands.length;i++){ if (cands[i]!=null && cands[i]!=='' && !isNaN(+cands[i])) return +cands[i]; }
+    var m = (n.name||'').match(/(\d+)/); if (m) return +m[1];
+    var ph = n.getAttribute('placeholder')||''; var m2 = ph.match(/(\d+)/); if (m2) return +m2[1];
+    return Infinity;
+  }
+  function collectCloze(){
+    var sels = [
+      'input.cloze','input[data-cloze]','input[name^="cloze"]',
+      '.cloze input','.cloze-blank input','.blanks input','.answer-blanks input',
+      'input[data-blank]','[data-cloze-index] input','input[name^="blank"]',
+      'input[data-answer-index]','input[data-slot]','input[data-key]','input[data-num]','input[data-role="cloze"]'
+    ];
+    var nodes = [];
+    sels.forEach(function(s){
+      document.querySelectorAll(s).forEach(function(n){
+        if (nodes.indexOf(n)<0 && n.offsetParent!==null) nodes.push(n);
+      });
+    });
+    nodes.sort(function(a,b){
+      var ia=parseIndex(a), ib=parseIndex(b);
+      if (ia===ib) return nodes.indexOf(a)-nodes.indexOf(b);
+      return ia-ib;
+    });
+    var vals = nodes.map(function(n){ return (n.value||'').trim(); }).filter(Boolean);
+    return vals.join(' ');
+  }
+  function bindFull(){
+    var full = MASTER;
+    if (!full.__bound_full){
+      full.__bound_full = true;
+      ['input','change','keyup'].forEach(function(ev){
+        full.addEventListener(ev, function(){ setMaster(full.value||''); });
+      });
+    }
+  }
+  function bindCloze(){
+    var sels = [
+      '.cloze input','.cloze-blank input','.blanks input','.answer-blanks input',
+      'input.cloze','input[data-cloze]','[data-role="cloze"] input','input[name^="blank"]','[data-cloze-index] input'
+    ];
+    var inputs = [];
+    sels.forEach(function(s){ document.querySelectorAll(s).forEach(function(n){ if (inputs.indexOf(n)<0) inputs.push(n); }); });
+    inputs.forEach(function(n){
+      if (n.__bound_cloze) return;
+      n.__bound_cloze = true;
+      ['input','change','keyup','blur'].forEach(function(ev){
+        n.addEventListener(ev, function(){ setMaster(collectCloze()); });
+      });
+    });
+  }
+  function findYourAnswerContainer(){
+    var labels = Array.from(document.querySelectorAll('h2,h3,legend,strong,span')).filter(function(n){
+      return /あなたの回答/.test(n.textContent||'');
+    });
+    if (labels.length){
+      return labels[0].parentElement;
+    }
+    return null;
+  }
+  function updateYourAnswerView(text){
+    var cont = findYourAnswerContainer();
+    if (!cont) return;
+    var view = cont.querySelector('.your-answer-view');
+    if (!view){
+      view = document.createElement('div');
+      view.className = 'your-answer-view';
+      view.style.whiteSpace='pre-wrap';
+      view.style.minHeight='1.5em';
+      cont.appendChild(view);
+    }
+    view.textContent = text;
+  }
+  function markAnswered(has){
+    document.documentElement.classList.toggle('answered', !!has);
+    var chips = Array.from(document.querySelectorAll('.badge-empty,.badge-unanswered,.badge-answered'));
+    chips.forEach(function(c){
+      if (has){ c.classList.add('badge-answered'); c.classList.remove('badge-empty','badge-unanswered'); c.textContent='入力済み'; }
+      else { c.classList.remove('badge-answered'); c.classList.add('badge-empty'); c.textContent='未入力'; }
+    });
+  }
+  function boot(){
+    bindFull();
+    bindCloze();
+    setMaster(MASTER.value||collectCloze()||'');
+  }
+  window.addEventListener('load', boot);
+  var mo = new MutationObserver(function(){ bindCloze(); });
+  mo.observe(document.documentElement, {childList:true, subtree:true});
+  window.addEventListener('click', function(e){
+    if (e.target && (e.target.matches('#grade, #grade-button, [data-action="grade"], button.grade, .btn-grade, [data-btn="grade"], button[type="submit"]'))){
+      setMaster(collectCloze() || MASTER.value || '');
+    }
+  }, true);
+})();
+
+// === Cloze/Full Unification – HARD MODE (handles contenteditable & grade buttons by text) ===
+(function(){
+  function isElVisible(el){
+    if (!el) return false;
+    var st = getComputedStyle(el);
+    if (st.display==='none' || st.visibility==='hidden' || parseFloat(st.opacity)===0) return false;
+    var r = el.getBoundingClientRect();
+    return r.width>0 && r.height>0;
+  }
+  function collectClozeHard(){
+    var roots = document.querySelectorAll('.cloze, .cloze-blank, .blanks, .answer-blanks, [data-role="cloze"], [data-mode="cloze"], [data-blanks]');
+    var scope = roots.length ? roots : [document];
+    var nodes = [];
+    function pushUnique(n){ if (n && nodes.indexOf(n)<0 && isElVisible(n)) nodes.push(n); }
+    scope.forEach(function(root){
+      root.querySelectorAll('input.cloze, input[data-cloze], input[name^="cloze"], .cloze input, .cloze-blank input, .blanks input, .answer-blanks input, input[data-blank], [data-cloze-index] input, input[name^="blank"], input[data-answer-index], input[data-slot], input[data-key], input[data-num], input[data-role="cloze"]').forEach(pushUnique);
+      root.querySelectorAll('[contenteditable=""], [contenteditable="true"], [role="textbox"]').forEach(pushUnique);
+      root.querySelectorAll('.blank, .fillin, .fill-blank, .cloze-item, .cloze-slot').forEach(function(n){
+        if (!n.matches('input') && !n.hasAttribute('contenteditable')) pushUnique(n);
+      });
+    });
+    function parseIndex(n){
+      var d = n.dataset||{}, cands=[d.index,d.clozeIndex,d.answerIndex,d.num,d.slot,d.key];
+      for (var i=0;i<cands.length;i++){ if (cands[i]!=null && cands[i]!=='' && !isNaN(+cands[i])) return +cands[i]; }
+      var m=(n.name||'').match(/(\d+)/); if (m) return +m[1];
+      var m2=(n.getAttribute('placeholder')||'').match(/(\d+)/); if (m2) return +m2[1];
+      var lab=n.previousElementSibling && n.previousElementSibling.textContent || '';
+      var m3=lab.match(/(\d+)/); if (m3) return +m3[1];
+      return 1e9;
+    }
+    nodes.sort(function(a,b){
+      var ia=parseIndex(a), ib=parseIndex(b);
+      if (ia===ib) return 0;
+      return ia-ib;
+    });
+    var vals = nodes.map(function(n){
+      if (n.matches('input,textarea')) return (n.value||'').trim();
+      if (n.hasAttribute('contenteditable') || n.getAttribute('role')==='textbox') return (n.textContent||'').trim();
+      return (n.textContent||'').trim();
+    }).filter(Boolean);
+    return vals.join(' ');
+  }
+
+  function writeToAllSinks(val){
+    var sels = [
+      '#answer','#userAnswer','#answerText','#answer-text','#answer_input','#answerField',
+      'textarea[name="answer"]','textarea[name="userAnswer"]','.answer-input','textarea[data-role="answer"]',
+      'input[type="hidden"][name*="answer"]','input[type="hidden"][id*="answer"]','[data-user-answer]'
+    ];
+    sels.forEach(function(sel){
+      document.querySelectorAll(sel).forEach(function(el){
+        try{
+          if (el.tagName==='INPUT' || el.tagName==='TEXTAREA'){ el.value = val; }
+          else { el.textContent = val; el.setAttribute('data-bridged','1'); }
+          el.dispatchEvent(new Event('input', {bubbles:true}));
+          el.dispatchEvent(new Event('change', {bubbles:true}));
+        }catch(_){}
+      });
+    });
+    window.USER_ANSWER_TEXT = val;
+  }
+
+  function updateYourAnswerView(val){
+    var containers = Array.from(document.querySelectorAll('*')).filter(function(n){
+      var t=(n.textContent||''); return /あなたの回答/.test(t);
+    });
+    containers.forEach(function(c){
+      var view = c.querySelector('.your-answer-view') || c.querySelector('[data-user-answer]');
+      if (!view){
+        var sib = c.nextElementSibling;
+        if (sib && isElVisible(sib)) view = sib;
+      }
+      if (!view){
+        view = document.createElement('div');
+        view.className='your-answer-view';
+        c.appendChild(view);
+      }
+      view.textContent = val;
+      view.classList.add('bridged-answer');
+    });
+  }
+
+  function markState(val){
+    var has = (val.trim().length>0);
+    document.querySelectorAll('.badge-empty,.badge-unanswered,.badge-answered').forEach(function(chip){
+      if (has){ chip.classList.add('badge-answered'); chip.classList.remove('badge-empty','badge-unanswered'); chip.textContent='入力済み'; }
+      else { chip.classList.remove('badge-answered'); chip.classList.add('badge-empty'); chip.textContent='未入力'; }
+    });
+  }
+
+  function fullSync(){
+    var val = collectClozeHard();
+    if (!val) return;
+    writeToAllSinks(val);
+    updateYourAnswerView(val);
+    markState(val);
+  }
+
+  document.addEventListener('input', function(e){
+    if (e.target && (e.target.closest('.cloze, .cloze-blank, .blanks, .answer-blanks, [data-role=\"cloze\"], [data-mode=\"cloze\"], [data-blanks]') || e.target.hasAttribute('contenteditable'))){
+      fullSync();
+    }
+  }, true);
+  document.addEventListener('keyup', function(e){
+    if (e.target && (e.target.closest('.cloze, .cloze-blank, .blanks, .answer-blanks, [data-role=\"cloze\"], [data-mode=\"cloze\"], [data-blanks]') || e.target.hasAttribute('contenteditable'))){
+      fullSync();
+    }
+  }, true);
+  document.addEventListener('click', function(e){
+    var t=e.target;
+    if (!t) return;
+    var isGrade = t.closest('#grade, #grade-button, [data-action=\"grade\"], button.grade, .btn-grade, [data-btn=\"grade\"], button[type=\"submit\"]');
+    if (!isGrade){
+      var text=(t.textContent||'').trim();
+      if (/採点/.test(text)) isGrade = true;
+    }
+    if (isGrade) fullSync();
+  }, true);
+  document.addEventListener('submit', function(){ fullSync(); }, true);
+
+  window.addEventListener('load', function(){ setTimeout(fullSync, 50); setTimeout(fullSync, 500); });
+  var mo = new MutationObserver(function(){ fullSync(); });
+  mo.observe(document.documentElement, {childList:true, subtree:true});
+
+})();
+
+/* =================== Cloze V2: number-blind from model answer + single textarea =================== */
+(function(){
+  function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function normalizeKeywords(raw){
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.map(function(x){return String(x).trim();}).filter(Boolean);
+    var list = String(raw).split(/[\s,、，。．]+/);
+    return list.map(function(x){return x.trim();}).filter(Boolean);
+  }
+  function tokenizeJP(s){
+    if (!s) return [];
+    var arr = String(s).split(/[\s\u3000、，。．,\.・\/「」『』\(\)（）\[\]【】…‥:：;；!！\?？"“”'’]+/);
+    return arr.map(function(t){return t.trim();}).filter(Boolean);
+  }
+  function getProblemData(){
+    var p = null;
+    try{ if (window.currentProblem) p = window.currentProblem; }catch(_){}
+    if (!p){ try{ if (window.App && App.state && App.state.currentProblem) p = App.state.currentProblem; }catch(_){} }
+    if (!p){ try{ if (window.app && app.state && app.state.currentProblem) p = app.state.currentProblem; }catch(_){} }
+    if (!p){
+      var el = document.querySelector('#problem-json, script[type="application/json"][data-problem]');
+      if (el){ try{ p = JSON.parse(el.textContent); }catch(_){ } }
+    }
+    if (!p){
+      var wrap = document.querySelector('[data-model-answer],[data-keywords]');
+      if (wrap){
+        p = {
+          modelAnswer: wrap.getAttribute('data-model-answer')||'',
+          keywords: normalizeKeywords(wrap.getAttribute('data-keywords')||'')
+        };
+      }
+    }
+    if (!p){
+      try{
+        var all = JSON.parse(localStorage.getItem('problems')||'[]');
+        var curId = localStorage.getItem('currentProblemId');
+        var found = Array.isArray(all) ? all.find(function(x){ return String(x.id||'')===String(curId||''); }) : null;
+        if (found) p = found;
+      }catch(_){}
+    }
+    return p || {};
+  }
+  function buildBlindFromModel(modelAnswer, keywords){
+    if (!modelAnswer || !keywords || !keywords.length) return null;
+    var order = keywords.slice();
+    var idx = {}; order.forEach(function(kw, i){ idx[kw] = i+1; });
+    var text = modelAnswer;
+    order.sort(function(a,b){ return b.length - a.length; }).forEach(function(kw){
+      var i = idx[kw];
+      var re = new RegExp(escReg(kw), 'g');
+      text = text.replace(re, '['+i+']');
+    });
+    return { blindText: text, indexMap: idx };
+  }
+  function ensureClozeUI(){
+    var stem = document.querySelector('[data-slot="stem"], #stem, .problem-stem, .question-stem, .stem, #question');
+    var host = stem ? stem : document.querySelector('#main, .main, .card, .panel') || document.body;
+    var container = document.getElementById('clozeV2');
+    if (!container){
+      container = document.createElement('div');
+      container.id = 'clozeV2';
+      container.style.marginTop = '8px';
+      host.prepend(container);
+    }
+    var ans = document.querySelector('#answer, #userAnswer, .answer-input, textarea[name="answer"]');
+    if (!ans){
+      ans = document.createElement('textarea');
+      ans.id = 'answer';
+      ans.style.width='100%'; ans.style.minHeight='140px';
+      container.appendChild(ans);
+    }
+    return {container, ans};
+  }
+  function renderNumberedKeywords(list){
+    var wrap = document.getElementById('clozeV2-keylist');
+    if (!wrap){
+      wrap = document.createElement('div');
+      wrap.id = 'clozeV2-keylist';
+      wrap.className = 'keylist';
+      var mount = document.querySelector('#result, .grade-panel, .grading, .after-grade, #clozeV2') || document.body;
+      mount.appendChild(wrap);
+    }
+    wrap.innerHTML = '<div class="subtle">番号付きキーワード</div>' + list.map(function(item, i){
+      return '<span class="kw"><b>['+(i+1)+']</b> '+item+'</span>';
+    }).join(' ');
+  }
+  function renderBlindProblem(blindText){
+    var t = document.getElementById('clozeV2-blind');
+    if (!t){
+      t = document.createElement('div');
+      t.id = 'clozeV2-blind';
+      t.className = 'blind';
+      var stemHost = document.querySelector('[data-slot="stem"], #stem, .problem-stem, .question-stem, .stem, #question, #clozeV2');
+      (stemHost||document.body).prepend(t);
+    }
+    t.textContent = blindText;
+  }
+  function gradeClozeV2(data){
+    var ans = document.querySelector('#answer, #userAnswer, .answer-input, textarea[name="answer"]');
+    var typed = ans ? ans.value : '';
+    var tokens = tokenizeJP(typed);
+    var kw = normalizeKeywords(data.keywords);
+    var map = {}; kw.forEach(function(k){ map[k]=false; });
+    tokens.forEach(function(tok){ if (map.hasOwnProperty(tok)) map[tok]=true; });
+    var res = document.getElementById('clozeV2-result');
+    if (!res){
+      res = document.createElement('div');
+      res.id = 'clozeV2-result';
+      var mount = document.querySelector('#result, .grade-panel, .grading, .after-grade') || document.querySelector('#clozeV2') || document.body;
+      mount.appendChild(res);
+    }
+    var rows = kw.map(function(k, i){
+      var ok = !!map[k];
+      return '<div class="row '+(ok?'ok':'ng')+'"><span class="no">['+(i+1)+']</span><span class="word">'+k+'</span><span class="state">'+(ok?'✓':'×')+'</span></div>';
+    }).join('');
+    var ma = '<div class="model"><div class="label">模範論証</div><div class="body">'+ (data.modelAnswer || '') +'</div></div>';
+    res.innerHTML = '<div class="head">採点（穴埋め）</div><div class="rows">'+rows+'</div>'+ma;
+  }
+  function attachGradeHook(data){
+    function isGradeTarget(t){
+      return !!(t && t.closest && (t.closest('#grade, #grade-button, [data-action="grade"], button.grade, .btn-grade, [data-btn="grade"], button[type="submit"]') || /採点/.test((t.textContent||'').trim())));
+    }
+    window.addEventListener('click', function(e){
+      if (!isGradeTarget(e.target)) return;
+      if (document.body.classList.contains('mode-cloze') || /穴埋め/.test(document.body.textContent||'')){
+        gradeClozeV2(data);
+      }
+    }, true);
+  }
+  window.addEventListener('load', function(){
+    var data = getProblemData();
+    data.keywords = normalizeKeywords(data.keywords || data.keywordsRaw || data.kw || '');
+    if (!data.modelAnswer || !data.keywords || !data.keywords.length) return;
+    var built = buildBlindFromModel(data.modelAnswer, data.keywords);
+    if (built){ renderBlindProblem(built.blindText); renderNumberedKeywords(data.keywords); }
+    ensureClozeUI();
+    attachGradeHook(data);
+  });
+})();
+
 </script>
 </head>
 
