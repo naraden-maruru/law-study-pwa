@@ -45,7 +45,7 @@
     .note{background:#fff7ed;border:1px solid #fed7aa;border-radius:.6rem;padding:.6rem}
     mark{background:#fff59d;padding:0 .1rem;border-radius:.2rem}
     mark.hit{background:#fff59d}
-    mark.miss{ background:#ffd1e6 }
+    mark.miss{background:#fecaca}
     .kw{display:inline-block;margin:.1rem .2rem;padding:.15rem .4rem;border:1px dashed #bbb;border-radius:.4rem;background:#fafafa;font-size:.85rem}
     .kw-miss{background:#fee2e2;border-color:#fecaca;color:#991b1b;font-weight:700}
     .score{font-weight:700}
@@ -176,7 +176,9 @@ input,select,textarea{background:#fff; border:1px solid var(--line); border-radi
 input:focus,select:focus,textarea:focus{outline:none; border-color:#c7d8ff; box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 /* Keyword highlight */
 mark.hit{background:#fde68a}
-mark.miss{ background:#ffd1e6 }
+mark.miss{background:#e0ecff}
+/* iPhone compact */
+html.iphone header{padding:.48rem .7rem}
 html.iphone header nav{gap:.35rem; overflow:auto; -webkit-overflow-scrolling:touch}
 html.iphone header nav::-webkit-scrollbar{display:none}
 html.iphone #global-inputmode{margin-left:.4rem}
@@ -355,7 +357,7 @@ html.iphone .review-today .rating-group .rating-btn{ height:44px; font-size:16px
 .review-today .back-to-list{ display:none !important }
 /* Keyword emphasize */
 mark.hit{ background:#fde68a }
-mark.miss{ background:#ffd1e6 }
+mark.miss{ background:#dbeafe }
 /* ---------- Mini helpers ---------- */
 .grid.three{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.8rem }
 @media (max-width: 900px){ .grid.three{ grid-template-columns:repeat(2,minmax(0,1fr)) } }
@@ -531,6 +533,15 @@ small,.muted{ letter-spacing:.01em }
 #tabbar .item .ico{ width:20px; height:20px }
 h2{ font-size:1.08rem }
 h3{ font-size:.98rem }
+
+
+/* === Missing keyword marker: pink === */
+mark.miss, .kw-miss, .highlight-miss{
+  background:#ffd5e5 !important; /* peach-pink */
+  color:inherit;
+  border-radius:4px;
+  box-shadow:0 0 0 1px rgba(255, 105, 180, .15) inset;
+}
 
 </style>
   <script>
@@ -742,67 +753,45 @@ window.__markBackButtons = function(){
 })();
 
 
-
-
-// --- Robust rail/tabbar navigation & mode wiring (with stronger SETTINGS fallback) ---
+// --- Robust rail/tabbar navigation & mode wiring ---
 (function(){
-  function tryClick(el){ if(!el) return false; el.click(); return true; }
-  function qs(sel){ return document.querySelector(sel); }
-  function qsa(sel){ return Array.from(document.querySelectorAll(sel)); }
-  function notInChrome(el){ return el && !el.closest('#rail') && !el.closest('#tabbar'); }
-
-  function findAndClickSettings(){
-    if (tryClick(qs('#nav-settings'))) return true;
-    if (tryClick(qs('#nav-sync'))) return true;
-    if (tryClick(qs('#open-settings'))) return true;
-    if (tryClick(qs('#btn-settings'))) return true;
-    if (tryClick(qs('#settings-button'))) return true;
-    var cand = qsa('[data-nav="settings"], [data-page="settings"], a[href*="#settings"], button[name="settings"]').find(notInChrome);
-    if (tryClick(cand)) return true;
-    var cand2 = qsa('button, a').find(function(el){
-      if (!notInChrome(el)) return false;
-      var t=(el.textContent||'').trim();
-      return /設定|同期/.test(t);
-    });
-    if (tryClick(cand2)) return true;
-    if (typeof window.openSettings==='function'){ window.openSettings(); return true; }
-    if (typeof window.showSettings==='function'){ window.showSettings(); return true; }
-    if (typeof window.navigateToSettings==='function'){ window.navigateToSettings(); return true; }
-    location.hash = '#settings';
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  function tryClick(sel){
+  if (typeof sel==='string'){
+    var sels = sel.split(',');
+    for (var i=0;i<sels.length;i++){
+      var el = document.querySelector(sels[i].trim());
+      if (el){ el.click(); return true; }
+    }
+    return false;
+  } else {
+    if(sel){ sel.click(); return true; }
     return false;
   }
-
+}
   function navTo(key){
-    if (key==='settings'){ return findAndClickSettings(); }
-    var map = {subjects:'#nav-subjects', review:'#nav-review', add:'#nav-add', exit:'#nav-exit'};
-    var id = map[key]; if (id && qs(id)) return tryClick(qs(id));
-    var hashMap = {subjects:'#subjects', review:'#review', add:'#add'};
-    if (hashMap[key]){ location.hash = hashMap[key]; window.dispatchEvent(new HashChangeEvent('hashchange')); return true; }
+    var map = {subjects:'#nav-subjects', review:'#nav-review', add:'#nav-add', settings:'#nav-settings, #nav-sync, #nav-setting, #nav-config, button[aria-controls="settings"], a[href*="#settings"], [data-page="settings"]', exit:'#nav-exit'};
+    if (map[key] && tryClick(map[key])) return true;
+    var hashMap = {subjects:'#subjects', review:'#review', add:'#add', settings:'#settings,#settings-sync,#sync'};
+    if (hashMap[key]){ location.hash = hashMap[key]; return true; }
     if (window.navigateToPage) { window.navigateToPage(key); return true; }
     if (window.route) { window.route(key); return true; }
     window.dispatchEvent(new CustomEvent('app:nav', {detail:{key}}));
+if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'));
     return false;
   }
-
   function setActive(key){
-    qsa('#rail .nav button, #tabbar .item').forEach(function(n){ n.classList.remove('active'); });
-    var r = qs('#rail .nav button[data-nav="'+key+'"]'); if (r) r.classList.add('active');
-    var t = qs('#tabbar .item[data-nav="'+key+'"]'); if (t) t.classList.add('active');
+    document.querySelectorAll('#rail .nav button, #tabbar .item').forEach(function(n){ n.classList.remove('active'); });
+    var r = document.querySelector('#rail .nav button[data-nav="'+key+'"]'); if (r) r.classList.add('active');
+    var t = document.querySelector('#tabbar .item[data-nav="'+key+'"]'); if (t) t.classList.add('active');
   }
-
   function modeTo(which){
-    if (which==='full'){
-      if (!tryClick(qs('#btn-mode-full'))){ window.APP_INPUT_MODE='full'; window.dispatchEvent(new CustomEvent('app:mode',{detail:{mode:'full'}})); }
-    } else {
-      if (!tryClick(qs('#btn-mode-cloze'))){ window.APP_INPUT_MODE='cloze'; window.dispatchEvent(new CustomEvent('app:mode',{detail:{mode:'cloze'}})); }
-    }
-    var f = qs('#rail-mode-full'); var c = qs('#rail-mode-cloze');
+    if (which==='full'){ if (!tryClick('#btn-mode-full')){ window.APP_INPUT_MODE='full'; window.dispatchEvent(new CustomEvent('app:mode',{detail:{mode:'full'}})); } }
+    if (which==='cloze'){ if (!tryClick('#btn-mode-cloze')){ window.APP_INPUT_MODE='cloze'; window.dispatchEvent(new CustomEvent('app:mode',{detail:{mode:'cloze'}})); } }
+    var f = document.getElementById('rail-mode-full'); var c = document.getElementById('rail-mode-cloze');
     if (f&&c){ if (which==='full'){ f.classList.add('active'); c.classList.remove('active'); } else { c.classList.add('active'); f.classList.remove('active'); } }
   }
-
   function bindNav(){
-    qsa('#rail .nav button, #tabbar .item').forEach(function(n){
+    document.querySelectorAll('#rail .nav button, #tabbar .item').forEach(function(n){
       if (n.__bound) return;
       n.__bound = true;
       n.addEventListener('click', function(){
@@ -811,30 +800,42 @@ window.__markBackButtons = function(){
         navTo(key); setActive(key);
       });
     });
-    var mFull = qs('#rail-mode-full'), mCloze = qs('#rail-mode-cloze');
+    var mFull = document.getElementById('rail-mode-full');
+    var mCloze = document.getElementById('rail-mode-cloze');
     if (mFull && !mFull.__bound){ mFull.__bound=true; mFull.addEventListener('click', function(){ modeTo('full'); }); }
     if (mCloze && !mCloze.__bound){ mCloze.__bound=true; mCloze.addEventListener('click', function(){ modeTo('cloze'); }); }
-    var fab = qs('#mode-fab');
+    var fab = document.getElementById('mode-fab');
     if (fab && !fab.__bound){
       fab.__bound=true;
       fab.addEventListener('click', function(){
-        var isFull = qs('#rail-mode-full')?.classList.contains('active');
+        var isFull = document.getElementById('rail-mode-full')?.classList.contains('active');
         modeTo(isFull ? 'cloze' : 'full');
         fab.textContent = isFull ? 'Aa' : '___';
       });
     }
   }
-
   var obs = new MutationObserver(bindNav);
   obs.observe(document.documentElement, {childList:true, subtree:true});
-
   window.addEventListener('load', function(){
     bindNav();
     setTimeout(function(){ navTo('subjects'); setActive('subjects'); }, 0);
-    var fullActive = qs('#btn-mode-full')?.classList.contains('active');
+    var fullActive = document.getElementById('btn-mode-full')?.classList.contains('active');
     modeTo(fullActive ? 'full' : 'cloze');
   });
 })();
+
+// --- Hide Exit in sidebar on macOS ---
+(function(){
+  try{
+    var UA = navigator.userAgent||"";
+    var isMac = /Macintosh|Mac OS X/.test(UA) && !/Mobile|iPhone|iPad|iPod/.test(UA);
+    if (isMac){
+      var exitBtn = document.querySelector('#rail .nav button[data-nav="exit"]');
+      if (exitBtn){ exitBtn.style.display = 'none'; }
+    }
+  }catch(_){}
+})();
+
 </script>
 </head>
 
