@@ -912,6 +912,30 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
     if (isiPhone) document.documentElement.classList.add('iphone');
   }catch(e){}
 })();
+
+// --- Safety binder for tabbar clicks (subjects/review/add/settings/exit) ---
+(function(){
+  function bindOnce(){
+    document.querySelectorAll('#tabbar .item').forEach(function(n){
+      if (n.__bound2) return;
+      n.__bound2 = true;
+      n.addEventListener('click', function(){
+        var key = n.getAttribute('data-nav'); if (!key) return;
+        var id = (key==='subjects') ? '#nav-subjects' :
+                 (key==='review')   ? '#nav-review'   :
+                 (key==='add')      ? '#nav-add'      :
+                 (key==='settings') ? '#nav-settings' :
+                 (key==='exit')     ? '#nav-exit'     : null;
+        if (id){ var el=document.querySelector(id); if (el){ el.click(); return; } }
+        window.dispatchEvent(new CustomEvent('app:nav', {detail:{key}}));
+        if (key==='settings'){ location.hash = '#settings'; window.dispatchEvent(new CustomEvent('app:open-settings')); }
+        if (key==='exit'){ location.hash = '#exit'; }
+      });
+    });
+  }
+  window.addEventListener('load', bindOnce);
+  new MutationObserver(bindOnce).observe(document.documentElement, {childList:true, subtree:true});
+})();
 </script>
 </head>
 
@@ -939,13 +963,15 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
 </aside>
 
 <!-- Bottom Tabbar (Mobile) -->
+
 <nav id="tabbar" aria-label="タブバー">
   <div class="item" data-nav="subjects"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4zM4 3h8a4 4 0 0 1 4 4v10H4z"/><path d="M16 7h4v10h-4z"/></svg><button>科目</button></div>
   <div class="item" data-nav="review"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v2H3zM3 10h18v2H3zM3 16h12v2H3z"/></svg><button>復習</button></div>
-  <div class="item" data-nav="add"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg><button>追加</button></div>
+  <div class="item" data-nav="add"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M11 11V5h2v6h6v2H11z"/></svg><button>追加</button></div>
   <div class="item" data-nav="settings"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58-1.92-3.32-2.4.97a7.34 7.34 0 0 0-1.62-.94l-.36-2.54h-3.84l-.36 2.54c-.57.22-1.12.53-1.62.94l-2.4-.97-1.92 3.32L4.86 11.06c-.03.31-.05.62-.05.94 0 .32.02.63.05.94l-2.03 1.58 1.92 3.32 2.4-.97c.5.41 1.05.72 1.62.94l.36 2.54h3.84l.36-2.54c.57-.22 1.12-.53 1.62-.94l2.4.97 1.92-3.32-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg><button>設定</button></div>
   <div class="item" data-nav="exit"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg><button>終了</button></div>
 </nav>
+
 <button id="mode-fab" aria-label="入力モード切替（全/穴）" title="入力モード切替">全</button>
 
 <header>
