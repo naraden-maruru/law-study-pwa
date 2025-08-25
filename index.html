@@ -552,6 +552,35 @@ mark.miss, .kw-miss, .highlight-miss{
 #tabbar .item[data-nav="exit"]{ display:none !important; }
 html.iphone #tabbar .item[data-nav="exit"]{ display:flex !important; }
 
+
+/* ===== Mobile bottom tabbar (5 items) ===== */
+#rail .nav button[data-nav="exit"]{ display:none !important; } /* hide sidebar exit everywhere */
+#tabbar{
+  position:fixed; left:0; right:0; bottom:0; height:60px;
+  background:#0e2240; color:#eaf2ff;
+  border-top:1px solid rgba(255,255,255,.08);
+  display:none; align-items:center; justify-content:space-between;
+  padding:0 4px; z-index:60;
+}
+#tabbar .item{
+  flex:1 1 20%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; min-width:0;
+}
+#tabbar .item .ico{ width:20px; height:20px; opacity:.9 }
+#tabbar .item button{ background:transparent; border:0; color:#eaf2ff; font-weight:700; font-size:.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+#tabbar .item.active button{ color:#fff }
+#tabbar .item.active .ico{ opacity:1 }
+@media(max-width: 999px){
+  #tabbar{ display:flex }
+  body{ padding-bottom:72px }
+}
+@supports (padding-bottom: env(safe-area-inset-bottom)){
+  @media(max-width: 999px){
+    body{ padding-bottom: calc(72px + env(safe-area-inset-bottom)) }
+    #tabbar{ padding-bottom: env(safe-area-inset-bottom) }
+  }
+}
+
 </style>
   <script>
     // Optional: disable SW if ?nosw in URL
@@ -936,10 +965,51 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
   window.addEventListener('load', bindOnce);
   new MutationObserver(bindOnce).observe(document.documentElement, {childList:true, subtree:true});
 })();
+
+// ===== Tabbar binder (subjects/review/add/settings/exit) =====
+(function(){
+  function bindTabbar(){
+    document.querySelectorAll('#tabbar .item').forEach(function(n){
+      if (n.__bound_tab5) return;
+      n.__bound_tab5 = true;
+      n.addEventListener('click', function(){
+        var key = n.getAttribute('data-nav'); if (!key) return;
+        var id = (key==='subjects') ? '#nav-subjects' :
+                 (key==='review')   ? '#nav-review'   :
+                 (key==='add')      ? '#nav-add'      :
+                 (key==='settings') ? '#nav-settings' :
+                 (key==='exit')     ? '#nav-exit'     : null;
+        if (id){
+          var el = document.querySelector(id);
+          if (el){ el.click(); return; }
+        }
+        window.dispatchEvent(new CustomEvent('app:nav', {detail:{key}}));
+        var hash = (key==='subjects') ? '#subjects'
+                 : (key==='review')   ? '#review'
+                 : (key==='add')      ? '#add'
+                 : (key==='settings') ? '#settings'
+                 : (key==='exit')     ? '#exit' : '';
+        if (hash) location.hash = hash;
+      });
+    });
+  }
+  window.addEventListener('load', bindTabbar);
+  new MutationObserver(bindTabbar).observe(document.documentElement, {childList:true, subtree:true});
+})();
 </script>
 </head>
 
 <body>
+
+<!-- Rebuilt 5-item bottom tabbar (mobile only) -->
+<nav id="tabbar" aria-label="タブバー">
+  <div class="item" data-nav="subjects"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4zM4 3h8a4 4 0 0 1 4 4v10H4z"/><path d="M16 7h4v10h-4z"/></svg><button>科目</button></div>
+  <div class="item" data-nav="review"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v2H3zM3 10h18v2H3zM3 16h12v2H3z"/></svg><button>復習</button></div>
+  <div class="item" data-nav="add"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M11 11V5h2v6h6v2H11z"/></svg><button>追加</button></div>
+  <div class="item" data-nav="settings"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58-1.92-3.32-2.4.97a7.34 7.34 0 0 0-1.62-.94l-.36-2.54h-3.84l-.36 2.54c-.57.22-1.12.53-1.62.94l-2.4-.97-1.92 3.32L4.86 11.06c-.03.31-.05.62-.05.94 0 .32.02.63.05.94l-2.03 1.58 1.92 3.32 2.4-.97c.5.41 1.05.72 1.62.94l.36 2.54h3.84l.36-2.54c.57-.22 1.12-.53 1.62-.94l2.4.97 1.92-3.32-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg><button>設定</button></div>
+  <div class="item" data-nav="exit"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg><button>終了</button></div>
+</nav>
+
 </div>
 
 <!-- Left Rail (Desktop) -->
