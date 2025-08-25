@@ -573,158 +573,13 @@ html.iphone #iphone-exit{ display:flex !important; }
 html.iphone:not(.subjects-active) #iphone-exit{ display:none !important; }
 
 
-/* bridged answer visual hint (subtle) */
-.bridged-answer{ outline: 1px dashed rgba(180,136,59,.35); outline-offset: 2px; }
-
-
-/* === Remove cloze mode UI globally === */
-#mode-fab{ display:none !important; }
-#rail .mode, .mode-seg, .input-mode, [data-mode-toggle]{ display:none !important; }
-#btn-mode-cloze, #rail-mode-cloze, [data-mode="cloze"], .btn-mode-cloze{ display:none !important; }
-/* Hide cloze-only exercise blocks */
-.cloze, .cloze-blank, .blanks, .answer-blanks, [data-role="cloze"], [data-mode="cloze"]{ display:none !important; }
-/* Keep full input visible */
-.full-input, textarea, .answer-input{ display:initial; }
-/* If any tabs show "穴埋め", hide the tab label area */
-.tab-mode-cloze, .tab--cloze{ display:none !important; }
-
-
-/* ================= STYLE REFRESH v48 ================= */
-:root{
-  --bg:#f6f7fb;
-  --surface:#ffffff;
-  --surface-2:#f2f4f8;
-  --text:#111827;
-  --muted:#6b7280;
-  --primary:#0b3d91;
-  --primary-700:#08337a;
-  --accent:#b4883b;
-  --success:#0ea5e9;
-  --danger:#ef4444;
-  --ring:rgba(11,61,145,.25);
-  --shadow:0 10px 30px rgba(2,16,40,.08);
-  --radius:14px;
-  --radius-sm:10px;
-  --radius-lg:18px;
-  --space:18px;
-}
-html,body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-body{
-  background:linear-gradient(180deg,#f9fafc 0%, #f1f4f9 100%);
-  color:var(--text);
-  font-family:"SF Pro Text","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
-               "Hiragino Kaku Gothic ProN","Noto Sans JP","Source Han Sans JP","Yu Gothic",Meiryo,Arial,sans-serif;
-  letter-spacing:.01em;
-}
-h1,h2,h3{ font-weight:700; letter-spacing:.02em; color:#0f172a }
-h1{ font-size:clamp(20px,2.4vw,28px) }
-h2{ font-size:clamp(18px,2vw,22px) }
-h3{ font-size:clamp(16px,1.6vw,18px) }
-section, .card, .panel{ margin-block: calc(var(--space) * .75); }
-.card, .panel, .box, .sheet, .surface{
-  background:var(--surface);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  border:1px solid rgba(2,16,40,.06);
-}
-input[type="text"], input[type="search"], textarea, select{
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  padding:12px 14px;
-  font-size:15px;
-  transition:border-color .15s, box-shadow .15s;
-}
-input:focus, textarea:focus, select:focus{
-  outline:0; border-color:var(--primary);
-  box-shadow:0 0 0 4px var(--ring);
-}
-button, .btn{
-  appearance:none;
-  border:0;
-  border-radius:12px;
-  padding:12px 16px;
-  font-weight:600;
-  line-height:1;
-  box-shadow:0 1px 2px rgba(2,16,40,.05);
-  background:var(--surface-2);
-  color:var(--text);
-  transition:transform .06s ease, box-shadow .2s, background .15s, color .15s;
-}
-button:hover, .btn:hover{ transform:translateY(-1px); box-shadow:0 10px 18px rgba(2,16,40,.06); }
-button:active, .btn:active{ transform:translateY(0); box-shadow:0 4px 10px rgba(2,16,40,.08); }
-button.primary, .btn.primary, [data-variant="primary"]{
-  background:linear-gradient(180deg,var(--primary) 0%, var(--primary-700) 100%);
-  color:#fff;
-}
-button.ghost, .btn.ghost, [data-variant="ghost"]{
-  background:transparent; border:1px solid #e5e7eb;
-}
-button.danger, .btn.danger, [data-variant="danger"]{ background:#fee2e2; color:#b91c1c }
-.badge, .pill, .tag{
-  display:inline-flex; align-items:center; gap:6px;
-  height:28px; padding:0 10px; border-radius:999px;
-  background:#eef2ff; color:#3730a3; font-weight:700; font-size:12px;
-}
-.badge.is-today{ background:#fee2e2; color:#b91c1c }
-.badge.count, .bubble{
-  background:var(--danger); color:#fff; height:20px; min-width:20px; border-radius:999px;
-  display:inline-flex; align-items:center; justify-content:center; font-size:12px; padding:0 6px;
-}
-#rail{
-  background:linear-gradient(180deg,#061733 0%, #0b274f 100%);
-  color:#dbeafe;
-  border-right:1px solid rgba(255,255,255,.05);
-}
-#rail .brand{ font-weight:800; letter-spacing:.02em }
-#rail .nav button{
-  width:100%; height:44px; margin:8px 10px;
-  background:transparent; color:#cbd5e1; border:1px solid rgba(255,255,255,.08);
-  border-radius:10px;
-}
-#rail .nav button:hover{ background:rgba(255,255,255,.06); color:#fff }
-#rail .nav button.active{ background:#1e3a8a; color:#fff; border-color:transparent; }
-#tabbar{
-  position:fixed; left:0; right:0; bottom:0;
-  backdrop-filter:saturate(160%) blur(18px);
-  background:color-mix(in oklab, #0b274f 20%, #ffffff 80%);
-  border-top:1px solid rgba(2,16,40,.08);
-  height:64px;
-}
-#tabbar .item{ align-items:center; justify-content:center; gap:6px }
-#tabbar .item button{ background:transparent; font-weight:700; font-size:12px; color:#0f172a }
-#tabbar .item.active button{ color:var(--primary) }
-#tabbar .item .ico{ width:22px; height:22px }
-.header-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-.header-actions .btn{ height:40px; padding:10px 14px; border-radius:10px }
-.markdown, .model-answer, .your-answer, #your-answer{
-  background:var(--surface); border-radius:12px; border:1px solid #e5e7eb;
-  padding:14px 16px;
-}
-mark.miss, .kw-miss, .highlight-miss{
-  background:#ffd5e5 !important; color:inherit;
-  border-radius:4px; box-shadow:0 0 0 1px rgba(255,105,180,.15) inset;
-}
-#iphone-exit{
-  position:fixed; right:12px; top:calc(env(safe-area-inset-top, 0px) + 8px);
-  width:46px; height:46px; border-radius:999px;
-  display:none; align-items:center; justify-content:center;
-  background:var(--accent); color:#0e2240; font-weight:900; font-size:16px;
-  border:0; box-shadow:var(--shadow); z-index:10000;
-}
-html.iphone #iphone-exit{ display:flex; }
-html.iphone:not(.subjects-active) #iphone-exit{ display:none !important; }
-.table, table{
-  border-collapse:separate; border-spacing:0; width:100%;
-  background:var(--surface); border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;
-}
-table th, table td{ padding:12px 14px; border-bottom:1px solid #eef2f7 }
-table tr:last-child td{ border-bottom:0 }
-table th{ background:#f8fafc; color:#334155; font-weight:700 }
-textarea{ min-height:140px; resize:vertical }
-*:focus-visible{ outline:3px solid var(--ring); outline-offset:2px; border-radius:10px }
-.muted, small{ color:var(--muted) }
-
+/* === Cloze linking styles === */
+.cloze-card .cloze-slot{padding:0 3px;border-bottom:2px dotted #999;cursor:pointer;border-radius:4px;transition:background .15s, border-color .15s}
+.cloze-card .cloze-slot.ok{background:rgba(46,204,113,.18);border-bottom-color:#2ecc71}
+.cloze-card .cloze-slot.miss{background:rgba(255,64,129,.14);border-bottom-color:#ff4081}
+.cloze-card .cloze-slot.empty{background:rgba(0,0,0,.06);border-bottom-color:#bbb}
+.cloze-inputs input.ok{outline:2px solid #2ecc71}
+.cloze-inputs input.miss{outline:2px solid #ff4081}
 </style>
   <script>
     // Optional: disable SW if ?nosw in URL
@@ -799,7 +654,7 @@ function buildClozeNumbered(text, keywords){
                        .sort((a,b)=> b.kw.length - a.kw.length);
   for (const {kw, n} of pairs){
     const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    out = out.replace(new RegExp(esc, 'g'), `［${n}］`);
+    out = out.replace(new RegExp(esc, 'g'), `<span class=\"cloze-slot\" data-slot=\"${n}\" id=\"slot-${n}\">［${n}］</span>`);
   }
   return out!==text ? out : null;
 }
@@ -1199,139 +1054,143 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
   }
 })();
 
-// === Cloze bridge++ : wider selectors, submit/enter, and "あなたの回答"ビュー更新 ===
+/* === Safe enhancer: datalist suggestions for topic/subtopic === */
 (function(){
-  function isClozeMode(){
-    try{
-      if (window.APP_INPUT_MODE==='cloze') return true;
-      if (document.getElementById('btn-mode-cloze')?.classList.contains('active')) return true;
-      if (document.getElementById('rail-mode-cloze')?.classList.contains('active')) return true;
-      if (document.querySelector('.cloze, .cloze-blank, .blanks, [data-role="cloze"], [data-mode="cloze"]')) return true;
-    }catch(_){}
-    return false;
+  function ensureDatalist(id){
+    let dl = document.getElementById(id);
+    if (!dl){
+      dl = document.createElement('datalist');
+      dl.id = id;
+      document.body.appendChild(dl);
+    }
+    return dl;
   }
-  function visible(n){
-    if (!n) return false;
-    var s = window.getComputedStyle(n);
-    if (s.display==='none' || s.visibility==='hidden' || s.opacity==='0') return false;
-    var r = n.getBoundingClientRect();
-    return r.width>0 && r.height>0;
+  function fillOptions(dl, list){
+    dl.innerHTML = '';
+    (list||[]).forEach(v=>{
+      const opt = document.createElement('option');
+      opt.value = v;
+      dl.appendChild(opt);
+    });
   }
-  function collectClozeValues(){
-    var roots = Array.from(document.querySelectorAll('.cloze, .cloze-blank, .blanks, .answer-blanks, [data-role="cloze"], [data-mode="cloze"], [data-blanks]'));
-    if (roots.length===0){ roots = [document.body]; }
-    var sels = [
-      'input.cloze','input[data-cloze]','input[name^="cloze"]',
-      '.cloze input','.cloze-blank input','.blanks input','.answer-blanks input',
-      'input[data-blank]','[data-cloze-index] input','input[name^="blank"]',
-      'input[data-answer-index]','input[data-slot]','input[data-key]','input[data-num]','input[data-role="cloze"]'
-    ];
-    var nodes = [];
-    roots.forEach(function(root){
-      sels.forEach(function(s){
-        root.querySelectorAll(s).forEach(function(n){
-          if (nodes.indexOf(n)<0 && visible(n)) nodes.push(n);
-        });
+  function attachInputList(input, datalistId){
+    if (!input) return;
+    input.setAttribute('list', datalistId);
+  }
+  function refresh(){
+    const subjA = document.getElementById('f-subject');
+    const topicA = document.getElementById('f-topic');
+    const subA = document.getElementById('f-subtopic');
+    if (subjA && topicA){
+      const dlT = ensureDatalist('dl-topics-add');
+      const topics = (typeof topicsForSubject==='function') ? (topicsForSubject(subjA.value)||[]) : [];
+      fillOptions(dlT, topics);
+      attachInputList(topicA, 'dl-topics-add');
+    }
+    if (subjA && subA && topicA){
+      const dlS = ensureDatalist('dl-subtopics-add');
+      const subs = (typeof subtopicsFor==='function') ? (subtopicsFor(subjA.value, topicA.value||'')||[]) : [];
+      fillOptions(dlS, subs);
+      attachInputList(subA, 'dl-subtopics-add');
+    }
+    const subjE = document.getElementById('e-subject');
+    const topicE = document.getElementById('e-topic');
+    const subE = document.getElementById('e-subtopic');
+    if (subjE && topicE){
+      const dlTE = ensureDatalist('dl-topics-edit');
+      const topicsE = (typeof topicsForSubject==='function') ? (topicsForSubject(subjE.value)||[]) : [];
+      fillOptions(dlTE, topicsE);
+      attachInputList(topicE, 'dl-topics-edit');
+    }
+    if (subjE && subE && topicE){
+      const dlSE = ensureDatalist('dl-subtopics-edit');
+      const subsE = (typeof subtopicsFor==='function') ? (subtopicsFor(subjE.value, topicE.value||'')||[]) : [];
+      fillOptions(dlSE, subsE);
+      attachInputList(subE, 'dl-subtopics-edit');
+    }
+  }
+  function bindChanges(){
+    [['f-subject','f-topic','f-subtopic'], ['e-subject','e-topic','e-subtopic']].forEach(ids=>{
+      ids.forEach(id=>{
+        const el = document.getElementById(id);
+        if (el && !el.__dlbound){
+          el.__dlbound = true;
+          el.addEventListener('change', refresh);
+          el.addEventListener('input', function(){
+            if (id.endsWith('subject')) refresh();
+            if (id.endsWith('topic')) refresh();
+          });
+        }
       });
     });
-    var vals = nodes.map(function(n){ return (n.value||'').trim(); }).filter(function(v){ return v.length>0; });
-    return vals;
   }
-  function writeToAnswerTargets(text){
-    var targets = [
-      '#userAnswer','#answer','#answerText','#answer-text','#answer_input','#answerField',
-      'textarea[name="answer"]','textarea[name="userAnswer"]','input[name="answer"]','input[name="userAnswer"]',
-      '.answer-input','#your-answer-input'
-    ];
-    var wrote=false;
-    targets.forEach(function(sel){
-      var el = document.querySelector(sel);
-      if (!el) return;
-      try{
-        el.value = text;
-        el.textContent = text;
-        el.setAttribute('data-bridge','1');
-        el.dispatchEvent(new Event('input', {bubbles:true}));
-        el.dispatchEvent(new Event('change', {bubbles:true}));
-        wrote=true;
-      }catch(_){}
-    });
-    window.USER_ANSWER_TEXT = text;
-    return wrote;
+  function tick(){
+    refresh();
+    bindChanges();
   }
-  function updateYourAnswerView(text){
-    var candidates = Array.from(document.querySelectorAll('section, article, .card, .panel, .box, div'));
-    candidates = candidates.filter(function(el){
-      var t = (el.textContent||'').slice(0, 300);
-      return /あなたの回答/.test(t);
-    });
-    candidates.forEach(function(el){
-      var view = el.querySelector('#your-answer, .your-answer, [data-user-answer], .answer-view');
-      if (!view){
-        var poss = Array.from(el.querySelectorAll('textarea, pre, .content, .body, p, div')).find(function(n){
-          var tx=(n.textContent||'').trim();
-          return tx==='' || /未入力/.test(tx);
-        });
-        view = poss || el;
-      }
-      try{
-        view.textContent = text;
-        view.classList.add('bridged-answer');
-      }catch(_){}
-    });
+  if (document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(tick, 0);
+  } else {
+    document.addEventListener('DOMContentLoaded', tick);
   }
-  function aggregateAndBridge(){
-    if (!isClozeMode()) return false;
-    var vals = collectClozeValues();
-    var agg = vals.join(' ').trim();
-    if (agg.length===0) return false;
-    writeToAnswerTargets(agg);
-    updateYourAnswerView(agg);
-    return true;
-  }
-  function isGradeButton(target){
-    if (!target) return false;
-    return !!target.closest('#grade, #grade-button, [data-action="grade"], button.grade, .btn-grade, [data-btn="grade"], button[type="submit"]');
-  }
-  window.addEventListener('click', function(e){
-    if (isGradeButton(e.target)) aggregateAndBridge();
-  }, true);
-  window.addEventListener('keydown', function(e){
-    if (e.key==='Enter' && (e.metaKey || e.ctrlKey || e.shiftKey || !e.isComposing)){
-      if (document.activeElement && document.activeElement.closest('.cloze, .cloze-blank, .blanks, [data-role="cloze"], [data-mode="cloze"]')){
-        aggregateAndBridge();
-      }
-    }
-  }, true);
-  window.addEventListener('submit', function(e){ aggregateAndBridge(); }, true);
+  window.addEventListener('load', tick);
+  try{
+    const mo = new MutationObserver(()=>tick());
+    mo.observe(document.documentElement, {childList:true, subtree:true});
+  }catch(_){}
 })();
 
-// === Force FULL mode; block CLOZE entirely ===
+
+/* === Cloze linking & live validation === */
 (function(){
-  function forceFull(){
-    try{ window.APP_INPUT_MODE = 'full'; }catch(_){}
-    document.documentElement.classList.add('mode-full');
-    document.documentElement.classList.remove('mode-cloze');
-    var fullBtn = document.querySelector('#btn-mode-full, #rail-mode-full');
-    if (fullBtn){ fullBtn.classList.add('active'); }
-    var clozeBtn = document.querySelector('#btn-mode-cloze, #rail-mode-cloze');
-    if (clozeBtn){ clozeBtn.classList.remove('active'); }
+  function normalize(s){
+    if (s==null) return '';
+    try{ s = String(s).normalize('NFKC'); }catch(_){ s = String(s); }
+    s = s.replace(/\s+/g, ' ').trim();
+    s = s.replace(/[、   　，]/g, ',').replace(/[。．]/g, '.');
+    return s.toLowerCase();
   }
-  // Block any attempt to switch to cloze
-  window.addEventListener('app:mode', function(e){
-    try{
-      if (e && e.detail && e.detail.mode === 'cloze'){ forceFull(); }
-    }catch(_){}
-  }, true);
-  document.addEventListener('click', function(e){
-    if (e.target && e.target.closest('#btn-mode-cloze, #rail-mode-cloze, [data-mode=\"cloze\"], .mode-cloze')){
-      e.preventDefault(); e.stopPropagation();
-      forceFull();
+  function init(){
+    const card = document.querySelector('.cloze-card');
+    const inputsWrap = document.querySelector('.cloze-inputs');
+    if (!card || !inputsWrap) return;
+    card.querySelectorAll('.cloze-slot').forEach(span=>{
+      if (span.__bound) return; span.__bound = true;
+      span.addEventListener('click', ()=>{
+        const i = span.getAttribute('data-slot');
+        const inp = document.getElementById('cloze-'+i);
+        if (inp) inp.focus();
+      });
+    });
+    const prob = (window.state && Array.isArray(state.problems)) ? state.problems.find(x=>x.id===state.currentProblemId) : null;
+    const kws = prob && Array.isArray(prob.keywords) ? prob.keywords : [];
+    function update(i){
+      const slot = document.getElementById('slot-'+i);
+      const inp = document.getElementById('cloze-'+i);
+      if (!slot || !inp) return;
+      const got = normalize(inp.value||'');
+      const exp = normalize(kws[i-1]||'');
+      slot.classList.remove('ok','miss','empty');
+      inp.classList.remove('ok','miss');
+      if (!got){ slot.classList.add('empty'); return; }
+      if (got===exp){ slot.classList.add('ok'); inp.classList.add('ok'); }
+      else { slot.classList.add('miss'); inp.classList.add('miss'); }
     }
-  }, true);
-  window.addEventListener('load', forceFull);
-  // Safety: after SPA navigations
-  setInterval(forceFull, 1000);
+    for (let i=1;i<=kws.length;i++){
+      const inp = document.getElementById('cloze-'+i);
+      if (inp && !inp.__clozeLive){
+        inp.__clozeLive = true;
+        inp.addEventListener('input', ()=>update(i));
+        inp.addEventListener('change', ()=>update(i));
+      }
+      update(i);
+    }
+  }
+  function tick(){ init(); }
+  if (document.readyState==='complete' || document.readyState==='interactive'){ setTimeout(tick,0); }
+  else document.addEventListener('DOMContentLoaded', tick);
+  window.addEventListener('load', tick);
+  try{ const mo=new MutationObserver(()=>tick()); mo.observe(document.body,{childList:true,subtree:true}); }catch(_){}
 })();
 </script>
 </head>
@@ -1351,7 +1210,7 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
   </div>
   <div class="spacer"></div>
   <div class="mode">
-    <small></small>
+    <small>入力モード</small>
     <div class="seg">
       <button id="rail-mode-full">全文</button>
       <button id="rail-mode-cloze">穴埋め</button>
@@ -1367,7 +1226,7 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
   <div class="item" data-nav="settings"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58-1.92-3.32-2.4.97a7.34 7.34 0 0 0-1.62-.94l-.36-2.54h-3.84l-.36 2.54c-.57.22-1.12.53-1.62.94l-2.4-.97-1.92 3.32L4.86 11.06c-.03.31-.05.62-.05.94 0 .32.02.63.05.94l-2.03 1.58 1.92 3.32 2.4-.97c.5.41 1.05.72 1.62.94l.36 2.54h3.84l.36-2.54c.57-.22 1.12-.53 1.62-.94l2.4.97 1.92-3.32-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg><button>設定</button></div>
   <div class="item" data-nav="exit"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg><button>終了</button></div>
 </nav>
-<button id="mode-fab" aria-label="切替（全/穴）" title="切替">全</button>
+<button id="mode-fab" aria-label="入力モード切替（全/穴）" title="入力モード切替">全</button>
 
 <header>
   <h1 class="brand" class=\"brand\"><span class="dot"></span>司法試験 論証タイピング</h1>
@@ -1380,7 +1239,7 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
   </nav>
 
     <div id="global-inputmode" class="toolbar" style="padding:.4rem 1rem; border-bottom:1px solid var(--border); display:flex; gap:.5rem; align-items:center;">
-      <span class="small muted"></span>
+      <span class="small muted">入力モード</span>
       <button class="ghost" id="btn-mode-full" onclick="__setInputMode('full')">全文入力</button>
       <button class="ghost" id="btn-mode-cloze" onclick="__setInputMode('cloze')">穴埋め（番号入力）</button>
     </div>
@@ -2347,7 +2206,7 @@ function rawCountBySubject(name){
           <button class="back-to-list ghost" onclick="__backList()">← 問題一覧</button>
           <h2 style="margin:0 .5rem">Q: ${p.question}</h2>
           <div class="space"></div>
-          <div class="small">タイマー：<span id="timer" class="timer">00:00</span></div><div class="small muted" style="margin-left:.75rem">：${getInputMode()==="cloze"?"穴埋め":"全文"}</div>
+          <div class="small">タイマー：<span id="timer" class="timer">00:00</span></div><div class="small muted" style="margin-left:.75rem">入力モード：${getInputMode()==="cloze"?"穴埋め":"全文"}</div>
         </div>
         <div class="section">
           <label>あなたの回答</label>
@@ -2390,11 +2249,38 @@ ${(function(){
 
     window.__grade = ()=>{
       const elapsed = state.timerStart ? Math.round((Date.now()-state.timerStart)/1000) : null;
-      const txt = (document.getElementById('answer').value || '').trim();
+      let txt = (document.getElementById('answer').value || '').trim();
       const prob = state.problems.find(x=>x.id===state.currentProblemId);
-      const total = (prob.keywords||[]).length;
-      const matches = (prob.keywords||[]).filter(kw => txt.includes(kw));
-      const missing = (prob.keywords||[]).filter(kw => !txt.includes(kw));
+      
+      // override txt in cloze mode by aggregating #cloze-1..n
+      const __mode = (typeof getInputMode==='function') ? getInputMode() : 'full';
+      if (__mode==='cloze' && prob && Array.isArray(prob.keywords) && prob.keywords.length){
+        const parts = [];
+        for (let i=1;i<=prob.keywords.length;i++){
+          const el = document.getElementById('cloze-'+i);
+          parts.push(el ? String(el.value||'').trim() : '');
+        }
+        txt = parts.join(' ');
+      }
+                 const total = (prob.keywords||[]).length;
+      let matches=[], missing=[];
+      const __mode2 = (typeof getInputMode==='function') ? getInputMode() : 'full';
+      function __norm(s){ try{ s = String(s||'').normalize('NFKC'); }catch(_){ s = String(s||''); } s = s.replace(/\s+/g,' ').trim().replace(/[、，]/g,',').replace(/[。．]/g,'.').toLowerCase(); return s; }
+      if (__mode2==='cloze' && total>0){
+        const parts = [];
+        for (let i=1;i<=total;i++){
+          const el = document.getElementById('cloze-'+i);
+          parts.push(el ? (el.value||'') : '');
+        }
+        for (let i=0;i<total;i++){
+          if (__norm(parts[i]) === __norm(prob.keywords[i])) matches.push(prob.keywords[i]);
+          else missing.push(prob.keywords[i]);
+        }
+      }else{
+        const nTxt = __norm(txt);
+        matches = (prob.keywords||[]).filter(kw => nTxt.includes(__norm(kw)));
+        missing = (prob.keywords||[]).filter(kw => !nTxt.includes(__norm(kw)));
+      }
 
       let score="✕", cls="score-bad", scoreDetail="";
       if (total===0){
