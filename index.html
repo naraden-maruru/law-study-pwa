@@ -61,19 +61,29 @@
       line-height:1; border-radius:var(--radius-md);
       font-weight:600;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
     }
-    button:hover { filter: brightness(1.1); }
+    button:hover { 
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: none;
+      transform: none;
+    }
     button.primary{
       height:42px; padding:0 1rem; font-weight:700;
       background:linear-gradient(180deg, #143057 0%, #0e2240 100%);
       border:1px solid #0e2240; color:#fff;
     }
-    button.primary:hover { filter: brightness(1.05); transform: scale(1.02); }
+    button.primary:hover { filter: brightness(1.1); transform: scale(1.02); }
     button.ghost{
       height:42px; padding:0 .95rem; font-weight:700;
       border:1px solid var(--line); background:#fff;
     }
-    button.ghost:hover{ border-color:#d9cfbf; }
+    button.ghost:hover{ border-color:#d9cfbf; background-color: #fcfcfc; }
     .badge{ display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:22px; padding:0 .5rem;
       border-radius:999px; background:var(--accent-2); color:#fff; font-weight:600; font-size:.75rem }
     .pill{ display:inline-flex; align-items:center; padding:.22rem .6rem; border:1px solid var(--line); border-radius:999px; background:var(--panel); font-weight:600 }
@@ -537,7 +547,7 @@
 <button id="iphone-exit" aria-label="終了（iPhone専用）" title="終了">終</button>
 
 <script>
-(() => {
+const app = (()=>{
   // ===== Debug overlay =====
   function showError(msg){
     try{
@@ -1178,29 +1188,8 @@
     const answeredDueToday = getAnsweredDueTodayCount();
     const answeredToday = todayCount();
     const streak = calcStreak();
-    const stats = calculateAllSubjectStats();
     const radarData = calculateRadarChartData();
     const globalStats = calculateGlobalStats();
-
-    const statsHtml = stats.length > 0 ? stats.map(s => `
-      <div class="subject-stat-item">
-        <div class="subject-name">${s.subjectName}</div>
-        <div class="stat-row">
-          <div class="label">達成率</div>
-          <div class="progress-bar-container">
-            <div class="progress-bar" style="width: ${s.achievementRate.toFixed(1)}%;"></div>
-          </div>
-          <div class="value">${s.achievementRate.toFixed(0)}%</div>
-        </div>
-        <div class="stat-row">
-          <div class="label">正解率</div>
-          <div class="progress-bar-container">
-            <div class="progress-bar" style="width: ${s.correctRate.toFixed(1)}%;"></div>
-          </div>
-          <div class="value">${s.correctRate.toFixed(0)}%</div>
-        </div>
-      </div>
-    `).join('') : '<p class="muted small">まだ学習履歴がありません。問題を解いてみましょう。</p>';
     
     $app.innerHTML = `
       <div class="card">
@@ -1239,12 +1228,6 @@
       <div class="card">
         <h3>学習バランス</h3>
         <canvas id="radarChart"></canvas>
-      </div>
-      <div class="card">
-        <h3>科目別 進捗</h3>
-        <div class="subject-stats-list section">
-          ${statsHtml}
-        </div>
       </div>
     `;
 
@@ -1327,8 +1310,8 @@
               <strong>${escapeHtml(p.question)}</strong>
               <div class="muted small">${escapeHtml(subjectLabel(p.subject))} > ${escapeHtml(p.topic)} > ${escapeHtml(p.subtopic)}</div>
             </div>
-            <button class="ghost" onclick="__startQuiz(${p.id})">解く</button>
-            <button class="ghost" onclick="__editProblem(${p.id})">編集</button>
+            <button class="ghost" onclick="app.startQuiz(${p.id})">解く</button>
+            <button class="ghost" onclick="app.editProblem(${p.id})">編集</button>
           </div>
         </div>
       `).join('');
@@ -1349,20 +1332,17 @@
     return `
       <div class="section flex" style="gap:.75rem;align-items:center">
         <label class="small">重要度：</label>
-        <select onchange="__setImp(this.value)">${impOpts}</select>
+        <select onchange="app.setImp(this.value)">${impOpts}</select>
         <label class="small">自己評価：</label>
-        <select onchange="__setSelf(this.value)">${selfOpts}</select>
+        <select onchange="app.setSelf(this.value)">${selfOpts}</select>
         <label class="small" style="margin-left:1rem">件数</label>
         <input type="number" id="count-subject" min="1" step="1" placeholder="（空=全件）" style="max-width:6rem">
         <div class="space"></div>
-        <button class="ghost" onclick="__resetFilters()">リセット</button>
+        <button class="ghost" onclick="app.resetFilters()">リセット</button>
       </div>
     `;
   }
-  window.__setImp = (v)=>{ state.currentImportance=v; render(); };
-  window.__setSelf = (v)=>{ state.currentSelf=v; render(); };
-  window.__resetFilters = ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); };
-
+  
   function rawCountBySubject(name){
     const ids = idsBySubject(name);
     return ids.map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length;
@@ -1370,7 +1350,7 @@
 
   function renderSubjects(){
     const coreHtml = CORE_SUBJECTS.map(s=>`
-      <div class="list-item" style="cursor:pointer" onclick="__selectSubject('${s}')">
+      <div class="list-item" style="cursor:pointer" onclick="app.selectSubject('${s}')">
         <div class="flex">
           <strong>${s}</strong>
           <span class="pill">${rawCountBySubject(s)} 問</span>
@@ -1379,7 +1359,7 @@
       </div>`).join('');
 
     const electiveHtml = `
-      <div class="list-item" style="cursor:pointer" onclick="__selectElective()">
+      <div class="list-item" style="cursor:pointer" onclick="app.selectElective()">
         <div class="flex">
           <strong>選択科目</strong>
           <span class="pill">${rawCountBySubject("__ELECTIVE__")} 問</span>
@@ -1405,8 +1385,6 @@
         </div>
       </div>
     `;
-    window.__selectSubject = (s)=>{ state.currentSubject = s; state.currentTopic='all'; state.currentSubtopic='all'; setActive('topics'); };
-    window.__selectElective = ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; setActive('topics'); };
   }
   
   function topicCount(subj, topic){ return idsByTopic(subj, topic).map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length; }
@@ -1434,14 +1412,14 @@
     if (!subj){ setActive('subjects'); return; }
     const topics = topicsForSubject(subj);
     const list = topics.filter(t=>t).map(t=>`
-      <div class="list-item" style="cursor:pointer" onclick="__selectTopic('${t.replace(/'/g,"\\'")}')">
+      <div class="list-item" style="cursor:pointer" onclick="app.selectTopic('${t.replace(/'/g,"\\'")}')">
         <div class="list-title">
           <strong>${t}</strong>
           <span class="pill">${topicCount(subj, t)} 件</span>
         </div>
         <div class="list-actions">
-          <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\\'")}', false)">順番</button>
-          <button class="ghost" onclick="event.stopPropagation();__startTopic('${t.replace(/'/g,"\\'")}', true)">ランダム</button>
+          <button class="ghost" onclick="event.stopPropagation();app.startTopic('${t.replace(/'/g,"\\'")}', false)">順番</button>
+          <button class="ghost" onclick="event.stopPropagation();app.startTopic('${t.replace(/'/g,"\\'")}', true)">ランダム</button>
         </div>
       </div>
     `).join('');
@@ -1451,19 +1429,19 @@
     $app.innerHTML = `
       <div class="card">
         <div class="flex">
-          <button class="ghost" onclick="setActive('subjects')">← 科目一覧</button>
+          <button class="ghost" onclick="app.setActive('subjects')">← 科目一覧</button>
           <h2 style="margin:0 .5rem">科目：${subjectLabel(subj)}（${subjectCount} 件）</h2>
         </div>
         ${filterBarHTML()}
         <div class="section">
           <div class="list-item">
-            <div style="cursor:pointer" onclick="__selectTopic('all')" class="list-title">
+            <div style="cursor:pointer" onclick="app.selectTopic('all')" class="list-title">
               <strong>（この科目の全て）</strong>
               <span class="pill">${subjectCount} 件</span>
             </div>
             <div class="list-actions">
-              <button class="ghost" onclick="__startSubjectAll(false)">順番</button>
-              <button class="ghost" onclick="__startSubjectAll(true)">ランダム</button>
+              <button class="ghost" onclick="app.startSubjectAll(false)">順番</button>
+              <button class="ghost" onclick="app.startSubjectAll(true)">ランダム</button>
             </div>
           </div>
         </div>
@@ -1477,37 +1455,20 @@
         <div class="section">
           <h3>未分類の分野</h3>
           <div class="list-item">
-            <div style="cursor:pointer" onclick="__selectTopic('')" class="list-title">
+            <div style="cursor:pointer" onclick="app.selectTopic('')" class="list-title">
               <strong>未分類</strong>
               <span class="pill">${unclassifiedTopicCount(subj)} 件</span>
             </div>
             <div class="list-actions">
-              <button class="ghost" onclick="__startTopic('', false)">順番</button>
-              <button class="ghost" onclick="event.stopPropagation();__startTopic('', true)">ランダム</button>
+              <button class="ghost" onclick="app.startTopic('', false)">順番</button>
+              <button class="ghost" onclick="event.stopPropagation();app.startTopic('', true)">ランダム</button>
             </div>
           </div>
         </div>` : ''}
       </div>
     `;
-    window.__selectTopic = (t)=>{
-      state.currentTopic = t;
-      state.currentSubtopic = 'all';
-      setActive((t==='all') ? 'list' : 'subtopics');
-    };
-    window.__startSubjectAll = (rnd)=>{
-      let ids = idsBySubject(subj);
-      const n = getSubjectCount();
-      ids = pickWithLimit(ids, n, rnd);
-      startQueue(ids, false);
-    };
-    window.__startTopic = (topic, rnd)=>{
-      let ids = idsByTopic(subj, topic);
-      const n = getSubjectCount();
-      ids = pickWithLimit(ids, n, rnd);
-      startQueue(ids, false);
-    };
   }
-
+  
   function subtopicCount(subj, topic, subtopic){ return idsBySubtopic(subj, topic, subtopic).map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length; }
   function unclassifiedSubtopicCount(subj, topic){ return idsBySubtopic(subj, topic, "").map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length; }
   
@@ -1519,14 +1480,14 @@
 
     const subs = subtopicsFor(subj, topic);
     const list = subs.map(st=>`
-      <div class="list-item" style="cursor:pointer" onclick="__selectSubtopic('${st.replace(/'/g,"\\'")}')">
+      <div class="list-item" style="cursor:pointer" onclick="app.selectSubtopic('${st.replace(/'/g,"\\'")}')">
         <div class="list-title">
           <strong>${st}</strong>
           <span class="pill">${subtopicCount(subj, topic, st)} 件</span>
         </div>
         <div class="list-actions">
-          <button class="ghost" onclick="event.stopPropagation();__startSubtopic('${st.replace(/'/g,"\\'")}', false)">順番</button>
-          <button class="ghost" onclick="event.stopPropagation();__startSubtopic('${st.replace(/'/g,"\\'")}', true)">ランダム</button>
+          <button class="ghost" onclick="event.stopPropagation();app.startSubtopic('${st.replace(/'/g,"\\'")}', false)">順番</button>
+          <button class="ghost" onclick="event.stopPropagation();app.startSubtopic('${st.replace(/'/g,"\\'")}', true)">ランダム</button>
         </div>
       </div>
     `).join('');
@@ -1536,19 +1497,19 @@
     $app.innerHTML = `
       <div class="card">
         <div class="flex">
-          <button class="ghost" onclick="setActive('topics')">← 分野一覧</button>
-          <button class="ghost" onclick="setActive('subjects')">← 科目一覧</button>
+          <button class="ghost" onclick="app.setActive('topics')">← 分野一覧</button>
+          <button class="ghost" onclick="app.setActive('subjects')">← 科目一覧</button>
           <h2 style="margin:0 .5rem">科目：${subjectLabel(subj)} / 分野：${topic}（${topicAll} 件）</h2>
         </div>
         <div class="section">
           <div class="list-item">
-            <div style="cursor:pointer" onclick="__selectSubtopic('all')" class="list-title">
+            <div style="cursor:pointer" onclick="app.selectSubtopic('all')" class="list-title">
               <strong>（この分野の全て）</strong>
               <span class="pill">${topicAll} 件</span>
             </div>
             <div class="list-actions">
-              <button class="ghost" onclick="__startTopicAll(false)">順番</button>
-              <button class="ghost" onclick="__startTopicAll(true)">ランダム</button>
+              <button class="ghost" onclick="app.startTopicAll(false)">順番</button>
+              <button class="ghost" onclick="app.startTopicAll(true)">ランダム</button>
             </div>
           </div>
         </div>
@@ -1562,31 +1523,18 @@
         <div class="section">
           <h3>未分類の小分類</h3>
           <div class="list-item">
-            <div style="cursor:pointer" onclick="__selectSubtopic('')" class="list-title">
+            <div style="cursor:pointer" onclick="app.selectSubtopic('')" class="list-title">
               <strong>未分類</strong>
               <span class="pill">${unclassifiedSubtopicCount(subj, topic)} 件</span>
             </div>
             <div class="list-actions">
-              <button class="ghost" onclick="__startSubtopic('', false)">順番</button>
-              <button class="ghost" onclick="event.stopPropagation();__startSubtopic('', true)">ランダム</button>
+              <button class="ghost" onclick="app.startSubtopic('', false)">順番</button>
+              <button class="ghost" onclick="event.stopPropagation();app.startSubtopic('', true)">ランダム</button>
             </div>
           </div>
         </div>` : ''}
       </div>
     `;
-    window.__selectSubtopic = (st)=>{ state.currentSubtopic = st; setActive('list'); };
-    window.__startTopicAll = (rnd)=>{
-      let ids = idsByTopic(subj, topic);
-      const n = getSubjectCount();
-      ids = pickWithLimit(ids, n, rnd);
-      startQueue(ids, false);
-    };
-    window.__startSubtopic = (st, rnd)=>{
-      let ids = idsBySubtopic(subj, topic, st);
-      const n = getSubjectCount();
-      ids = pickWithLimit(ids, n, rnd);
-      startQueue(ids, false);
-    };
   }
 
   function startQueue(ids, randomize, mode){
@@ -1609,16 +1557,16 @@
     $app.innerHTML = `
       <div class="card">
         <div class="flex">
-          ${state.currentTopic!=='all' ? `<button class="ghost" onclick="setActive('subtopics')">← 小分類一覧</button>` : ''}
-          <button class="ghost" onclick="setActive('topics')">← 分野一覧</button>
-          <button class="ghost" onclick="setActive('subjects')">← 科目一覧</button>
+          ${state.currentTopic!=='all' ? `<button class="ghost" onclick="app.setActive('subtopics')">← 小分類一覧</button>` : ''}
+          <button class="ghost" onclick="app.setActive('topics')">← 分野一覧</button>
+          <button class="ghost" onclick="app.setActive('subjects')">← 科目一覧</button>
           <h2 style="margin:0 .5rem">科目：${subjectLabel(state.currentSubject)} / 分野：${topicLabel} / 小分類：${subLabel}（${list.length} 件）</h2>
         </div>
         <div class="section">
           <div class="list-title"><strong>この一覧の全問題を連続演習：</strong></div>
           <div class="list-actions">
-            <button class="ghost" ${disabled} onclick="__startAll(false)">順番</button>
-            <button class="ghost" ${disabled} onclick="__startAll(true)">ランダム</button>
+            <button class="ghost" ${disabled} onclick="app.startAll(false)">順番</button>
+            <button class="ghost" ${disabled} onclick="app.startAll(true)">ランダム</button>
           </div>
         </div>
         <div class="section">
@@ -1635,9 +1583,9 @@
                   ${tagBadge}
                 </div>
                 <div class="section flex">
-                  <button class="primary" onclick="__startQuiz(${p.id})">この問題を解く</button>
-                  <button class="ghost" onclick="__editProblem(${p.id})">編集</button>
-                  <button class="ghost danger" onclick="__deleteProblem(${p.id})">削除</button>
+                  <button class="primary" onclick="app.startQuiz(${p.id})">この問題を解く</button>
+                  <button class="ghost" onclick="app.editProblem(${p.id})">編集</button>
+                  <button class="ghost danger" onclick="app.deleteProblem(${p.id})">削除</button>
                 </div>
               </div>`;
             }).join('')
@@ -1645,25 +1593,6 @@
         </div>
       </div>
     `;
-    window.__startAll = (rnd)=>{
-      let base = ids.slice();
-      const n = getSubjectCount();
-      const chosen = pickWithLimit(base, n, rnd);
-      startQueue(chosen, false);
-    };
-    window.__startQuiz = (id)=>{ state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); setActive('quiz'); };
-    window.__editProblem = (id)=>{ state.currentProblemId = id; setActive('edit'); };
-    window.__deleteProblem = (id)=>{
-      const target = state.problems.find(p=>p.id===id);
-      if (!target) return;
-      if (!confirm(`次の問題を削除します。よろしいですか？\n\n「${target.question}」`)) return;
-      state.problems = state.problems.filter(p=>p.id!==id);
-      reindex();
-      saveLocal(state.problems, sessionsState.logs);
-      scheduleFileSave();
-      updateNavBadges();
-      renderList();
-    };
   }
   
   function idsForNav(){
@@ -1686,7 +1615,7 @@
     $app.innerHTML = `
       <div class="card">
         <div class="flex">
-          <button class="back-to-list ghost" onclick="setActive('list')">← 問題一覧</button>
+          <button class="back-to-list ghost" onclick="app.setActive('list')">← 問題一覧</button>
           <h2 style="margin:0 .5rem">Q: ${p.question}</h2>
           <div class="space"></div>
           <div class="small">タイマー：<span id="timer" class="timer">00:00</span></div><div class="small muted" style="margin-left:.75rem">入力モード：${getInputMode()==="cloze"?"穴埋め":"全文"}</div>
@@ -1706,9 +1635,9 @@
             }catch(_){ return ''; }
           })()}
           <div class="section flex">
-            ${prevExists ? `<button class="ghost" onclick="__prev()">◀ 前の問題へ</button>` : ""}
-            <button class="primary" id="btn-grade" onclick="__grade()" title="ショートカット: ⌘/Ctrl + Enter">採点する</button>
-            ${nextExists ? `<button class="ghost" onclick="__next()">次の問題へ ▶</button>` : ""}
+            ${prevExists ? `<button class="ghost" onclick="app.prev()">◀ 前の問題へ</button>` : ""}
+            <button class="primary" id="btn-grade" onclick="app.grade()" title="ショートカット: ⌘/Ctrl + Enter">採点する</button>
+            ${nextExists ? `<button class="ghost" onclick="app.next()">次の問題へ ▶</button>` : ""}
           </div>
           <div class="small muted">ショートカット：採点 <span class="kbd">⌘</span>/<span class="kbd">Ctrl</span>+<span class="kbd">Enter</span>、前へ <span class="kbd">K</span>、次へ <span class="kbd">J</span>、自己評価 <span class="kbd">1</span>/<span class="kbd">2</span>/<span class="kbd">3</span></div>
         </div>
@@ -1716,171 +1645,6 @@
       </div>
     `;
     startTimer();
-    window.__prev = ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; renderQuiz(); } };
-    window.__next = ()=>{ const id=navNextId(); if (id){ state.currentProblemId=id; renderQuiz(); } else showNoNext(); };
-    window.__goHome = ()=> { endSession(); stopTimer(); setActive('home'); };
-
-    function showNoNext(){
-      document.getElementById('result').innerHTML = `<div class="card"><div class="muted">キュー内の問題を解き終えました。</div><div class="section flex"><button class="ghost" onclick="__goHome()">トップへ戻る</button><button class="ghost" onclick="setActive('review')">復習ダッシュボードに戻る</button></div></div>`;
-      endSession();
-      stopTimer();
-    }
-
-    window.__grade = ()=>{
-      const elapsed = state.timerStart ? Math.round((Date.now()-state.timerStart)/1000) : null;
-      let txt = (document.getElementById('answer').value || '').trim();
-      const prob = state.problems.find(x=>x.id===state.currentProblemId);
-      
-      const __mode = (typeof getInputMode==='function') ? getInputMode() : 'full';
-      if (__mode==='cloze' && prob && Array.isArray(prob.keywords) && prob.keywords.length){
-        const parts = [];
-        for (let i=1;i<=prob.keywords.length;i++){
-          const el = document.getElementById('cloze-'+i);
-          parts.push(el ? String(el.value||'').trim() : '');
-        }
-        txt = parts.join(' ');
-      }
-      const total = (prob.keywords||[]).length;
-      let matches=[], missing=[];
-      function __norm(s){ try{ s = String(s||'').normalize('NFKC'); }catch(_){ s = String(s||''); } s = s.replace(/\s+/g,' ').trim().replace(/[、，]/g,',').replace(/[。．]/g,'.').toLowerCase(); return s; }
-      if (__mode==='cloze' && total>0){
-        const parts = [];
-        for (let i=1;i<=total;i++){
-          const el = document.getElementById('cloze-'+i);
-          parts.push(el ? (el.value||'') : '');
-        }
-        for (let i=0;i<total;i++){
-          if (__norm(parts[i]) === __norm(prob.keywords[i])) matches.push(prob.keywords[i]);
-          else missing.push(prob.keywords[i]);
-        }
-      }else{
-        const nTxt = __norm(txt);
-        matches = (prob.keywords||[]).filter(kw => nTxt.includes(__norm(kw)));
-        missing = (prob.keywords||[]).filter(kw => !nTxt.includes(__norm(kw)));
-      }
-
-      let score="✕", cls="score-bad", scoreDetail="";
-      if (total===0){
-        score="—"; cls=""; scoreDetail="（キーワード未設定のため採点なし）";
-      }else{
-        const ratio = matches.length / total;
-        if (ratio===1){ score="◎"; cls="score-okay"; }
-        else if (ratio>=0.6){ score="○"; cls="score-mid"; }
-        else if (ratio>0){ score="△"; cls="score-low"; }
-        else { score="✕"; cls="score-bad"; }
-        scoreDetail = `（${matches.length} / ${total}）`;
-      }
-
-      const t = todayStr();
-      const nextByScore = (()=>{
-        if (score==="◎") return [7,14,30];
-        if (score==="○") return [3,7,14,30];
-        if (score==="△") return [1,3,7,14];
-        if (score==="✕") return [1,3];
-        return [1,3,7,14,30];
-      })().map(addDaysLocal);
-      prob.reviews = (prob.reviews || []).filter(d=>d>t);
-      const set = new Set([...(prob.reviews||[]), ...nextByScore]);
-      prob.reviews = Array.from(set).sort();
-
-      prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, secs: elapsed, self:null});
-      try {
-        const mode = (sessionsState.current && sessionsState.current.context && sessionsState.current.context.mode) || null;
-        if (mode === 'weak' && score === '◎') {
-          prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 3);
-        }
-      } catch(_) {}
-
-      bumpSessionOnScore(score);
-      addDailyAnswered(1);
-
-      saveLocal(state.problems, sessionsState.logs);
-      scheduleFileSave();
-      updateNavBadges();
-
-      function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-      let escaped = escapeHtml(txt);
-      matches.forEach(kw=>{
-        const re = new RegExp(escReg(kw), 'g');
-        escaped = escaped.replace(re, `<mark class="hit">${kw}</mark>`);
-      });
-
-      let modelEscaped = escapeHtml(prob.example || "（登録なし）");
-      (prob.keywords || []).forEach(kw=>{
-        if (!kw) return;
-        const re = new RegExp(escReg(kw), 'g');
-        const has = matches.includes(kw);
-        modelEscaped = modelEscaped.replace(re, `<mark class="${has?'hit':'miss'}">${kw}</mark>`);
-      });
-
-      const currentSel = (()=>{ for(let i=prob.history.length-1;i>=0;i--){ if (prob.history[i].self) return prob.history[i].self; } return null; })();
-
-      document.getElementById('result').innerHTML = `
-        <div class="card">
-          <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail} ${elapsed!=null? `<span class="muted small">（所要 ${Math.floor(elapsed/60)}分${elapsed%60}秒）</span>`:''}</div>
-          <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div>
-          ${ total>0 ? `<div class="section"><strong>抜けていたキーワード</strong><div>${missing.length? missing.map(k=>`<span class='kw kw-miss'>${k}</span>`).join(' ') : "なし"}</div></div>` : ""}
-          <div class="section">
-            <label>あなたの回答（命中キーワードをハイライト）</label>
-            <div style="white-space:pre-line;border:1px dashed #ccc;border-radius:.6rem;padding:.6rem;background:#fcfcfc">${escaped || "（未入力）"}</div>
-          </div>
-          <div class="section">
-            <strong>模範解答（命中=黄／抜け=桃）</strong>
-            <div style="white-space:pre-line;border:1px solid #dbeafe;background:#eff6ff;border-radius:.6rem;padding:.6rem">${modelEscaped}</div>
-          </div>
-          ${prob.note ? `<div class="section"><strong>補足情報</strong><div class="note">${escapeHtml(prob.note)}</div></div>` : ""}
-          <div class="section">
-            <strong>自己評価：</strong>
-            <div class="flex" id="selfBtns" style="margin-top:.5rem">
-              <button class="ghost selfbtn ${currentSel==='perfect'?'active':''}" data-tag="perfect" onclick="__selfMark('perfect')">できた</button>
-              <button class="ghost selfbtn ${currentSel==='unsure'?'active':''}" data-tag="unsure" onclick="__selfMark('unsure')">普通</button>
-              <button class="ghost selfbtn ${currentSel==='fail'?'active':''}" data-tag="fail" onclick="__selfMark('fail')">できない</button>
-            </div>
-          </div>
-          <div class="section flex">
-            <button class="ghost" onclick="__goHome()">トップへ戻る</button>
-            ${!!navPrevId() ? `<button class="ghost" onclick="__prev()">◀ 前の問題へ</button>` : ''}
-            ${!!navNextId() ? `<button class="primary" onclick="__next()">次の問題へ ▶</button>` : '<span class="muted">（キューの最後です）</span>'}
-          </div>
-        </div>
-      `;
-    };
-
-    window.__selfMark = (tag)=>{
-      const prob = state.problems.find(x=>x.id===state.currentProblemId);
-      const last = prob.history[prob.history.length-1];
-      if (last) last.self = tag;
-      prob.selfStats = prob.selfStats || {perfect:0,unsure:0,fail:0};
-      if (tag==='perfect') prob.selfStats.perfect++;
-      if (tag==='unsure') { prob.selfStats.unsure++; prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 2); }
-      if (tag==='fail')   { prob.selfStats.fail++;   prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 3); }
-      saveLocal(state.problems, sessionsState.logs);
-      scheduleFileSave();
-      updateNavBadges();
-      document.querySelectorAll('.selfbtn').forEach(b=> b.classList.remove('active'));
-      const target = Array.from(document.querySelectorAll('.selfbtn')).find(b=> b.getAttribute('data-tag')===tag);
-      if (target) target.classList.add('active');
-    };
-  }
-
-  function lastAnswerYmdLocal(p){
-    if (!Array.isArray(p.history) || p.history.length===0) return null;
-    let last = null;
-    for (let i=0;i<p.history.length;i++){
-      const h = p.history[i];
-      if (h && h.date){
-        const ymd = ymdLocal(new Date(h.date));
-        if (!last || ymd > last) last = ymd;
-      }
-    }
-    return last;
-  }
-
-  function getReviewTimingLabel(p) {
-    const lastAnswer = lastAnswerYmdLocal(p);
-    if (!lastAnswer) return '初回';
-    const days = daysBetweenLocal(todayStr(), lastAnswer);
-    return `${days}日後の復習`;
   }
 
   function renderReview(){
@@ -1900,7 +1664,7 @@
             <div class="review-detail-item">
               <span class="timing-tag">${getReviewTimingLabel(p)}</span>
               <span class="space">${escapeHtml(p.question)}</span>
-              <button class="ghost" onclick="__startQuiz(${p.id})">解く</button>
+              <button class="ghost" onclick="app.startQuiz(${p.id})">解く</button>
             </div>
           `;
         }).join('') : '<p class="muted small" style="text-align: center;">今日復習する問題はありません。</p>'}
@@ -1911,19 +1675,19 @@
       <div class="card">
         <h2>復習</h2>
         <div class="review-tabs">
-          <button class="review-tab ${state.reviewTab === 'today' ? 'active' : ''}" onclick="__setReviewTab('today')">今日の復習</button>
-          <button class="review-tab ${state.reviewTab === 'weak' ? 'active' : ''}" onclick="__setReviewTab('weak')">弱点ドリル</button>
-          <button class="review-tab ${state.reviewTab === 'custom' ? 'active' : ''}" onclick="__setReviewTab('custom')">カスタム演習</button>
+          <button class="review-tab ${state.reviewTab === 'today' ? 'active' : ''}" onclick="app.setReviewTab('today')">今日の復習</button>
+          <button class="review-tab ${state.reviewTab === 'weak' ? 'active' : ''}" onclick="app.setReviewTab('weak')">弱点ドリル</button>
+          <button class="review-tab ${state.reviewTab === 'custom' ? 'active' : ''}" onclick="app.setReviewTab('custom')">カスタム演習</button>
         </div>
 
         <div id="tab-today" class="tab-content ${state.reviewTab === 'today' ? 'active' : ''}">
-          <div class="action-card primary" style="cursor: pointer;" onclick="__toggleReviewTodayList()">
+          <div class="action-card primary" style="cursor: pointer;" onclick="app.toggleReviewTodayList()">
             <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v2H3zM3 10h18v2H3zM3 16h12v2H3z"/></svg>
             <h3 class="title">今日やる問題 (${dueToday.length}件)</h3>
             <p class="description">間隔反復に基づき、今日復習すべき問題です。クリックして一覧を表示します。</p>
             <div class="actions">
-              <button class="ghost" style="background: #fff; color: var(--accent);" ${dueToday.length === 0 ? 'disabled' : ''} onclick='event.stopPropagation(); __startQueue(${dueTodayJson}, false)'>順番に解く</button>
-              <button class="ghost" style="background: #fff; color: var(--accent);" ${dueToday.length === 0 ? 'disabled' : ''} onclick='event.stopPropagation(); __startQueue(${dueTodayJson}, true)'>ランダムで解く</button>
+              <button class="ghost" style="background: #fff; color: var(--accent);" ${dueToday.length === 0 ? 'disabled' : ''} onclick='event.stopPropagation(); app.startQueue(${dueTodayJson}, false)'>順番に解く</button>
+              <button class="ghost" style="background: #fff; color: var(--accent);" ${dueToday.length === 0 ? 'disabled' : ''} onclick='event.stopPropagation(); app.startQueue(${dueTodayJson}, true)'>ランダムで解く</button>
             </div>
           </div>
           ${todayListHtml}
@@ -1936,13 +1700,13 @@
             <div class="section">
               <strong>「普通」と評価した問題 (${weakUnsure.length}件)</strong>
               <div class="actions" style="margin-top: 0.5rem">
-                <button class="ghost" ${weakUnsure.length === 0 ? 'disabled' : ''} onclick='__startQueue(${weakUnsureJson}, true)'>ランダムで解く</button>
+                <button class="ghost" ${weakUnsure.length === 0 ? 'disabled' : ''} onclick='app.startQueue(${weakUnsureJson}, true)'>ランダムで解く</button>
               </div>
             </div>
             <div class="section">
               <strong>「できない」と評価した問題 (${weakFail.length}件)</strong>
               <div class="actions" style="margin-top: 0.5rem">
-                <button class="ghost" ${weakFail.length === 0 ? 'disabled' : ''} onclick='__startQueue(${weakFailJson}, true)'>ランダムで解く</button>
+                <button class="ghost" ${weakFail.length === 0 ? 'disabled' : ''} onclick='app.startQueue(${weakFailJson}, true)'>ランダムで解く</button>
               </div>
             </div>
           </div>
@@ -1966,17 +1730,6 @@
         </div>
       </div>
     `;
-    
-    window.__setReviewTab = (tabName) => {
-      state.reviewTab = tabName;
-      state.reviewTodayListVisible = false; // タブ切り替えでリストを閉じる
-      renderReview();
-    };
-    window.__toggleReviewTodayList = () => {
-      state.reviewTodayListVisible = !state.reviewTodayListVisible;
-      renderReview();
-    };
-    window.__startQueue = (ids, rnd)=> startQueue(ids, rnd);
     
     const btnRandStart = document.getElementById('btnRandStart');
     if(btnRandStart) {
@@ -2040,7 +1793,7 @@
           <textarea id="f-note"></textarea>
         </div>
         <div class="section flex">
-          <button class="primary" onclick="__addSubmit()">追加する</button>
+          <button class="primary" onclick="app.addSubmit()">追加する</button>
         </div>
       </div>
     `;
@@ -2093,44 +1846,6 @@
 
     sel.addEventListener('change', ()=>{ mountTopic(); });
     mountTopic();
-    
-    window.__addSubmit = ()=>{
-      const subject = document.getElementById('f-subject').value;
-      let topic = '';
-      const tSel = document.getElementById('f-topic');
-      if (tSel) {
-        topic = (tSel.value === "__NEW__") ? (document.getElementById('f-topic-new').value || '').trim() : tSel.value;
-      } else {
-        topic = (document.getElementById('f-topic-new').value || '').trim();
-      }
-      let subtopic = '';
-      const sSel = document.getElementById('f-subtopic');
-      if (sSel) {
-        subtopic = (sSel.value === "__NEW__") ? (document.getElementById('f-subtopic-new').value || '').trim() : sSel.value;
-      } else {
-        subtopic = (document.getElementById('f-subtopic-new').value || '').trim();
-      }
-      const importance = document.getElementById('f-importance').value;
-      const question = (document.getElementById('f-question').value||'').trim();
-      const example  = (document.getElementById('f-example').value||'').trim();
-      const keywordsRaw = (document.getElementById('f-keywords').value||'');
-      const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : [];
-      const note     = (document.getElementById('f-note').value||'').trim();
-      if (!question) {
-        showToast('問題文を入力してください。', 'error');
-        return;
-      }
-      state.problems.push({ id: Date.now()+Math.floor(Math.random()*1000), subject, topic, subtopic, importance, question, example, keywords, note, history:[], reviews:[], selfStats:{perfect:0,unsure:0,fail:0} });
-      reindex();
-      saveLocal(state.problems, sessionsState.logs);
-      scheduleFileSave();
-      updateNavBadges();
-      document.getElementById('f-question').value='';
-      document.getElementById('f-example').value='';
-      document.getElementById('f-keywords').value='';
-      document.getElementById('f-note').value='';
-      showToast('問題を追加しました。', 'success');
-    };
   }
 
   function buildTopicSelectHTML(subject, currentValue){
@@ -2179,7 +1894,7 @@
     $app.innerHTML = `
       <div class="card">
         <div class="flex">
-          <button class="back-to-list ghost" onclick="setActive('list')">← 問題一覧</button>
+          <button class="back-to-list ghost" onclick="app.setActive('list')">← 問題一覧</button>
           <h2 style="margin:0 .5rem">問題の編集</h2>
         </div>
         <div class="home-grid section">
@@ -2219,8 +1934,8 @@
           <textarea id="e-note">${escapeHtml(prob.note||'')}</textarea>
         </div>
         <div class="section flex">
-          <button class="primary" onclick="__saveEdit()">保存する</button>
-          <button class="ghost danger" onclick="__deleteProblem(${prob.id})">削除</button>
+          <button class="primary" onclick="app.saveEdit()">保存する</button>
+          <button class="ghost danger" onclick="app.deleteProblem(${prob.id})">削除</button>
         </div>
       </div>
     `;
@@ -2270,40 +1985,6 @@
     }
     sel.addEventListener('change', mountTopic);
     mountTopic();
-    
-    window.__saveEdit = ()=>{
-      const subject = document.getElementById('e-subject').value;
-      let topic = '';
-      const tSel = document.getElementById('e-topic');
-      if (tSel) {
-        topic = (tSel.value === "__NEW__") ? (document.getElementById('e-topic-new').value || '').trim() : tSel.value;
-      } else {
-        topic = (document.getElementById('e-topic-new').value || '').trim();
-      }
-      let subtopic = '';
-      const sSel = document.getElementById('e-subtopic');
-      if (sSel) {
-        subtopic = (sSel.value === "__NEW__") ? (document.getElementById('e-subtopic-new').value || '').trim() : sSel.value;
-      } else {
-        subtopic = (document.getElementById('e-subtopic-new').value || '').trim();
-      }
-      const importance = document.getElementById('e-importance').value;
-      const question = (document.getElementById('e-question').value||'').trim();
-      const example  = (document.getElementById('e-example').value||'').trim();
-      const keywordsRaw = (document.getElementById('e-keywords').value||'');
-      const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : [];
-      const note     = (document.getElementById('e-note').value||'').trim();
-      if (!question) {
-        showToast('問題文を入力してください。', 'error');
-        return;
-      }
-      Object.assign(prob, {subject, topic, subtopic, importance, question, example, keywords, note});
-      reindex();
-      saveLocal(state.problems, sessionsState.logs);
-      scheduleFileSave();
-      updateNavBadges();
-      showToast('保存しました。', 'success');
-    };
   }
   
   function buildTopicSelectEditHTML(subject, currentValue){
@@ -2496,6 +2177,35 @@
     }catch(e){ showError(e); }
   })();
 
+  // Expose functions to global scope for onclick handlers
+  return {
+    setActive,
+    selectSubject: (s)=>{ state.currentSubject = s; state.currentTopic='all'; state.currentSubtopic='all'; setActive('topics'); },
+    selectElective: ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; setActive('topics'); },
+    selectTopic: (t)=>{ state.currentTopic = t; state.currentSubtopic = 'all'; setActive((t==='all') ? 'list' : 'subtopics'); },
+    startSubjectAll: (rnd)=>{ let ids = idsBySubject(state.currentSubject); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
+    startTopic: (topic, rnd)=>{ let ids = idsByTopic(state.currentSubject, topic); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
+    selectSubtopic: (st)=>{ state.currentSubtopic = st; setActive('list'); },
+    startTopicAll: (rnd)=>{ let ids = idsByTopic(state.currentSubject, state.currentTopic); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
+    startSubtopic: (st, rnd)=>{ let ids = idsBySubtopic(state.currentSubject, state.currentTopic, st); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
+    startAll: (rnd)=>{ let base = filtered().map(p=>p.id); const n = getSubjectCount(); const chosen = pickWithLimit(base, n, rnd); startQueue(chosen, false); },
+    startQuiz: (id)=>{ state.reviewQueue=null; state.currentProblemId = id; startSession([id], false); setActive('quiz'); },
+    editProblem: (id)=>{ state.currentProblemId = id; setActive('edit'); },
+    deleteProblem: (id)=>{ const target = state.problems.find(p=>p.id===id); if (!target) return; if (confirm(`次の問題を削除します。よろしいですか？\n\n「${target.question}」`)) { state.problems = state.problems.filter(p=>p.id!==id); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); render(); } },
+    prev: ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; renderQuiz(); } },
+    next: ()=>{ const id=navNextId(); if (id){ state.currentProblemId=id; renderQuiz(); } else { const resultEl = document.getElementById('result'); if(resultEl) { resultEl.innerHTML = `<div class="card"><div class="muted">キュー内の問題を解き終えました。</div><div class="section flex"><button class="ghost" onclick="app.goHome()">トップへ戻る</button><button class="ghost" onclick="app.setActive('review')">復習ダッシュボードに戻る</button></div></div>`; endSession(); stopTimer(); } } },
+    grade: ()=>{ const elapsed = state.timerStart ? Math.round((Date.now()-state.timerStart)/1000) : null; let txt = (document.getElementById('answer').value || '').trim(); const prob = state.problems.find(x=>x.id===state.currentProblemId); const __mode = (typeof getInputMode==='function') ? getInputMode() : 'full'; if (__mode==='cloze' && prob && Array.isArray(prob.keywords) && prob.keywords.length){ const parts = []; for (let i=1;i<=prob.keywords.length;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? String(el.value||'').trim() : ''); } txt = parts.join(' '); } const total = (prob.keywords||[]).length; let matches=[], missing=[]; function __norm(s){ try{ s = String(s||'').normalize('NFKC'); }catch(_){ s = String(s||''); } s = s.replace(/\s+/g,' ').trim().replace(/[、，]/g,',').replace(/[。．]/g,'.').toLowerCase(); return s; } if (__mode==='cloze' && total>0){ const parts = []; for (let i=1;i<=total;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? (el.value||'') : ''); } for (let i=0;i<total;i++){ if (__norm(parts[i]) === __norm(prob.keywords[i])) matches.push(prob.keywords[i]); else missing.push(prob.keywords[i]); } }else{ const nTxt = __norm(txt); matches = (prob.keywords||[]).filter(kw => nTxt.includes(__norm(kw))); missing = (prob.keywords||[]).filter(kw => !nTxt.includes(__norm(kw))); } let score="✕", cls="score-bad", scoreDetail=""; if (total===0){ score="—"; cls=""; scoreDetail="（キーワード未設定のため採点なし）"; }else{ const ratio = matches.length / total; if (ratio===1){ score="◎"; cls="score-okay"; } else if (ratio>=0.6){ score="○"; cls="score-mid"; } else if (ratio>0){ score="△"; cls="score-low"; } else { score="✕"; cls="score-bad"; } scoreDetail = `（${matches.length} / ${total}）`; } const t = todayStr(); const nextByScore = (()=>{ if (score==="◎") return [7,14,30]; if (score==="○") return [3,7,14,30]; if (score==="△") return [1,3,7,14]; if (score==="✕") return [1,3]; return [1,3,7,14,30]; })().map(addDaysLocal); prob.reviews = (prob.reviews || []).filter(d=>d>t); const set = new Set([...(prob.reviews||[]), ...nextByScore]); prob.reviews = Array.from(set).sort(); prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, secs: elapsed, self:null}); try { const mode = (sessionsState.current && sessionsState.current.context && sessionsState.current.context.mode) || null; if (mode === 'weak' && score === '◎') { prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 3); } } catch(_) {} bumpSessionOnScore(score); addDailyAnswered(1); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); } let escaped = escapeHtml(txt); matches.forEach(kw=>{ const re = new RegExp(escReg(kw), 'g'); escaped = escaped.replace(re, `<mark class="hit">${kw}</mark>`); }); let modelEscaped = escapeHtml(prob.example || "（登録なし）"); (prob.keywords || []).forEach(kw=>{ if (!kw) return; const re = new RegExp(escReg(kw), 'g'); const has = matches.includes(kw); modelEscaped = modelEscaped.replace(re, `<mark class="${has?'hit':'miss'}">${kw}</mark>`); }); const currentSel = (()=>{ for(let i=prob.history.length-1;i>=0;i--){ if (prob.history[i].self) return prob.history[i].self; } return null; })(); document.getElementById('result').innerHTML = ` <div class="card"> <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail} ${elapsed!=null? `<span class="muted small">（所要 ${Math.floor(elapsed/60)}分${elapsed%60}秒）</span>`:''}</div> <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div> ${ total>0 ? `<div class="section"><strong>抜けていたキーワード</strong><div>${missing.length? missing.map(k=>`<span class='kw kw-miss'>${k}</span>`).join(' ') : "なし"}</div></div>` : ""} <div class="section"> <label>あなたの回答（命中キーワードをハイライト）</label> <div style="white-space:pre-line;border:1px dashed #ccc;border-radius:.6rem;padding:.6rem;background:#fcfcfc">${escaped || "（未入力）"}</div> </div> <div class="section"> <strong>模範解答（命中=黄／抜け=桃）</strong> <div style="white-space:pre-line;border:1px solid #dbeafe;background:#eff6ff;border-radius:.6rem;padding:.6rem">${modelEscaped}</div> </div> ${prob.note ? `<div class="section"><strong>補足情報</strong><div class="note">${escapeHtml(prob.note)}</div></div>` : ""} <div class="section"> <strong>自己評価：</strong> <div class="flex" id="selfBtns" style="margin-top:.5rem"> <button class="ghost selfbtn ${currentSel==='perfect'?'active':''}" data-tag="perfect" onclick="app.selfMark('perfect')">できた</button> <button class="ghost selfbtn ${currentSel==='unsure'?'active':''}" data-tag="unsure" onclick="app.selfMark('unsure')">普通</button> <button class="ghost selfbtn ${currentSel==='fail'?'active':''}" data-tag="fail" onclick="app.selfMark('fail')">できない</button> </div> </div> <div class="section flex"> <button class="ghost" onclick="app.goHome()">トップへ戻る</button> ${!!navPrevId() ? `<button class="ghost" onclick="app.prev()">◀ 前の問題へ</button>` : ''} ${!!navNextId() ? `<button class="primary" onclick="app.next()">次の問題へ ▶</button>` : '<span class="muted">（キューの最後です）</span>'} </div> </div> `; },
+    selfMark: (tag)=>{ const prob = state.problems.find(x=>x.id===state.currentProblemId); const last = prob.history[prob.history.length-1]; if (last) last.self = tag; prob.selfStats = prob.selfStats || {perfect:0,unsure:0,fail:0}; if (tag==='perfect') prob.selfStats.perfect++; if (tag==='unsure') { prob.selfStats.unsure++; prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 2); } if (tag==='fail')   { prob.selfStats.fail++;   prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 3); } saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); document.querySelectorAll('.selfbtn').forEach(b=> b.classList.remove('active')); const target = Array.from(document.querySelectorAll('.selfbtn')).find(b=> b.getAttribute('data-tag')===tag); if (target) target.classList.add('active'); },
+    goHome: ()=> { endSession(); stopTimer(); setActive('home'); },
+    setReviewTab: (tabName) => { state.reviewTab = tabName; state.reviewTodayListVisible = false; renderReview(); },
+    toggleReviewTodayList: () => { state.reviewTodayListVisible = !state.reviewTodayListVisible; renderReview(); },
+    startQueue: (ids, rnd)=> startQueue(ids, rnd),
+    addSubmit: ()=>{ const subject = document.getElementById('f-subject').value; let topic = ''; const tSel = document.getElementById('f-topic'); if (tSel) { topic = (tSel.value === "__NEW__") ? (document.getElementById('f-topic-new').value || '').trim() : tSel.value; } else { topic = (document.getElementById('f-topic-new').value || '').trim(); } let subtopic = ''; const sSel = document.getElementById('f-subtopic'); if (sSel) { subtopic = (sSel.value === "__NEW__") ? (document.getElementById('f-subtopic-new').value || '').trim() : sSel.value; } else { subtopic = (document.getElementById('f-subtopic-new').value || '').trim(); } const importance = document.getElementById('f-importance').value; const question = (document.getElementById('f-question').value||'').trim(); const example  = (document.getElementById('f-example').value||'').trim(); const keywordsRaw = (document.getElementById('f-keywords').value||''); const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : []; const note     = (document.getElementById('f-note').value||'').trim(); if (!question) { showToast('問題文を入力してください。', 'error'); return; } state.problems.push({ id: Date.now()+Math.floor(Math.random()*1000), subject, topic, subtopic, importance, question, example, keywords, note, history:[], reviews:[], selfStats:{perfect:0,unsure:0,fail:0} }); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); document.getElementById('f-question').value=''; document.getElementById('f-example').value=''; document.getElementById('f-keywords').value=''; document.getElementById('f-note').value=''; showToast('問題を追加しました。', 'success'); },
+    saveEdit: ()=>{ const prob = state.problems.find(x=>x.id===state.currentProblemId); const subject = document.getElementById('e-subject').value; let topic = ''; const tSel = document.getElementById('e-topic'); if (tSel) { topic = (tSel.value === "__NEW__") ? (document.getElementById('e-topic-new').value || '').trim() : tSel.value; } else { topic = (document.getElementById('e-topic-new').value || '').trim(); } let subtopic = ''; const sSel = document.getElementById('e-subtopic'); if (sSel) { subtopic = (sSel.value === "__NEW__") ? (document.getElementById('e-subtopic-new').value || '').trim() : sSel.value; } else { subtopic = (document.getElementById('e-subtopic-new').value || '').trim(); } const importance = document.getElementById('e-importance').value; const question = (document.getElementById('e-question').value||'').trim(); const example  = (document.getElementById('e-example').value||'').trim(); const keywordsRaw = (document.getElementById('e-keywords').value||''); const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : []; const note     = (document.getElementById('e-note').value||'').trim(); if (!question) { showToast('問題文を入力してください。', 'error'); return; } Object.assign(prob, {subject, topic, subtopic, importance, question, example, keywords, note}); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); showToast('保存しました。', 'success'); },
+    setImp: (v)=>{ state.currentImportance=v; render(); },
+    setSelf: (v)=>{ state.currentSelf=v; render(); },
+    resetFilters: ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); }
+  };
 })();
 </script>
 </body>
