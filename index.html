@@ -892,17 +892,12 @@ const app = (()=>{
     updateNavBadges();
   }
 
-  function lastAnswerYmdLocal(p){
-    if (!Array.isArray(p.history) || p.history.length===0) return null;
-    let last = null;
-    for (let i=0;i<p.history.length;i++){
-      const h = p.history[i];
-      if (h && h.date){
-        const ymd = ymdLocal(new Date(h.date));
-        if (!last || ymd > last) last = ymd;
-      }
+  function latestSelfTag(p){
+    if (!p || !Array.isArray(p.history) || p.history.length===0) return null;
+    for (let i=p.history.length-1;i>=0;i--){
+      if (p.history[i] && p.history[i].self) return p.history[i].self;
     }
-    return last;
+    return null;
   }
   function todayStr(){ return ymdLocal(new Date()); }
   function escapeHtml(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
