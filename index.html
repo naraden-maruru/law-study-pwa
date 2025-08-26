@@ -1053,94 +1053,6 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
     });
   }
 })();
-
-/* === Safe enhancer: datalist suggestions for topic/subtopic === */
-(function(){
-  function ensureDatalist(id){
-    let dl = document.getElementById(id);
-    if (!dl){
-      dl = document.createElement('datalist');
-      dl.id = id;
-      document.body.appendChild(dl);
-    }
-    return dl;
-  }
-  function fillOptions(dl, list){
-    dl.innerHTML = '';
-    (list||[]).forEach(v=>{
-      const opt = document.createElement('option');
-      opt.value = v;
-      dl.appendChild(opt);
-    });
-  }
-  function attachInputList(input, datalistId){
-    if (!input) return;
-    input.setAttribute('list', datalistId);
-  }
-  function refresh(){
-    const subjA = document.getElementById('f-subject');
-    const topicA = document.getElementById('f-topic');
-    const subA = document.getElementById('f-subtopic');
-    if (subjA && topicA){
-      const dlT = ensureDatalist('dl-topics-add');
-      const topics = (typeof topicsForSubject==='function') ? (topicsForSubject(subjA.value)||[]) : [];
-      fillOptions(dlT, topics);
-      attachInputList(topicA, 'dl-topics-add');
-    }
-    if (subjA && subA && topicA){
-      const dlS = ensureDatalist('dl-subtopics-add');
-      const subs = (typeof subtopicsFor==='function') ? (subtopicsFor(subjA.value, topicA.value||'')||[]) : [];
-      fillOptions(dlS, subs);
-      attachInputList(subA, 'dl-subtopics-add');
-    }
-    const subjE = document.getElementById('e-subject');
-    const topicE = document.getElementById('e-topic');
-    const subE = document.getElementById('e-subtopic');
-    if (subjE && topicE){
-      const dlTE = ensureDatalist('dl-topics-edit');
-      const topicsE = (typeof topicsForSubject==='function') ? (topicsForSubject(subjE.value)||[]) : [];
-      fillOptions(dlTE, topicsE);
-      attachInputList(topicE, 'dl-topics-edit');
-    }
-    if (subjE && subE && topicE){
-      const dlSE = ensureDatalist('dl-subtopics-edit');
-      const subsE = (typeof subtopicsFor==='function') ? (subtopicsFor(subjE.value, topicE.value||'')||[]) : [];
-      fillOptions(dlSE, subsE);
-      attachInputList(subE, 'dl-subtopics-edit');
-    }
-  }
-  function bindChanges(){
-    [['f-subject','f-topic','f-subtopic'], ['e-subject','e-topic','e-subtopic']].forEach(ids=>{
-      ids.forEach(id=>{
-        const el = document.getElementById(id);
-        if (el && !el.__dlbound){
-          el.__dlbound = true;
-          el.addEventListener('change', refresh);
-          el.addEventListener('input', function(){
-            if (id.endsWith('subject')) refresh();
-            if (id.endsWith('topic')) refresh();
-          });
-        }
-      });
-    });
-  }
-  function tick(){
-    refresh();
-    bindChanges();
-  }
-  if (document.readyState === 'complete' || document.readyState === 'interactive'){
-    setTimeout(tick, 0);
-  } else {
-    document.addEventListener('DOMContentLoaded', tick);
-  }
-  window.addEventListener('load', tick);
-  try{
-    const mo = new MutationObserver(()=>tick());
-    mo.observe(document.documentElement, {childList:true, subtree:true});
-  }catch(_){}
-})();
-
-
 /* === Cloze linking & live validation === */
 (function(){
   function normalize(s){
@@ -1198,7 +1110,6 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
 <body>
 </div>
 
-<!-- Left Rail (Desktop) -->
 <aside id="rail" aria-label="メインナビ">
   <div class="logo"><span class="mon">法</span><span>論証タイピング</span></div>
   <div class="nav">
@@ -1218,7 +1129,6 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
   </div>
 </aside>
 
-<!-- Bottom Tabbar (Mobile) -->
 <nav id="tabbar" aria-label="タブバー">
   <div class="item" data-nav="subjects"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4zM4 3h8a4 4 0 0 1 4 4v10H4z"/><path d="M16 7h4v10h-4z"/></svg><button>科目</button></div>
   <div class="item" data-nav="review"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v2H3zM3 10h18v2H3zM3 16h12v2H3z"/></svg><button>復習</button></div>
@@ -1609,8 +1519,24 @@ if (key==='settings') window.dispatchEvent(new CustomEvent('app:open-settings'))
   function idsBySubject(s){ if (!indexCache) reindex(); if (s===ELECTIVE_GROUP){ const ids=new Set(indexCache.subjects.get(ELECTIVE_GROUP)||[]); ELECTIVE_SUBJECTS.forEach(x=> (indexCache.subjects.get(x)||[]).forEach(id=>ids.add(id))); return [...ids]; } return (indexCache.subjects.get(s)||[]).slice(); }
   function idsByTopic(s,t){ if (!indexCache) reindex(); return ((indexCache.topics.get(s)||new Map()).get(t||"")||[]).slice(); }
   function idsBySubtopic(s,t,st){ if (!indexCache) reindex(); return (((indexCache.subtopics.get(s)||new Map()).get(t||"")||new Map()).get(st||"")||[]).slice(); }
-  function topicsForSubject(s){ if (!indexCache) reindex(); const m=indexCache.topics.get(s)||new Map(); return [...m.keys()].filter(Boolean).sort((a,b)=>a.localeCompare(b,'ja')); }
-  function subtopicsFor(s,t){ if (!indexCache) reindex(); const m=((indexCache.subtopics.get(s)||new Map()).get(t||"")||new Map()); return [...m.keys()].filter(Boolean).sort((a,b)=>a.localeCompare(b,'ja')); }
+  
+  // MODIFIED: Helper functions for hybrid dropdown
+  function topicsForSubject(subj){
+    const list = idsBySubject(subj)
+      .map(id => idToProb(id))
+      .filter(Boolean)
+      .map(p => (p.topic||"").trim())
+      .filter(t=>t);
+    return Array.from(new Set(list)).sort((a,b)=> a.localeCompare(b,'ja'));
+  }
+  function subtopicsFor(subj, topic){
+    const list = idsByTopic(subj, topic)
+      .map(id => idToProb(id))
+      .filter(Boolean)
+      .map(p => (p.subtopic||"").trim())
+      .filter(t=>t);
+    return Array.from(new Set(list)).sort((a,b)=> a.localeCompare(b,'ja'));
+  }
 
   const $app = document.getElementById('app');
   document.getElementById('nav-subjects').onclick = () => { setActive('subjects') };
@@ -1859,8 +1785,7 @@ function rawCountBySubject(name){
           <strong>${s}</strong>
           <span class="pill">${rawCountBySubject(s)} 問</span>
           <span class="space"></span>
-          <!-- インタリーブ模試は分野一覧の行で提供 -->
-        </div>
+          </div>
       </div>`).join('');
 
     const electiveHtml = `
@@ -2539,6 +2464,42 @@ ${(function(){
     };
   }
 
+  // MODIFIED: Functions to build hybrid dropdowns
+  function buildTopicSelectHTML(subject, currentValue){
+    const topics = topicsForSubject(subject);
+    if (topics.length === 0) {
+      return `
+        <input id="f-topic-new" placeholder="新しい分野名を入力（未分類可）" value="${escapeHtml(currentValue||'')}">
+        <div class="help">※ まだ登録された分野がありません。必要なら入力してください（空でも可）。</div>`;
+    }
+    const opts = ['<option value="">（未分類）</option>']
+      .concat(topics.map(t=>`<option value="${t.replace(/"/g,'&quot;')}" ${currentValue===t?'selected':''}>${t}</option>`))
+      .concat([`<option value="__NEW__">（新規作成…）</option>`])
+      .join('');
+    return `
+      <select id="f-topic">${opts}</select>
+      <div class="inline ${currentValue && !topics.includes(currentValue)?'':'hidden'}" id="f-topic-new-wrap" style="margin-top: .5rem;">
+        <input id="f-topic-new" placeholder="新しい分野名" value="${escapeHtml(currentValue||'')}">
+      </div>`;
+  }
+  function buildSubtopicSelectHTML(subject, topic, currentValue){
+    const subs = subtopicsFor(subject, topic);
+    if (subs.length === 0) {
+      return `
+        <input id="f-subtopic-new" placeholder="新しい小分類名を入力（未分類可）" value="${escapeHtml(currentValue||'')}">
+        <div class="help">※ この分野には登録された小分類がありません。必要なら入力してください（空でも可）。</div>`;
+    }
+    const opts = ['<option value="">（未分類）</option>']
+      .concat(subs.map(t=>`<option value="${t.replace(/"/g,'&quot;')}" ${currentValue===t?'selected':''}>${t}</option>`))
+      .concat([`<option value="__NEW__">（新規作成…）</option>`])
+      .join('');
+    return `
+      <select id="f-subtopic">${opts}</select>
+      <div class="inline ${currentValue && !subs.includes(currentValue)?'':'hidden'}" id="f-subtopic-new-wrap" style="margin-top: .5rem;">
+        <input id="f-subtopic-new" placeholder="新しい小分類名" value="${escapeHtml(currentValue||'')}">
+      </div>`;
+  }
+
   function renderAdd(){
     const subjectOptions = `
       <optgroup label="必修科目">
@@ -2564,11 +2525,11 @@ ${(function(){
         </div>
         <div class="section">
           <label>分野</label>
-          <input id="f-topic" placeholder="（未分類可）">
+          <div id="f-topic-area"></div>
         </div>
         <div class="section">
           <label>小分類</label>
-          <input id="f-subtopic" placeholder="（未分類可）">
+          <div id="f-subtopic-area"></div>
         </div>
         <div class="section">
           <label>問題文</label>
@@ -2592,11 +2553,72 @@ ${(function(){
         <div id="add-msg" class="section muted small"></div>
       </div>
     `;
-    document.getElementById('f-subject').value = defaultSubject;
+    const sel = document.getElementById('f-subject');
+    sel.value = defaultSubject;
+
+    function mountTopic(){
+      document.getElementById('f-topic-area').innerHTML = buildTopicSelectHTML(sel.value, '');
+      bindTopicHandlers();
+      mountSubtopic();
+    }
+    function currentTopicValue(){
+      const tSel = document.getElementById('f-topic');
+      if (!tSel) return (document.getElementById('f-topic-new')?.value||'').trim();
+      if (tSel.value === "__NEW__") return (document.getElementById('f-topic-new')?.value||'').trim();
+      return tSel.value;
+    }
+    function mountSubtopic(){
+      const topicVal = currentTopicValue();
+      document.getElementById('f-subtopic-area').innerHTML = buildSubtopicSelectHTML(sel.value, topicVal, '');
+      bindSubtopicHandlers();
+    }
+    function bindTopicHandlers(){
+      const tSel = document.getElementById('f-topic');
+      const tNewWrap = document.getElementById('f-topic-new-wrap');
+      if (tSel){
+        tSel.addEventListener('change', ()=>{
+          if (tSel.value === "__NEW__"){
+            if (tNewWrap) tNewWrap.classList.remove('hidden');
+          }else{
+            if (tNewWrap) tNewWrap.classList.add('hidden');
+          }
+          mountSubtopic();
+        });
+      }
+    }
+    function bindSubtopicHandlers(){
+      const sSel = document.getElementById('f-subtopic');
+      const sNewWrap = document.getElementById('f-subtopic-new-wrap');
+      if (sSel){
+        sSel.addEventListener('change', ()=>{
+          if (sSel.value === "__NEW__"){
+            if (sNewWrap) sNewWrap.classList.remove('hidden');
+          }else{
+            if (sNewWrap) sNewWrap.classList.add('hidden');
+          }
+        });
+      }
+    }
+
+    sel.addEventListener('change', ()=>{ mountTopic(); });
+    mountTopic();
+    
     window.__addSubmit = ()=>{
       const subject = document.getElementById('f-subject').value;
-      const topic = (document.getElementById('f-topic').value||'').trim();
-      const subtopic = (document.getElementById('f-subtopic').value||'').trim();
+      let topic = '';
+      const tSel = document.getElementById('f-topic');
+      if (tSel) {
+        topic = (tSel.value === "__NEW__") ? (document.getElementById('f-topic-new').value || '').trim() : tSel.value;
+      } else {
+        topic = (document.getElementById('f-topic-new').value || '').trim();
+      }
+      let subtopic = '';
+      const sSel = document.getElementById('f-subtopic');
+      if (sSel) {
+        subtopic = (sSel.value === "__NEW__") ? (document.getElementById('f-subtopic-new').value || '').trim() : sSel.value;
+      } else {
+        subtopic = (document.getElementById('f-subtopic-new').value || '').trim();
+      }
       const importance = document.getElementById('f-importance').value;
       const question = (document.getElementById('f-question').value||'').trim();
       const example  = (document.getElementById('f-example').value||'').trim();
@@ -2614,8 +2636,47 @@ ${(function(){
       document.getElementById('f-keywords').value='';
       document.getElementById('f-note').value='';
       showMsg('追加しました。');
+      mountTopic(); // Refresh dropdowns
     };
     function showMsg(m){ document.getElementById('add-msg').textContent = m; }
+  }
+
+  // MODIFIED: Functions to build hybrid dropdowns for Edit screen
+  function buildTopicSelectEditHTML(subject, currentValue){
+    const topics = topicsForSubject(subject);
+    if (topics.length === 0) {
+      return `
+        <input id="e-topic-new" placeholder="新しい分野名を入力（未分類可）" value="${escapeHtml(currentValue||'')}">
+        <div class="help">※ まだ登録された分野がありません。必要なら入力してください（空でも可）。</div>`;
+    }
+    const opts = ['<option value="">（未分類）</option>']
+      .concat(topics.map(t=>`<option value="${t.replace(/"/g,'&quot;')}" ${currentValue===t?'selected':''}>${t}</option>`))
+      .concat([`<option value="__NEW__">（新規作成…）</option>`])
+      .join('');
+    const needNew = currentValue && !topics.includes(currentValue);
+    return `
+      <select id="e-topic">${opts}</select>
+      <div class="inline ${needNew?'':'hidden'}" id="e-topic-new-wrap" style="margin-top: .5rem;">
+        <input id="e-topic-new" placeholder="新しい分野名" value="${escapeHtml(currentValue||'')}">
+      </div>`;
+  }
+  function buildSubtopicSelectEditHTML(subject, topic, currentValue){
+    const subs = subtopicsFor(subject, topic);
+    if (subs.length === 0) {
+      return `
+        <input id="e-subtopic-new" placeholder="新しい小分類名を入力（未分類可）" value="${escapeHtml(currentValue||'')}">
+        <div class="help">※ この分野には登録された小分類がありません。必要なら入力してください（空でも可）。</div>`;
+    }
+    const opts = ['<option value="">（未分類）</option>']
+      .concat(subs.map(t=>`<option value="${t.replace(/"/g,'&quot;')}" ${currentValue===t?'selected':''}>${t}</option>`))
+      .concat([`<option value="__NEW__">（新規作成…）</option>`])
+      .join('');
+    const needNew = currentValue && !subs.includes(currentValue);
+    return `
+      <select id="e-subtopic">${opts}</select>
+      <div class="inline ${needNew?'':'hidden'}" id="e-subtopic-new-wrap" style="margin-top: .5rem;">
+        <input id="e-subtopic-new" placeholder="新しい小分類名" value="${escapeHtml(currentValue||'')}">
+      </div>`;
   }
 
   function renderEdit(){
@@ -2650,11 +2711,11 @@ ${(function(){
         </div>
         <div class="section">
           <label>分野</label>
-          <input id="e-topic" value="${(prob.topic||'').replace(/"/g,'&quot;')}">
+          <div id="e-topic-area"></div>
         </div>
         <div class="section">
           <label>小分類</label>
-          <input id="e-subtopic" value="${(prob.subtopic||'').replace(/"/g,'&quot;')}">
+          <div id="e-subtopic-area"></div>
         </div>
         <div class="section">
           <label>問題文</label>
@@ -2679,11 +2740,70 @@ ${(function(){
         <div id="edit-msg" class="section muted small"></div>
       </div>
     `;
+    const sel = document.getElementById('e-subject');
+    function mountTopic(){
+      document.getElementById('e-topic-area').innerHTML = buildTopicSelectEditHTML(sel.value, prob.topic||'');
+      bindTopicHandlers();
+      mountSubtopic();
+    }
+    function currentTopicValue(){
+      const tSel = document.getElementById('e-topic');
+      if (!tSel) return (document.getElementById('e-topic-new')?.value||'').trim();
+      if (tSel.value === "__NEW__") return (document.getElementById('e-topic-new')?.value||'').trim();
+      return tSel.value;
+    }
+    function mountSubtopic(){
+      const topicVal = currentTopicValue();
+      document.getElementById('e-subtopic-area').innerHTML = buildSubtopicSelectEditHTML(sel.value, topicVal, prob.subtopic||'');
+      bindSubtopicHandlers();
+    }
+    function bindTopicHandlers(){
+      const tSel = document.getElementById('e-topic');
+      const tNewWrap = document.getElementById('e-topic-new-wrap');
+      if (tSel){
+        tSel.addEventListener('change', ()=>{
+          if (tSel.value === "__NEW__"){
+            if (tNewWrap) tNewWrap.classList.remove('hidden');
+          }else{
+            if (tNewWrap) tNewWrap.classList.add('hidden');
+          }
+          mountSubtopic();
+        });
+      }
+    }
+    function bindSubtopicHandlers(){
+      const sSel = document.getElementById('e-subtopic');
+      const sNewWrap = document.getElementById('e-subtopic-new-wrap');
+      if (sSel){
+        sSel.addEventListener('change', ()=>{
+          if (sSel.value === "__NEW__"){
+            if (sNewWrap) sNewWrap.classList.remove('hidden');
+          }else{
+            if (sNewWrap) sNewWrap.classList.add('hidden');
+          }
+        });
+      }
+    }
+    sel.addEventListener('change', mountTopic);
+    mountTopic();
+    
     window.__backList = ()=>{ state.view='list'; render(); };
     window.__saveEdit = ()=>{
       const subject = document.getElementById('e-subject').value;
-      const topic = (document.getElementById('e-topic').value||'').trim();
-      const subtopic = (document.getElementById('e-subtopic').value||'').trim();
+      let topic = '';
+      const tSel = document.getElementById('e-topic');
+      if (tSel) {
+        topic = (tSel.value === "__NEW__") ? (document.getElementById('e-topic-new').value || '').trim() : tSel.value;
+      } else {
+        topic = (document.getElementById('e-topic-new').value || '').trim();
+      }
+      let subtopic = '';
+      const sSel = document.getElementById('e-subtopic');
+      if (sSel) {
+        subtopic = (sSel.value === "__NEW__") ? (document.getElementById('e-subtopic-new').value || '').trim() : sSel.value;
+      } else {
+        subtopic = (document.getElementById('e-subtopic-new').value || '').trim();
+      }
       const importance = document.getElementById('e-importance').value;
       const question = (document.getElementById('e-question').value||'').trim();
       const example  = (document.getElementById('e-example').value||'').trim();
