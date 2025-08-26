@@ -118,42 +118,33 @@
     #rail .mode .seg button{ height:34px; font-size:.9rem; border-radius:9px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:#fff; font-weight:900 }
     #rail .mode .seg button.active{ background:#fff; color:#0e2240 }
 
+    #mobile-header { display: none; }
     #tabbar{
-      position:fixed; left:0; right:0; bottom:0; height:60px; background:#0e2240; color:#eaf2ff;
-      border-top:1px solid rgba(255,255,255,.08); display:none; align-items:center; justify-content:space-around; z-index:60;
+      display:flex; align-items:center; justify-content:space-around;
+      background:#0e2240; color:#eaf2ff;
+      border-bottom:1px solid rgba(255,255,255,.08);
     }
-    #tabbar .item{ display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center; width:20% }
+    #tabbar .item{ display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center; flex:1; padding: 4px 0; }
     #tabbar .item button{ background:transparent; border:0; color:#eaf2ff; font-size:.8rem; font-weight:700 }
     #tabbar .item .ico{ width:20px; height:20px; opacity:.9 }
     #tabbar .item.active button{ color:#fff }
     #tabbar .item.active .ico{ opacity:1 }
-    #mode-fab{
-      position:fixed; right:12px; bottom:72px; width:46px; height:46px; border-radius:999px;
-      background:#b4883b; color:#0e2240; display:none; align-items:center; justify-content:center; font-weight:900; z-index:61;
-      box-shadow:0 8px 24px rgba(0,0,0,.18);
-    }
+
     @media(min-width: 1000px){
       #rail{ display:flex }
       body{ padding-left:240px }
     }
     @media(max-width: 999px){
-      #tabbar{ display:flex }
-      #mode-fab{ display:flex }
-      body{ padding-bottom:68px }
+      #mobile-header {
+        position:fixed; top:0; left:0; right:0;
+        z-index: 50;
+      }
+      body{ padding-top: 55px; }
     }
     
     /* iPhone specific styles */
     html.iphone #tabbar .item[data-nav="exit"]{ display:flex !important; }
-    html.iphone #iphone-exit{ display:flex; }
-    html.iphone:not(.subjects-active) #iphone-exit{ display:none !important; }
-    #iphone-exit{
-      position:fixed; right:12px; top:calc(env(safe-area-inset-top, 0px) + 8px);
-      width:46px; height:46px; border-radius:999px;
-      display:none; align-items:center; justify-content:center;
-      background:#b4883b; color:#0e2240; font-weight:900; font-size:16px;
-      border:0; box-shadow:0 8px 24px rgba(0,0,0,.18); z-index:70;
-    }
-
+    
     /* Helper classes */
     .flex{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap}
     .row-sm{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
@@ -388,9 +379,9 @@
     }
     .settings-row {
       display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      align-items: flex-start;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
     }
   </style>
   <script>
@@ -431,13 +422,11 @@
 
     function updateInputModeUI(){
       try{
-        const full=document.getElementById('rail-mode-full');
-        const clo=document.getElementById('rail-mode-cloze');
-        const mode=getInputMode();
-        if(full&&clo){
-          full.classList.toggle('active', mode==='full');
-          clo.classList.toggle('active', mode==='cloze');
-        }
+        const fulls = document.querySelectorAll('.btn-mode-full');
+        const clozes = document.querySelectorAll('.btn-mode-cloze');
+        const mode = getInputMode();
+        fulls.forEach(el => el.classList.toggle('active', mode === 'full'));
+        clozes.forEach(el => el.classList.toggle('active', mode === 'cloze'));
       }catch(_){}
     }
     window.addEventListener('load', ()=>{
@@ -480,30 +469,29 @@
   <div class="mode">
     <small>入力モード</small>
     <div class="seg">
-      <button id="rail-mode-full">全文</button>
-      <button id="rail-mode-cloze">穴埋め</button>
+      <button id="rail-mode-full" class="btn-mode-full">全文</button>
+      <button id="rail-mode-cloze" class="btn-mode-cloze">穴埋め</button>
     </div>
   </div>
 </aside>
 
-<nav id="tabbar" aria-label="タブバー">
-  <div class="item" data-nav="home"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><button>ホーム</button></div>
-  <div class="item" data-nav="subjects"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4zM4 3h8a4 4 0 0 1 4 4v10H4z"/><path d="M16 7h4v10h-4z"/></svg><button>科目</button></div>
-  <div class="item" data-nav="review"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v2H3zM3 10h18v2H3zM3 16h12v2H3z"/></svg><button>復習</button></div>
-  <div class="item" data-nav="add"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg><button>追加</button></div>
-  <div class="item" data-nav="search"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><button>検索</button></div>
-  <div class="item" data-nav="settings"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58-1.92-3.32-2.4.97a7.34 7.34 0 0 0-1.62-.94l-.36-2.54h-3.84l-.36 2.54c-.57.22-1.12.53-1.62.94l-2.4-.97-1.92 3.32L4.86 11.06c-.03.31-.05.62-.05.94 0 .32.02.63.05.94l-2.03 1.58 1.92 3.32 2.4-.97c.5.41 1.05.72 1.62.94l.36 2.54h3.84l.36-2.54c.57-.22 1.12-.53 1.62-.94l2.4.97 1.92-3.32-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg><button>設定</button></div>
-  <div class="item" data-nav="exit"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg><button>終了</button></div>
-</nav>
-<button id="mode-fab" aria-label="入力モード切替（全/穴）" title="入力モード切替">全</button>
+<header id="mobile-header">
+  <nav id="tabbar" aria-label="タブバー">
+    <div class="item" data-nav="home"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><button>ホーム</button></div>
+    <div class="item" data-nav="subjects"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4zM4 3h8a4 4 0 0 1 4 4v10H4z"/><path d="M16 7h4v10h-4z"/></svg><button>科目</button></div>
+    <div class="item" data-nav="review"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v2H3zM3 10h18v2H3zM3 16h12v2H3z"/></svg><button>復習</button></div>
+    <div class="item" data-nav="add"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg><button>追加</button></div>
+    <div class="item" data-nav="search"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><button>検索</button></div>
+    <div class="item" data-nav="settings"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58-1.92-3.32-2.4.97a7.34 7.34 0 0 0-1.62-.94l-.36-2.54h-3.84l-.36 2.54c-.57.22-1.12.53-1.62.94l-2.4-.97-1.92 3.32L4.86 11.06c-.03.31-.05.62-.05.94 0 .32.02.63.05.94l-2.03 1.58 1.92 3.32 2.4-.97c.5.41 1.05.72 1.62.94l.36 2.54h3.84l.36-2.54c.57-.22 1.12-.53 1.62-.94l2.4.97 1.92-3.32-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg><button>設定</button></div>
+    <div class="item" data-nav="exit"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg><button>終了</button></div>
+  </nav>
+</header>
 
 <main id="app"></main>
 <div id="sys-banner" class="banner hidden"></div>
 <div id="modal-root"></div>
 <div id="errlayer"><div id="errbox"><h3>エラーが発生しました</h3><pre id="errtext"></pre><div class="section"><button onclick="document.getElementById('errlayer').style.display='none'">閉じる</button></div></div></div>
 <div id="toast-container"></div>
-
-<button id="iphone-exit" aria-label="終了（iPhone専用）" title="終了">終</button>
 
 <script>
 const app = (()=>{
@@ -1150,40 +1138,48 @@ const app = (()=>{
     const radarData = calculateRadarChartData();
     const globalStats = calculateGlobalStats();
     
+    const dailyStatsHtml = `
+      <h3>今日の進捗</h3>
+      <div class="home-grid section">
+        <div class="stat-card">
+          <div class="value">${answeredDueToday}<span class="unit">/ ${dueCount} 件</span></div>
+          <div class="label">今日の復習</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${answeredToday}<span class="unit">件</span></div>
+          <div class="label">本日の解答数</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${streak}<span class="unit">日</span></div>
+          <div class="label">継続日数</div>
+        </div>
+      </div>
+    `;
+    
+    const globalStatsHtml = `
+      <h3 class="section">全体の進捗</h3>
+      <div class="home-grid section">
+         <div class="stat-card">
+          <div class="value">${globalStats.answeredProblems}<span class="unit">/ ${globalStats.totalProblems} 問</span></div>
+          <div class="label">解答済み問題</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${globalStats.totalAnswers}<span class="unit">回</span></div>
+          <div class="label">総解答数</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${globalStats.correctRate.toFixed(1)}<span class="unit">%</span></div>
+          <div class="label">総正解率</div>
+        </div>
+      </div>
+    `;
+
     $app.innerHTML = `
       <div class="card">
         <h2>ホーム</h2>
-        <h3>今日の進捗</h3>
-        <div class="home-grid section">
-          <div class="stat-card">
-            <div class="value">${answeredDueToday}<span class="unit">/ ${dueCount} 件</span></div>
-            <div class="label">今日の復習</div>
-          </div>
-          <div class="stat-card">
-            <div class="value">${answeredToday}<span class="unit">件</span></div>
-            <div class="label">本日の解答数</div>
-          </div>
-          <div class="stat-card">
-            <div class="value">${streak}<span class="unit">日</span></div>
-            <div class="label">継続日数</div>
-          </div>
-        </div>
-        <h3 class="section">全体の進捗</h3>
-        <div class="home-grid section">
-           <div class="stat-card">
-            <div class="value">${globalStats.answeredProblems}<span class="unit">/ ${globalStats.totalProblems} 問</span></div>
-            <div class="label">解答済み問題</div>
-          </div>
-          <div class="stat-card">
-            <div class="value">${globalStats.totalAnswers}<span class="unit">回</span></div>
-            <div class="label">総解答数</div>
-          </div>
-          <div class="stat-card">
-            <div class="value">${globalStats.correctRate.toFixed(1)}<span class="unit">%</span></div>
-            <div class="label">総正解率</div>
-          </div>
-        </div>
+        ${IS_IPHONE ? dailyStatsHtml + globalStatsHtml : dailyStatsHtml}
       </div>
+      ${!IS_IPHONE ? `<div class="card">${globalStatsHtml}</div>` : ''}
       <div class="card">
         <h3>学習バランス</h3>
         <canvas id="radarChart"></canvas>
@@ -1571,10 +1567,12 @@ const app = (()=>{
     if (!p) { setActive('subjects'); return; }
     const prevExists = !!navPrevId();
     const nextExists = !!navNextId();
+    const backButtonTarget = (sessionsState.current?.context?.mode?.startsWith('review')) ? 'review' : 'list';
+
     $app.innerHTML = `
       <div class="card">
         <div class="flex">
-          <button class="back-to-list ghost" onclick="app.setActive('list')">← 問題一覧</button>
+          <button class="back-to-list ghost" onclick="app.setActive('${backButtonTarget}')">← 戻る</button>
           <h2 style="margin:0 .5rem">Q: ${p.question}</h2>
           <div class="space"></div>
           <div class="small">タイマー：<span id="timer" class="timer">00:00</span></div><div class="small muted" style="margin-left:.75rem">入力モード：${getInputMode()==="cloze"?"穴埋め":"全文"}</div>
@@ -1606,6 +1604,13 @@ const app = (()=>{
     startTimer();
   }
 
+  function getReviewTimingLabel(p) {
+    const lastAnswer = lastAnswerYmdLocal(p);
+    if (!lastAnswer) return '初回';
+    const days = daysBetweenLocal(todayStr(), lastAnswer);
+    return `${days}日後の復習`;
+  }
+
   function renderReview(){
     const dueToday = getDueTodayIds();
     const weakUnsure = state.problems.filter(p => latestSelfTag(p)==='unsure').map(p=>p.id);
@@ -1623,7 +1628,7 @@ const app = (()=>{
             <div class="review-detail-item">
               <span class="timing-tag">${getReviewTimingLabel(p)}</span>
               <span class="space">${escapeHtml(p.question)}</span>
-              <button class="ghost" onclick="app.startQuiz(${p.id})">解く</button>
+              <button class="ghost" onclick="app.startQuiz(${p.id}, 'review_list')">解く</button>
             </div>
           `;
         }).join('') : '<p class="muted small" style="text-align: center;">今日復習する問題はありません。</p>'}
@@ -1645,8 +1650,8 @@ const app = (()=>{
             <h3 class="title">今日やる問題 (${dueToday.length}件)</h3>
             <p class="description">間隔反復に基づき、今日復習すべき問題です。クリックして一覧を表示します。</p>
             <div class="actions">
-              <button class="ghost" style="background: #fff; color: var(--accent);" ${dueToday.length === 0 ? 'disabled' : ''} onclick='event.stopPropagation(); app.startQueue(${dueTodayJson}, false)'>順番に解く</button>
-              <button class="ghost" style="background: #fff; color: var(--accent);" ${dueToday.length === 0 ? 'disabled' : ''} onclick='event.stopPropagation(); app.startQueue(${dueTodayJson}, true)'>ランダムで解く</button>
+              <button class="ghost" style="background: #fff; color: var(--accent);" ${dueToday.length === 0 ? 'disabled' : ''} onclick='event.stopPropagation(); app.startQueue(${dueTodayJson}, false, "review_today")'>順番に解く</button>
+              <button class="ghost" style="background: #fff; color: var(--accent);" ${dueToday.length === 0 ? 'disabled' : ''} onclick='event.stopPropagation(); app.startQueue(${dueTodayJson}, true, "review_today")'>ランダムで解く</button>
             </div>
           </div>
           ${todayListHtml}
@@ -1656,17 +1661,10 @@ const app = (()=>{
           <div class="action-card">
             <h3 class="title">弱点ドリル</h3>
             <p class="description">過去の評価に基づき、苦手な問題を重点的に復習します。</p>
-            <div class="section">
-              <strong>「普通」と評価した問題 (${weakUnsure.length}件)</strong>
-              <div class="actions" style="margin-top: 0.5rem">
-                <button class="ghost" ${weakUnsure.length === 0 ? 'disabled' : ''} onclick='app.startQueue(${weakUnsureJson}, true)'>ランダムで解く</button>
-              </div>
-            </div>
-            <div class="section">
-              <strong>「できない」と評価した問題 (${weakFail.length}件)</strong>
-              <div class="actions" style="margin-top: 0.5rem">
-                <button class="ghost" ${weakFail.length === 0 ? 'disabled' : ''} onclick='app.startQueue(${weakFailJson}, true)'>ランダムで解く</button>
-              </div>
+            <div class="row-sm" style="justify-content: center;">
+              <label class="small">件数</label>
+              <input type="number" id="wdN" min="1" step="1" value="20" style="max-width:8rem">
+              <button class="ghost" id="btnWdStart">開始</button>
             </div>
           </div>
         </div>
@@ -1690,6 +1688,16 @@ const app = (()=>{
       </div>
     `;
     
+    const btnWdStart = document.getElementById('btnWdStart');
+    if (btnWdStart) {
+      btnWdStart.onclick = ()=>{
+        const n = Math.max(1, Number((document.getElementById('wdN')||{}).value||20));
+        const ids = state.problems.map(p=>p.id);
+        const queue = buildWeakDrillWeighted(ids, config.mixRatio, n, true);
+        startQueue(queue, false, 'review_weak');
+      };
+    }
+    
     const btnRandStart = document.getElementById('btnRandStart');
     if(btnRandStart) {
       btnRandStart.onclick = ()=>{
@@ -1699,7 +1707,7 @@ const app = (()=>{
         if (impSel !== 'all'){ arr = arr.filter(p => p.importance === impSel); }
         arr = shuffle(arr);
         const ids = arr.slice(0, n).map(p=>p.id);
-        startQueue(ids, false);
+        startQueue(ids, false, 'review_custom');
       };
     }
   }
@@ -2094,6 +2102,53 @@ const app = (()=>{
         });
     }, 3000);
   }
+  
+  function showModal(content) {
+    const modalRoot = document.getElementById('modal-root');
+    modalRoot.innerHTML = `<div class="mask"><div class="modal">${content}</div></div>`;
+    modalRoot.querySelector('.mask').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        modalRoot.innerHTML = '';
+      }
+    });
+  }
+
+  function showIOSImportModal() {
+    if (state.problems.length > 0) return;
+    showModal(`
+      <h3>ようこそ</h3>
+      <p>iPhone/iPadでは、データの保存に手動でのインポート/エクスポートが必要です。</p>
+      <p>PCで作成した <code>problems.json</code> ファイルをお持ちの場合は、下のボタンからインポートしてください。</p>
+      <div class="section flex">
+        <input type="file" id="ios-import-file" accept="application/json" class="hidden">
+        <button class="primary" onclick="document.getElementById('ios-import-file').click()">ファイルを選択してインポート</button>
+        <button class="ghost" onclick="document.getElementById('modal-root').innerHTML = ''">閉じる</button>
+      </div>
+    `);
+    document.getElementById('ios-import-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        handleImportFile(file, true, () => {
+          document.getElementById('modal-root').innerHTML = '';
+        });
+      }
+    });
+  }
+
+  function exitFlow() {
+    if (IS_IPHONE && config.iosShowExportGuide) {
+      showModal(`
+        <h3>データをエクスポートしますか？</h3>
+        <p>iPhone/iPadでは、データをファイルとして保存（エクスポート）し、安全な場所に保管することを推奨します。</p>
+        <p class="muted small">次回利用時にこのファイルをインポートすることで、学習データを復元できます。</p>
+        <div class="section flex">
+          <button class="primary" onclick="app.doExport('problems.json'); document.getElementById('modal-root').innerHTML = ''">エクスポート</button>
+          <button class="ghost" onclick="document.getElementById('modal-root').innerHTML = ''">キャンセル</button>
+        </div>
+      `);
+    }
+  }
+
 
   (async function boot(){
     try{
@@ -2128,18 +2183,20 @@ const app = (()=>{
         el.addEventListener('click', () => {
           const view = el.getAttribute('data-nav');
           if (view === 'exit') {
-            // __exitFlow(); // Assuming this function exists for iPhone
+            exitFlow();
           } else if (view) {
             setActive(view);
           }
         });
       });
       
-      const mFull = document.getElementById('rail-mode-full');
-      const mCloze = document.getElementById('rail-mode-cloze');
-      if (mFull) mFull.addEventListener('click', () => setInputMode('full'));
-      if (mCloze) mCloze.addEventListener('click', () => setInputMode('cloze'));
+      document.querySelectorAll('.btn-mode-full').forEach(el => el.addEventListener('click', () => setInputMode('full')));
+      document.querySelectorAll('.btn-mode-cloze').forEach(el => el.addEventListener('click', () => setInputMode('cloze')));
       updateInputModeUI();
+      
+      if (IS_IPHONE && config.iosShowImportAtBoot) {
+        showIOSImportModal();
+      }
 
     }catch(e){ showError(e); }
   })();
@@ -2156,7 +2213,7 @@ const app = (()=>{
     startTopicAll: (rnd)=>{ let ids = idsByTopic(state.currentSubject, state.currentTopic); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
     startSubtopic: (st, rnd)=>{ let ids = idsBySubtopic(state.currentSubject, state.currentTopic, st); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
     startAll: (rnd)=>{ let base = filtered().map(p=>p.id); const n = getSubjectCount(); const chosen = pickWithLimit(base, n, rnd); startQueue(chosen, false); },
-    startQuiz: (id)=>{ state.reviewQueue=null; state.currentProblemId = id; startSession([id], false, 'review_list'); setActive('quiz'); },
+    startQuiz: (id, mode)=>{ state.currentProblemId = id; startSession([id], false, mode); setActive('quiz'); },
     editProblem: (id)=>{ state.currentProblemId = id; setActive('edit'); },
     deleteProblem: (id)=>{ const target = state.problems.find(p=>p.id===id); if (!target) return; if (confirm(`次の問題を削除します。よろしいですか？\n\n「${target.question}」`)) { state.problems = state.problems.filter(p=>p.id!==id); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); render(); } },
     prev: ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; renderQuiz(); } },
@@ -2166,7 +2223,7 @@ const app = (()=>{
     goHome: ()=> { endSession(); stopTimer(); setActive('home'); },
     setReviewTab: (tabName) => { state.reviewTab = tabName; state.reviewTodayListVisible = false; renderReview(); },
     toggleReviewTodayList: () => { state.reviewTodayListVisible = !state.reviewTodayListVisible; renderReview(); },
-    startQueue: (ids, rnd)=> startQueue(ids, rnd),
+    startQueue: (ids, rnd, mode)=> startQueue(ids, rnd, mode),
     addSubmit: ()=>{ const subject = document.getElementById('f-subject').value; let topic = ''; const tSel = document.getElementById('f-topic'); if (tSel) { topic = (tSel.value === "__NEW__") ? (document.getElementById('f-topic-new').value || '').trim() : tSel.value; } else { topic = (document.getElementById('f-topic-new').value || '').trim(); } let subtopic = ''; const sSel = document.getElementById('f-subtopic'); if (sSel) { subtopic = (sSel.value === "__NEW__") ? (document.getElementById('f-subtopic-new').value || '').trim() : sSel.value; } else { subtopic = (document.getElementById('f-subtopic-new').value || '').trim(); } const importance = document.getElementById('f-importance').value; const question = (document.getElementById('f-question').value||'').trim(); const example  = (document.getElementById('f-example').value||'').trim(); const keywordsRaw = (document.getElementById('f-keywords').value||''); const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : []; const note     = (document.getElementById('f-note').value||'').trim(); if (!question) { showToast('問題文を入力してください。', 'error'); return; } state.problems.push({ id: Date.now()+Math.floor(Math.random()*1000), subject, topic, subtopic, importance, question, example, keywords, note, history:[], reviews:[], selfStats:{perfect:0,unsure:0,fail:0} }); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); document.getElementById('f-question').value=''; document.getElementById('f-example').value=''; document.getElementById('f-keywords').value=''; document.getElementById('f-note').value=''; showToast('問題を追加しました。', 'success'); },
     saveEdit: ()=>{ const prob = state.problems.find(x=>x.id===state.currentProblemId); const subject = document.getElementById('e-subject').value; let topic = ''; const tSel = document.getElementById('e-topic'); if (tSel) { topic = (tSel.value === "__NEW__") ? (document.getElementById('e-topic-new').value || '').trim() : tSel.value; } else { topic = (document.getElementById('e-topic-new').value || '').trim(); } let subtopic = ''; const sSel = document.getElementById('e-subtopic'); if (sSel) { subtopic = (sSel.value === "__NEW__") ? (document.getElementById('e-subtopic-new').value || '').trim() : sSel.value; } else { subtopic = (document.getElementById('e-subtopic-new').value || '').trim(); } const importance = document.getElementById('e-importance').value; const question = (document.getElementById('e-question').value||'').trim(); const example  = (document.getElementById('e-example').value||'').trim(); const keywordsRaw = (document.getElementById('e-keywords').value||''); const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : []; const note     = (document.getElementById('e-note').value||'').trim(); if (!question) { showToast('問題文を入力してください。', 'error'); return; } Object.assign(prob, {subject, topic, subtopic, importance, question, example, keywords, note}); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); showToast('保存しました。', 'success'); },
     setImp: (v)=>{ state.currentImportance=v; render(); },
@@ -2174,6 +2231,7 @@ const app = (()=>{
     resetFilters: ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); },
     pickFile,
     tryRestoreFileHandle,
+    doExport,
   };
 })();
 </script>
