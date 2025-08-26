@@ -1003,39 +1003,6 @@ const app = (()=>{
     } catch(e){ showError(e); }
   }
 
-  function calculateAllSubjectStats() {
-    const allSubjects = [...CORE_SUBJECTS, ELECTIVE_GROUP];
-    return allSubjects.map(subjectName => {
-      const problemIds = idsBySubject(subjectName);
-      const problems = problemIds.map(id => idToProb(id)).filter(Boolean);
-      
-      const totalProblems = problems.length;
-      if (totalProblems === 0) {
-        return { subjectName, achievementRate: 0, correctRate: 0, totalProblems: 0 };
-      }
-
-      const answeredProblems = problems.filter(p => p.history && p.history.length > 0);
-      const achievementRate = (answeredProblems.length / totalProblems) * 100;
-
-      let correctAnswers = 0;
-      let totalAnswers = 0;
-      problems.forEach(p => {
-        if (p.history && p.history.length > 0) {
-          p.history.forEach(h => {
-            if (h.score === '◎' || h.score === '○') {
-              correctAnswers++;
-            }
-          });
-          totalAnswers += p.history.length;
-        }
-      });
-      
-      const correctRate = totalAnswers > 0 ? (correctAnswers / totalAnswers) * 100 : 0;
-
-      return { subjectName: subjectLabel(subjectName), achievementRate, correctRate, totalProblems };
-    }).filter(s => s.totalProblems > 0);
-  }
-  
   function calculateRadarChartData() {
     const subjects = [...CORE_SUBJECTS, ELECTIVE_GROUP];
     const labels = subjects.map(s => subjectLabel(s));
@@ -2236,4 +2203,4 @@ const app = (()=>{
 })();
 </script>
 </body>
-</html>
+</ht
