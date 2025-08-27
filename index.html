@@ -119,10 +119,23 @@
       background:linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 100%);
       border-color: var(--accent); color:#fff;
     }
+    button.danger {
+        background: #c0392b;
+        border-color: #c0392b;
+        color: #fff;
+    }
     button.ghost{
       border-color: var(--line); background:var(--panel); color: var(--ink);
     }
     button.ghost:hover{ border-color:var(--accent-2); background-color: var(--accent-soft); color: var(--accent); }
+    button.ghost.danger {
+        background: transparent;
+        border-color: #c0392b;
+        color: #c0392b;
+    }
+    button.ghost.danger:hover {
+        background: rgba(192, 57, 43, 0.1);
+    }
     .badge{ display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:22px; padding:0 .5rem;
       border-radius:999px; background:var(--accent-2); color:#fff; font-weight:600; font-size:.75rem }
     .pill{ display:inline-flex; align-items:center; padding:.25rem .75rem; border:1px solid var(--line); border-radius:999px; background:var(--bg-subtle); font-weight:600; font-size: 0.8rem; }
@@ -498,6 +511,7 @@
     }
     .toast.success { background-color: #16a34a; }
     .toast.info { background-color: var(--accent); }
+    .toast.error { background-color: #c0392b; }
     @keyframes toast-in { to { opacity: 1; transform: translateY(0); } }
     @keyframes toast-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); } }
     
@@ -921,7 +935,7 @@ const app = (()=>{
   function hideBanner(){ document.getElementById('sys-banner').classList.add('hidden'); }
 
   async function pickFile(){
-    if (!supportsFS) { showToast("このブラウザはファイル連携をサポートしていません。"); return; }
+    if (!supportsFS) { showToast("このブラウザはファイル連携をサポートしていません。", "error"); return; }
     try{
       const [handle] = await window.showOpenFilePicker({
         types: [{description:"JSON", accept: {"application/json": [".json"]}}],
@@ -1898,14 +1912,20 @@ function latestSelfTag(p){
           <div class="section flex">
             ${prevExists ? `<button class="ghost" onclick="app.prev()"><i data-lucide="arrow-left"></i>前の問題へ</button>` : ""}
             <button class="primary" id="btn-grade" onclick="app.grade()" title="ショートカット: ⌘/Ctrl + Enter">採点する</button>
-            ${nextExists ? `<button class="ghost" onclick="app.next()">次の問題へ<i data-lucide="arrow-right"></i></button>` : ""}
+            ${nextExists ? `<button class="ghost" id="btn-next" onclick="app.next()">次の問題へ<i data-lucide="arrow-right"></i></button>` : ""}
           </div>
           <div class="small muted">ショートカット：採点 <span class="kbd">⌘</span>/<span class="kbd">Ctrl</span>+<span class="kbd">Enter</span>、前へ <span class="kbd">K</span>、次へ <span class="kbd">J</span>、自己評価 <span class="kbd">1</span>/<span class="kbd">2</span>/<span class="kbd">3</span></div>
         </div>
         <div id="result" class="section"></div>
       </div>
     `;
-    setTimeout(startTimer, 0);
+    setTimeout(() => {
+        startTimer();
+        const nextBtn = document.getElementById('btn-next');
+        if (nextBtn) {
+            nextBtn.disabled = true;
+        }
+    }, 0);
     return html;
   }
 
@@ -2501,6 +2521,22 @@ function latestSelfTag(p){
       });
   }
 
+  function showConfirmModal(title, message, onConfirm) {
+    const content = `
+        <h3>${escapeHtml(title)}</h3>
+        <p style="white-space: pre-wrap;">${escapeHtml(message)}</p>
+        <div class="section flex" style="justify-content: flex-end;">
+            <button class="ghost" onclick="app.closeModal()">キャンセル</button>
+            <button class="primary danger" id="modal-confirm-btn">OK</button>
+        </div>
+    `;
+    showModal(content);
+    document.getElementById('modal-confirm-btn').onclick = () => {
+        onConfirm();
+        closeModal();
+    };
+  }
+
   function showIOSImportModal() {
     showModal(`
       <h3>ようこそ</h3>
@@ -2604,7 +2640,27 @@ function latestSelfTag(p){
     startAll: (rnd)=>{ let base = filtered().map(p=>p.id); const n = getSubjectCount(); const chosen = pickWithLimit(base, n, rnd); startQueue(chosen, false, 'list_all'); },
     startQuiz: (id, mode)=>{ state.currentProblemId = id; startSession([id], false, mode); setActive('quiz'); },
     editProblem: (id)=>{ state.currentProblemId = id; setActive('edit'); },
-    deleteProblem: (id)=>{ const target = state.problems.find(p=>p.id===id); if (!target) return; if (confirm(`次の問題を削除します。よろしいですか？\n\n「${target.question}」`)) { state.problems = state.problems.filter(p=>p.id!==id); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); render(); } },
+    deleteProblem: (id)=>{
+      const target = state.problems.find(p=>p.id===id);
+      if (!target) return;
+      showConfirmModal(
+          '問題の削除',
+          `次の問題を削除します。よろしいですか？\n\n「${target.question}」`,
+          () => {
+              state.problems = state.problems.filter(p=>p.id!==id);
+              reindex();
+              saveLocal(state.problems, sessionsState.logs);
+              scheduleFileSave();
+              updateNavBadges();
+              showToast('問題を削除しました。');
+              if (state.view === 'edit') {
+                  setActive('list');
+              } else {
+                  render();
+              }
+          }
+      );
+    },
     prev: ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; render(); } },
     next: ()=>{ const useQueue = Array.isArray(state.reviewQueue) && state.reviewQueue.length; if (useQueue && state.lastGradedProblemId === state.currentProblemId && state.lastGradedScore){   const ids = state.reviewQueue.slice();   const curId = state.currentProblemId;   const idx = ids.indexOf(curId);   let nextId = null;   if (state.lastGradedScore === "◎"){     if (idx >= 0) ids.splice(idx, 1);     state.reviewQueue = ids;     nextId = (idx < ids.length) ? ids[idx] : null;   } else {     ids.push(curId);     state.reviewQueue = ids;     nextId = (idx >= 0 && idx < ids.length-1) ? ids[idx+1] : null;   }   if (nextId){ state.currentProblemId = nextId; render(); }   else {     const resultEl = document.getElementById("result");     if (resultEl){ resultEl.innerHTML = `<div class="section"><div class="muted">リストの出題が完了しました。</div><div class="section"><button class="primary" onclick="app.goHome()">ダッシュボードに戻る</button></div></div>`; }     endSession(); stopTimer();   }   return; } const id=navNextId(); if (id){ state.currentProblemId=id; render(); } else {   const resultEl = document.getElementById("result");   if (resultEl){ resultEl.innerHTML = `<div class="section"><div class="muted">キューの最後です。</div><div class="section"><button class="primary" onclick="app.goHome()">ダッシュボードに戻る</button></div></div>`; }   endSession(); stopTimer(); }},
     grade: ()=>{ const elapsed = state.timerStart ? Math.round((Date.now()-state.timerStart)/1000) : null; let txt = (document.getElementById('answer').value || '').trim(); const prob = state.problems.find(x=>x.id===state.currentProblemId); const __mode = (typeof getInputMode==='function') ? getInputMode() : 'full'; if (__mode==='cloze' && prob && Array.isArray(prob.keywords) && prob.keywords.length){ const parts = []; for (let i=1;i<=prob.keywords.length;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? String(el.value||'').trim() : ''); } txt = parts.join(' '); } const total = (prob.keywords||[]).length; let matches=[], missing=[]; function __norm(s){ try{ s = String(s||'').normalize('NFKC'); }catch(_){ s = String(s||''); } s = s.replace(/\s+/g,' ').trim().replace(/[、，]/g,',').replace(/[。．]/g,'.').toLowerCase(); return s; } if (__mode==='cloze' && total>0){ const parts = []; for (let i=1;i<=total;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? (el.value||'') : ''); } for (let i=0;i<total;i++){ if (__norm(parts[i]) === __norm(prob.keywords[i])) matches.push(prob.keywords[i]); else missing.push(prob.keywords[i]); } }else{ const nTxt = __norm(txt); matches = (prob.keywords||[]).filter(kw => nTxt.includes(__norm(kw))); missing = (prob.keywords||[]).filter(kw => !nTxt.includes(__norm(kw))); } let score="✕", cls="score-bad", scoreDetail=""; if (total===0){ score="—"; cls=""; scoreDetail="（キーワード未設定のため採点なし）"; }else{ const ratio = matches.length / total; if (ratio===1){ score="◎"; cls="score-okay"; } else if (ratio>=0.6){ score="○"; cls="score-mid"; } else if (ratio>0){ score="△"; cls="score-low"; } else { score="✕"; cls="score-bad"; } scoreDetail = `（${matches.length} / ${total}）`; }
@@ -2647,14 +2703,80 @@ function latestSelfTag(p){
       // --- End of simplified grading logic ---
       prob.history = prob.history||[];  prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, secs: elapsed, self:null}); try { const mode = (sessionsState.current && sessionsState.current.context && sessionsState.current.context.mode) || null; if (mode === 'weak' && score === '◎') { prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 3); } } catch(_) {} bumpSessionOnScore(score);
       state.lastGradedProblemId = prob.id;
-      state.lastGradedScore = score; addDailyAnswered(1); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); } let escaped = escapeHtml(txt); matches.forEach(kw=>{ const re = new RegExp(escReg(kw), 'g'); escaped = escaped.replace(re, `<mark class="hit">${kw}</mark>`); }); let modelEscaped = escapeHtml(prob.example || "（登録なし）"); (prob.keywords || []).forEach(kw=>{ if (!kw) return; const re = new RegExp(escReg(kw), 'g'); const has = matches.includes(kw); modelEscaped = modelEscaped.replace(re, `<mark class="${has?'hit':'miss'}">${kw}</mark>`); }); const currentSel = (()=>{ for(let i=prob.history.length-1;i>=0;i--){ if (prob.history[i].self) return prob.history[i].self; } return null; })(); document.getElementById('result').innerHTML = ` <div class="card"> <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail} ${elapsed!=null? `<span class="muted small">（所要 ${Math.floor(elapsed/60)}分${elapsed%60}秒）</span>`:''}</div> <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div> ${ total>0 ? `<div class="section"><strong>抜けていたキーワード</strong><div>${missing.length? missing.map(k=>`<span class='kw kw-miss'>${k}</span>`).join(' ') : "なし"}</div></div>` : ""} <div class="section"> <label>あなたの回答（命中キーワードをハイライト）</label> <div style="white-space:pre-line;border:1px dashed #ccc;border-radius:.6rem;padding:.6rem;background:#fcfcfc">${escaped || "（未入力）"}</div> </div> <div class="section"> <strong>模範解答（命中=黄／抜け=桃）</strong> <div style="white-space:pre-line;border:1px solid #dbeafe;background:#eff6ff;border-radius:.6rem;padding:.6rem">${modelEscaped}</div> </div> ${prob.note ? `<div class="section"><strong>補足情報</strong><div class="note">${escapeHtml(prob.note)}</div></div>` : ""} <div class="section"> <strong>自己評価：</strong> <div class="flex" id="selfBtns" style="margin-top:.5rem"> <button class="ghost selfbtn ${currentSel==='perfect'?'active':''}" data-tag="perfect" onclick="app.selfMark('perfect')">できた</button> <button class="ghost selfbtn ${currentSel==='unsure'?'active':''}" data-tag="unsure" onclick="app.selfMark('unsure')">普通</button> <button class="ghost selfbtn ${currentSel==='fail'?'active':''}" data-tag="fail" onclick="app.selfMark('fail')">できない</button> </div> </div> <div class="section flex"> <button class="ghost" onclick="app.goHome()">トップへ戻る</button> ${!!navPrevId() ? `<button class="ghost" onclick="app.prev()"><i data-lucide="arrow-left"></i> 前の問題へ</button>` : ''} ${!!navNextId() ? `<button class="primary" onclick="app.next()">次の問題へ <i data-lucide="arrow-right"></i></button>` : '<span class="muted">（キューの最後です）</span>'} </div> </div> `; },
+      state.lastGradedScore = score; addDailyAnswered(1); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); } let escaped = escapeHtml(txt); matches.forEach(kw=>{ const re = new RegExp(escReg(kw), 'g'); escaped = escaped.replace(re, `<mark class="hit">${kw}</mark>`); }); let modelEscaped = escapeHtml(prob.example || "（登録なし）"); (prob.keywords || []).forEach(kw=>{ if (!kw) return; const re = new RegExp(escReg(kw), 'g'); const has = matches.includes(kw); modelEscaped = modelEscaped.replace(re, `<mark class="${has?'hit':'miss'}">${kw}</mark>`); }); const currentSel = (()=>{ for(let i=prob.history.length-1;i>=0;i--){ if (prob.history[i].self) return prob.history[i].self; } return null; })(); document.getElementById('result').innerHTML = ` <div class="card"> <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail} ${elapsed!=null? `<span class="muted small">（所要 ${Math.floor(elapsed/60)}分${elapsed%60}秒）</span>`:''}</div> <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div> ${ total>0 ? `<div class="section"><strong>抜けていたキーワード</strong><div>${missing.length? missing.map(k=>`<span class='kw kw-miss'>${k}</span>`).join(' ') : "なし"}</div></div>` : ""} <div class="section"> <label>あなたの回答（命中キーワードをハイライト）</label> <div style="white-space:pre-line;border:1px dashed #ccc;border-radius:.6rem;padding:.6rem;background:#fcfcfc">${escaped || "（未入力）"}</div> </div> <div class="section"> <strong>模範解答（命中=黄／抜け=桃）</strong> <div style="white-space:pre-line;border:1px solid #dbeafe;background:#eff6ff;border-radius:.6rem;padding:.6rem">${modelEscaped}</div> </div> ${prob.note ? `<div class="section"><strong>補足情報</strong><div class="note">${escapeHtml(prob.note)}</div></div>` : ""} <div class="section"> <strong>自己評価：</strong> <div class="flex" id="selfBtns" style="margin-top:.5rem"> <button class="ghost selfbtn ${currentSel==='perfect'?'active':''}" data-tag="perfect" onclick="app.selfMark('perfect')">できた</button> <button class="ghost selfbtn ${currentSel==='unsure'?'active':''}" data-tag="unsure" onclick="app.selfMark('unsure')">普通</button> <button class="ghost selfbtn ${currentSel==='fail'?'active':''}" data-tag="fail" onclick="app.selfMark('fail')">できない</button> </div> </div> <div class="section flex"> <button class="ghost" onclick="app.goHome()">トップへ戻る</button> ${!!navPrevId() ? `<button class="ghost" onclick="app.prev()"><i data-lucide="arrow-left"></i> 前の問題へ</button>` : ''} ${!!navNextId() ? `<button class="primary" id="btn-next-result" onclick="app.next()">次の問題へ <i data-lucide="arrow-right"></i></button>` : '<span class="muted">（キューの最後です）</span>'} </div> </div> `;
+      const nextBtn = document.getElementById('btn-next');
+      if (nextBtn) {
+        nextBtn.disabled = false;
+      }
+    },
     selfMark: (tag)=>{ const prob = state.problems.find(x=>x.id===state.currentProblemId); const last = prob.history[prob.history.length-1]; if (last) last.self = tag; prob.selfStats = prob.selfStats || {perfect:0,unsure:0,fail:0}; if (tag==='perfect') prob.selfStats.perfect++; if (tag==='unsure') { prob.selfStats.unsure++; prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 2); } if (tag==='fail')   { prob.selfStats.fail++;   prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 3); } saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); document.querySelectorAll('.selfbtn').forEach(b=> b.classList.remove('active')); const target = Array.from(document.querySelectorAll('.selfbtn')).find(b=> b.getAttribute('data-tag')===tag); if (target) target.classList.add('active'); },
     goHome: ()=> { endSession(); stopTimer(); setActive('home'); },
     setReviewTab: (tabName) => { state.reviewTab = tabName; state.reviewTodayListVisible = false; render(); },
     toggleReviewTodayList: () => { state.reviewTodayListVisible = !state.reviewTodayListVisible; render(); },
     startQueue: (ids, rnd, mode)=> startQueue(ids, rnd, mode),
-    addSubmit: ()=>{ const subject = document.getElementById('f-subject').value; let topic = ''; const tSel = document.getElementById('f-topic'); if (tSel) { topic = (tSel.value === "__NEW__") ? (document.getElementById('f-topic-new').value || '').trim() : tSel.value; } else { topic = (document.getElementById('f-topic-new').value || '').trim(); } let subtopic = ''; const sSel = document.getElementById('f-subtopic'); if (sSel) { subtopic = (sSel.value === "__NEW__") ? (document.getElementById('f-subtopic-new').value || '').trim() : sSel.value; } else { subtopic = (document.getElementById('f-subtopic-new').value || '').trim(); } const importance = document.getElementById('f-importance').value; const question = (document.getElementById('f-question').value||'').trim(); const example  = (document.getElementById('f-example').value||'').trim(); const keywordsRaw = (document.getElementById('f-keywords').value||''); const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : []; const note     = (document.getElementById('f-note').value||'').trim(); if (!question) { showToast('問題文を入力してください。', 'error'); return; } state.problems.push({ id: Date.now()+Math.floor(Math.random()*1000), subject, topic, subtopic, importance, question, example, keywords, note, history:[], reviews:[], selfStats:{perfect:0,unsure:0,fail:0} }); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); document.getElementById('f-question').value=''; document.getElementById('f-example').value=''; document.getElementById('f-keywords').value=''; document.getElementById('f-note').value=''; showToast('問題を追加しました。', 'success'); },
-    saveEdit: ()=>{ const prob = state.problems.find(x=>x.id===state.currentProblemId); const subject = document.getElementById('e-subject').value; let topic = ''; const tSel = document.getElementById('e-topic'); if (tSel) { topic = (tSel.value === "__NEW__") ? (document.getElementById('e-topic-new').value || '').trim() : tSel.value; } else { topic = (document.getElementById('e-topic-new').value || '').trim(); } let subtopic = ''; const sSel = document.getElementById('e-subtopic'); if (sSel) { subtopic = (sSel.value === "__NEW__") ? (document.getElementById('e-subtopic-new').value || '').trim() : sSel.value; } else { subtopic = (document.getElementById('e-subtopic-new').value || '').trim(); } const importance = document.getElementById('e-importance').value; const question = (document.getElementById('e-question').value||'').trim(); const example  = (document.getElementById('e-example').value||'').trim(); const keywordsRaw = (document.getElementById('e-keywords').value||''); const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : []; const note     = (document.getElementById('e-note').value||'').trim(); if (!question) { showToast('問題文を入力してください。', 'error'); return; } Object.assign(prob, {subject, topic, subtopic, importance, question, example, keywords, note}); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); showToast('保存しました。', 'success'); },
+    addSubmit: ()=>{ 
+      const subject = document.getElementById('f-subject').value;
+      let topic = '';
+      const tSel = document.getElementById('f-topic');
+      if (tSel) {
+          topic = tSel.value;
+          if (topic === "__NEW__") {
+              topic = (document.getElementById('f-topic-new').value || '').trim();
+              if (!topic) {
+                  showToast('新しい分野名を入力してください。', 'error');
+                  return;
+              }
+          }
+      } else {
+          topic = (document.getElementById('f-topic-new').value || '').trim();
+      }
+      let subtopic = '';
+      const sSel = document.getElementById('f-subtopic');
+      if (sSel) {
+          subtopic = sSel.value;
+          if (subtopic === "__NEW__") {
+              subtopic = (document.getElementById('f-subtopic-new').value || '').trim();
+              if (!subtopic) {
+                  showToast('新しい小分類名を入力してください。', 'error');
+                  return;
+              }
+          }
+      } else {
+          subtopic = (document.getElementById('f-subtopic-new').value || '').trim();
+      }
+      const importance = document.getElementById('f-importance').value; const question = (document.getElementById('f-question').value||'').trim(); const example  = (document.getElementById('f-example').value||'').trim(); const keywordsRaw = (document.getElementById('f-keywords').value||''); const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : []; const note     = (document.getElementById('f-note').value||'').trim(); if (!question) { showToast('問題文を入力してください。', 'error'); return; } state.problems.push({ id: Date.now()+Math.floor(Math.random()*1000), subject, topic, subtopic, importance, question, example, keywords, note, history:[], reviews:[], selfStats:{perfect:0,unsure:0,fail:0} }); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); document.getElementById('f-question').value=''; document.getElementById('f-example').value=''; document.getElementById('f-keywords').value=''; document.getElementById('f-note').value=''; showToast('問題を追加しました。', 'success'); },
+    saveEdit: ()=>{ 
+      const prob = state.problems.find(x=>x.id===state.currentProblemId);
+      const subject = document.getElementById('e-subject').value;
+      let topic = '';
+      const tSel = document.getElementById('e-topic');
+      if (tSel) {
+          topic = tSel.value;
+          if (topic === "__NEW__") {
+              topic = (document.getElementById('e-topic-new').value || '').trim();
+              if (!topic) {
+                  showToast('新しい分野名を入力してください。', 'error');
+                  return;
+              }
+          }
+      } else {
+          topic = (document.getElementById('e-topic-new').value || '').trim();
+      }
+      let subtopic = '';
+      const sSel = document.getElementById('e-subtopic');
+      if (sSel) {
+          subtopic = sSel.value;
+          if (subtopic === "__NEW__") {
+              subtopic = (document.getElementById('e-subtopic-new').value || '').trim();
+              if (!subtopic) {
+                  showToast('新しい小分類名を入力してください。', 'error');
+                  return;
+              }
+          }
+      } else {
+          subtopic = (document.getElementById('e-subtopic-new').value || '').trim();
+      }
+      const importance = document.getElementById('e-importance').value; const question = (document.getElementById('e-question').value||'').trim(); const example  = (document.getElementById('e-example').value||'').trim(); const keywordsRaw = (document.getElementById('e-keywords').value||''); const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : []; const note     = (document.getElementById('e-note').value||'').trim(); if (!question) { showToast('問題文を入力してください。', 'error'); return; } Object.assign(prob, {subject, topic, subtopic, importance, question, example, keywords, note}); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); showToast('保存しました。', 'success'); },
     setImp: (v)=>{ state.currentImportance=v; render(); },
     setSelf: (v)=>{ state.currentSelf=v; render(); },
     resetFilters: ()=>{ state.currentImportance='all'; state.currentSelf='all'; render(); },
