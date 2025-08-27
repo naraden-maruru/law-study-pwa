@@ -1021,7 +1021,7 @@ const app = (()=>{
       planned: ids.length,
       answered: 0,
       scoreCount: {ok:0, good:0, low:0, bad:0},
-      answeredIds: []
+      answeredIds: new Set()
     };
     saveLocal(state.problems, sessionsState.logs);
   }
@@ -2598,18 +2598,75 @@ function latestSelfTag(p){
     selectSubject: (s)=>{ state.currentSubject = s; state.currentTopic='all'; state.currentSubtopic='all'; setActive('topics'); },
     selectElective: ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; setActive('topics'); },
     selectTopic: (t)=>{ state.currentTopic = t; state.currentSubtopic = 'all'; setActive((t==='all') ? 'list' : 'subtopics'); },
-    startSubjectAll: (rnd)=>{ let ids = idsBySubject(state.currentSubject); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
-    startTopic: (topic, rnd)=>{ let ids = idsByTopic(state.currentSubject, topic); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
+    startSubjectAll: (rnd)=>{ let ids = idsBySubject(state.currentSubject); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, rnd); },
+    startTopic: (topic, rnd)=>{ let ids = idsByTopic(state.currentSubject, topic); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, rnd); },
     selectSubtopic: (st)=>{ state.currentSubtopic = st; setActive('list'); },
-    startTopicAll: (rnd)=>{ let ids = idsByTopic(state.currentSubject, state.currentTopic); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
-    startSubtopic: (st, rnd)=>{ let ids = idsBySubtopic(state.currentSubject, state.currentTopic, st); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
-    startAll: (rnd)=>{ let base = filtered().map(p=>p.id); const n = getSubjectCount(); const chosen = pickWithLimit(base, n, rnd); startQueue(chosen, false); },
+    startTopicAll: (rnd)=>{ let ids = idsByTopic(state.currentSubject, state.currentTopic); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, rnd); },
+    startSubtopic: (st, rnd)=>{ let ids = idsBySubtopic(state.currentSubject, state.currentTopic, st); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, rnd); },
+    startAll: (rnd)=>{ let base = filtered().map(p=>p.id); const n = getSubjectCount(); const chosen = pickWithLimit(base, n, rnd); startQueue(chosen, rnd); },
     startQuiz: (id, mode)=>{ state.currentProblemId = id; startSession([id], false, mode); setActive('quiz'); },
     editProblem: (id)=>{ state.currentProblemId = id; setActive('edit'); },
     deleteProblem: (id)=>{ const target = state.problems.find(p=>p.id===id); if (!target) return; if (confirm(`次の問題を削除します。よろしいですか？\n\n「${target.question}」`)) { state.problems = state.problems.filter(p=>p.id!==id); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); render(); } },
     prev: ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; render(); } },
-    next: ()=>{ const id=navNextId(); if (id){ state.currentProblemId=id; render(); } else { const resultEl = document.getElementById('result'); if(resultEl) { resultEl.innerHTML = `<div class="card"><div class="muted">キュー内の問題を解き終えました。</div><div class="section flex"><button class="ghost" onclick="app.goHome()">トップへ戻る</button><button class="ghost" onclick="app.setActive('review')">復習ダッシュボードに戻る</button></div></div>`; endSession(); stopTimer(); } } },
-    grade: ()=>{ const elapsed = state.timerStart ? Math.round((Date.now()-state.timerStart)/1000) : null; let txt = (document.getElementById('answer').value || '').trim(); const prob = state.problems.find(x=>x.id===state.currentProblemId); const __mode = (typeof getInputMode==='function') ? getInputMode() : 'full'; if (__mode==='cloze' && prob && Array.isArray(prob.keywords) && prob.keywords.length){ const parts = []; for (let i=1;i<=prob.keywords.length;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? String(el.value||'').trim() : ''); } txt = parts.join(' '); } const total = (prob.keywords||[]).length; let matches=[], missing=[]; function __norm(s){ try{ s = String(s||'').normalize('NFKC'); }catch(_){ s = String(s||''); } s = s.replace(/\s+/g,' ').trim().replace(/[、，]/g,',').replace(/[。．]/g,'.').toLowerCase(); return s; } if (__mode==='cloze' && total>0){ const parts = []; for (let i=1;i<=total;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? (el.value||'') : ''); } for (let i=0;i<total;i++){ if (__norm(parts[i]) === __norm(prob.keywords[i])) matches.push(prob.keywords[i]); else missing.push(prob.keywords[i]); } }else{ const nTxt = __norm(txt); matches = (prob.keywords||[]).filter(kw => nTxt.includes(__norm(kw))); missing = (prob.keywords||[]).filter(kw => !nTxt.includes(__norm(kw))); } let score="✕", cls="score-bad", scoreDetail=""; if (total===0){ score="—"; cls=""; scoreDetail="（キーワード未設定のため採点なし）"; }else{ const ratio = matches.length / total; if (ratio===1){ score="◎"; cls="score-okay"; } else if (ratio>=0.6){ score="○"; cls="score-mid"; } else if (ratio>0){ score="△"; cls="score-low"; } else { score="✕"; cls="score-bad"; } scoreDetail = `（${matches.length} / ${total}）`; } const t = todayStr(); const nextByScore = (()=>{ if (score==="◎") return [7,14,30]; if (score==="○") return [3,7,14,30]; if (score==="△") return [1,3,7,14]; if (score==="✕") return [1,3]; return [1,3,7,14,30]; })().map(addDaysLocal); prob.reviews = (prob.reviews || []).filter(d=>d>t); const set = new Set([...(prob.reviews||[]), ...nextByScore]); prob.reviews = Array.from(set).sort(); prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, secs: elapsed, self:null}); try { const mode = (sessionsState.current && sessionsState.current.context && sessionsState.current.context.mode) || null; if (mode === 'weak' && score === '◎') { prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 3); } } catch(_) {} bumpSessionOnScore(score); addDailyAnswered(1); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); } let escaped = escapeHtml(txt); matches.forEach(kw=>{ const re = new RegExp(escReg(kw), 'g'); escaped = escaped.replace(re, `<mark class="hit">${kw}</mark>`); }); let modelEscaped = escapeHtml(prob.example || "（登録なし）"); (prob.keywords || []).forEach(kw=>{ if (!kw) return; const re = new RegExp(escReg(kw), 'g'); const has = matches.includes(kw); modelEscaped = modelEscaped.replace(re, `<mark class="${has?'hit':'miss'}">${kw}</mark>`); }); const currentSel = (()=>{ for(let i=prob.history.length-1;i>=0;i--){ if (prob.history[i].self) return prob.history[i].self; } return null; })(); document.getElementById('result').innerHTML = ` <div class="card"> <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail} ${elapsed!=null? `<span class="muted small">（所要 ${Math.floor(elapsed/60)}分${elapsed%60}秒）</span>`:''}</div> <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div> ${ total>0 ? `<div class="section"><strong>抜けていたキーワード</strong><div>${missing.length? missing.map(k=>`<span class='kw kw-miss'>${k}</span>`).join(' ') : "なし"}</div></div>` : ""} <div class="section"> <label>あなたの回答（命中キーワードをハイライト）</label> <div style="white-space:pre-line;border:1px dashed #ccc;border-radius:.6rem;padding:.6rem;background:#fcfcfc">${escaped || "（未入力）"}</div> </div> <div class="section"> <strong>模範解答（命中=黄／抜け=桃）</strong> <div style="white-space:pre-line;border:1px solid #dbeafe;background:#eff6ff;border-radius:.6rem;padding:.6rem">${modelEscaped}</div> </div> ${prob.note ? `<div class="section"><strong>補足情報</strong><div class="note">${escapeHtml(prob.note)}</div></div>` : ""} <div class="section"> <strong>自己評価：</strong> <div class="flex" id="selfBtns" style="margin-top:.5rem"> <button class="ghost selfbtn ${currentSel==='perfect'?'active':''}" data-tag="perfect" onclick="app.selfMark('perfect')">できた</button> <button class="ghost selfbtn ${currentSel==='unsure'?'active':''}" data-tag="unsure" onclick="app.selfMark('unsure')">普通</button> <button class="ghost selfbtn ${currentSel==='fail'?'active':''}" data-tag="fail" onclick="app.selfMark('fail')">できない</button> </div> </div> <div class="section flex"> <button class="ghost" onclick="app.goHome()">トップへ戻る</button> ${!!navPrevId() ? `<button class="ghost" onclick="app.prev()"><i data-lucide="arrow-left"></i> 前の問題へ</button>` : ''} ${!!navNextId() ? `<button class="primary" onclick="app.next()">次の問題へ <i data-lucide="arrow-right"></i></button>` : '<span class="muted">（キューの最後です）</span>'} </div> </div> `; },
+    next: ()=>{ 
+      if (!state.reviewQueue || state.reviewQueue.length === 0) {
+        const resultEl = document.getElementById('result');
+        if(resultEl) {
+          resultEl.innerHTML = `<div class="card"><div class="muted">キュー内の問題を解き終えました。</div><div class="section flex"><button class="ghost" onclick="app.goHome()">トップへ戻る</button><button class="ghost" onclick="app.setActive('review')">復習ダッシュボードに戻る</button></div></div>`;
+        }
+        endSession();
+        stopTimer();
+        return;
+      }
+      
+      const prob = idToProb(state.currentProblemId);
+      const lastScore = prob.history[prob.history.length - 1].score;
+      
+      const currentId = state.reviewQueue.shift();
+      
+      if (lastScore !== '◎') {
+        const reinsertIndex = Math.min(2, state.reviewQueue.length);
+        state.reviewQueue.splice(reinsertIndex, 0, currentId);
+      }
+      
+      if (state.reviewQueue.length > 0) {
+        state.currentProblemId = state.reviewQueue[0];
+        renderQuiz();
+      } else {
+        const resultEl = document.getElementById('result');
+        if(resultEl) {
+          resultEl.innerHTML = `<div class="card"><div class="muted">キュー内の問題を解き終えました。</div><div class="section flex"><button class="ghost" onclick="app.goHome()">トップへ戻る</button><button class="ghost" onclick="app.setActive('review')">復習ダッシュボードに戻る</button></div></div>`;
+        }
+        endSession();
+        stopTimer();
+      }
+    },
+    grade: ()=>{ const elapsed = state.timerStart ? Math.round((Date.now()-state.timerStart)/1000) : null; let txt = (document.getElementById('answer').value || '').trim(); const prob = state.problems.find(x=>x.id===state.currentProblemId); const __mode = (typeof getInputMode==='function') ? getInputMode() : 'full'; if (__mode==='cloze' && prob && Array.isArray(prob.keywords) && prob.keywords.length){ const parts = []; for (let i=1;i<=prob.keywords.length;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? String(el.value||'').trim() : ''); } txt = parts.join(' '); } const total = (prob.keywords||[]).length; let matches=[], missing=[]; function __norm(s){ try{ s = String(s||'').normalize('NFKC'); }catch(_){ s = String(s||''); } s = s.replace(/\s+/g,' ').trim().replace(/[、，]/g,',').replace(/[。．]/g,'.').toLowerCase(); return s; } if (__mode==='cloze' && total>0){ const parts = []; for (let i=1;i<=total;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? (el.value||'') : ''); } for (let i=0;i<total;i++){ if (__norm(parts[i]) === __norm(prob.keywords[i])) matches.push(prob.keywords[i]); else missing.push(prob.keywords[i]); } }else{ const nTxt = __norm(txt); matches = (prob.keywords||[]).filter(kw => nTxt.includes(__norm(kw))); missing = (prob.keywords||[]).filter(kw => !nTxt.includes(__norm(kw))); } let score="✕", cls="score-bad", scoreDetail=""; if (total===0){ score="—"; cls=""; scoreDetail="（キーワード未設定のため採点なし）"; }else{ const ratio = matches.length / total; if (ratio===1){ score="◎"; cls="score-okay"; } else if (ratio>=0.6){ score="○"; cls="score-mid"; } else if (ratio>0){ score="△"; cls="score-low"; } else { score="✕"; cls="score-bad"; } scoreDetail = `（${matches.length} / ${total}）`; } 
+      
+      const isFirstTimeInSession = !sessionsState.current.answeredIds.has(prob.id);
+      const isNewCard = prob.history.length === 0;
+
+      prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, secs: elapsed, self:null});
+
+      if (isNewCard) {
+        prob.reviews = [addDaysLocal(1)];
+      } else if (isFirstTimeInSession) {
+        const t = todayStr();
+        const nextByScore = (()=>{ if (score==="◎") return [7,14,30]; if (score==="○") return [3,7,14,30]; if (score==="△") return [1,3,7,14]; if (score==="✕") return [1,3]; return [1,3,7,14,30]; })().map(addDaysLocal);
+        prob.reviews = (prob.reviews || []).filter(d=>d>t);
+        const set = new Set([...(prob.reviews||[]), ...nextByScore]);
+        prob.reviews = Array.from(set).sort();
+      }
+      sessionsState.current.answeredIds.add(prob.id);
+
+      try { const mode = (sessionsState.current && sessionsState.current.context && sessionsState.current.context.mode) || null; if (mode === 'weak' && score === '◎') { prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 3); } } catch(_) {} 
+      bumpSessionOnScore(score); 
+      addDailyAnswered(1); 
+      saveLocal(state.problems, sessionsState.logs); 
+      scheduleFileSave(); 
+      updateNavBadges(); 
+      
+      function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); } let escaped = escapeHtml(txt); matches.forEach(kw=>{ const re = new RegExp(escReg(kw), 'g'); escaped = escaped.replace(re, `<mark class="hit">${kw}</mark>`); }); let modelEscaped = escapeHtml(prob.example || "（登録なし）"); (prob.keywords || []).forEach(kw=>{ if (!kw) return; const re = new RegExp(escReg(kw), 'g'); const has = matches.includes(kw); modelEscaped = modelEscaped.replace(re, `<mark class="${has?'hit':'miss'}">${kw}</mark>`); }); const currentSel = (()=>{ for(let i=prob.history.length-1;i>=0;i--){ if (prob.history[i].self) return prob.history[i].self; } return null; })(); document.getElementById('result').innerHTML = ` <div class="card"> <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail} ${elapsed!=null? `<span class="muted small">（所要 ${Math.floor(elapsed/60)}分${elapsed%60}秒）</span>`:''}</div> <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div> ${ total>0 ? `<div class="section"><strong>抜けていたキーワード</strong><div>${missing.length? missing.map(k=>`<span class='kw kw-miss'>${k}</span>`).join(' ') : "なし"}</div></div>` : ""} <div class="section"> <label>あなたの回答（命中キーワードをハイライト）</label> <div style="white-space:pre-line;border:1px dashed #ccc;border-radius:.6rem;padding:.6rem;background:#fcfcfc">${escaped || "（未入力）"}</div> </div> <div class="section"> <strong>模範解答（命中=黄／抜け=桃）</strong> <div style="white-space:pre-line;border:1px solid #dbeafe;background:#eff6ff;border-radius:.6rem;padding:.6rem">${modelEscaped}</div> </div> ${prob.note ? `<div class="section"><strong>補足情報</strong><div class="note">${escapeHtml(prob.note)}</div></div>` : ""} <div class="section"> <strong>自己評価：</strong> <div class="flex" id="selfBtns" style="margin-top:.5rem"> <button class="ghost selfbtn ${currentSel==='perfect'?'active':''}" data-tag="perfect" onclick="app.selfMark('perfect')">できた</button> <button class="ghost selfbtn ${currentSel==='unsure'?'active':''}" data-tag="unsure" onclick="app.selfMark('unsure')">普通</button> <button class="ghost selfbtn ${currentSel==='fail'?'active':''}" data-tag="fail" onclick="app.selfMark('fail')">できない</button> </div> </div> <div class="section flex"> <button class="ghost" onclick="app.goHome()">トップへ戻る</button> ${!!navPrevId() ? `<button class="ghost" onclick="app.prev()"><i data-lucide="arrow-left"></i> 前の問題へ</button>` : ''} ${!!navNextId() ? `<button class="primary" onclick="app.next()">次の問題へ <i data-lucide="arrow-right"></i></button>` : '<span class="muted">（キューの最後です）</span>'} </div> </div> `; },
     selfMark: (tag)=>{ const prob = state.problems.find(x=>x.id===state.currentProblemId); const last = prob.history[prob.history.length-1]; if (last) last.self = tag; prob.selfStats = prob.selfStats || {perfect:0,unsure:0,fail:0}; if (tag==='perfect') prob.selfStats.perfect++; if (tag==='unsure') { prob.selfStats.unsure++; prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 2); } if (tag==='fail')   { prob.selfStats.fail++;   prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 3); } saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); document.querySelectorAll('.selfbtn').forEach(b=> b.classList.remove('active')); const target = Array.from(document.querySelectorAll('.selfbtn')).find(b=> b.getAttribute('data-tag')===tag); if (target) target.classList.add('active'); },
     goHome: ()=> { endSession(); stopTimer(); setActive('home'); },
     setReviewTab: (tabName) => { state.reviewTab = tabName; state.reviewTodayListVisible = false; render(); },
