@@ -384,6 +384,25 @@
       gap: 1rem;
       margin-bottom: 0.5rem;
     }
+
+    /* ===== 自己評価ボタンのスタイル（修正箇所） ===== */
+    .selfbtn.active {
+      color: #fff !important;
+      transform: translateY(0); /* ホバー効果をリセット */
+      box-shadow: none;
+    }
+    .selfbtn[data-tag="perfect"].active {
+      background: #27ae60 !important; /* Green */
+      border-color: #27ae60 !important;
+    }
+    .selfbtn[data-tag="unsure"].active {
+      background: #f39c12 !important; /* Orange */
+      border-color: #f39c12 !important;
+    }
+    .selfbtn[data-tag="fail"].active {
+      background: #c0392b !important; /* Red */
+      border-color: #c0392b !important;
+    }
   </style>
   <script>
     // Optional: disable SW if ?nosw in URL
@@ -1140,7 +1159,6 @@ function latestSelfTag(p){
   let radarChart = null;
   function renderHome() {
     const dueCount = getDueTodayCount();
-    const answeredDueToday = getAnsweredDueTodayCount();
     const answeredToday = todayCount();
     const streak = calcStreak();
     const radarData = calculateRadarChartData();
@@ -1150,7 +1168,7 @@ function latestSelfTag(p){
       <h3>今日の進捗</h3>
       <div class="home-grid section">
         <div class="stat-card">
-          <div class="value">${answeredDueToday}<span class="unit">/ ${dueCount} 件</span></div>
+          <div class="value">${dueCount}<span class="unit">件</span></div>
           <div class="label">今日の復習</div>
         </div>
         <div class="stat-card">
@@ -1643,6 +1661,11 @@ function latestSelfTag(p){
       </div>
     ` : '';
 
+    const importanceOptions = `
+      <option value="all">すべて</option>
+      ${IMPORTANCES.map(im => `<option value="${im}">${importanceLabel(im)}</option>`).join('')}
+    `;
+
     $app.innerHTML = `
       <div class="card">
         <h2>復習</h2>
@@ -1686,8 +1709,7 @@ function latestSelfTag(p){
               <input type="number" id="randN" min="1" step="1" value="10" style="max-width:8rem">
               <label class="small">重要度</label>
               <select id="randImp">
-                <option value="all">すべて</option>
-                ${IMPORTANCES.map(im => `<option value="${im}">${importanceLabel(im)}</option>`).join('')}
+                ${importanceOptions}
               </select>
               <button class="ghost" id="btnRandStart">開始</button>
             </div>
@@ -1923,7 +1945,7 @@ function latestSelfTag(p){
     function currentTopicValue(){
       const tSel = document.getElementById('e-topic');
       if (!tSel) return (document.getElementById('e-topic-new')?.value||'').trim();
-      if (tSel.value === "__NEW__") return (document.getElementById('e-topic-new')?.value||'').trim();
+      if (tSel.value === "__NEW__") return (document.getElementById('e-topic-new').value||'').trim();
       return tSel.value;
     }
     function mountSubtopic(){
@@ -2215,12 +2237,12 @@ function latestSelfTag(p){
     selectSubject: (s)=>{ state.currentSubject = s; state.currentTopic='all'; state.currentSubtopic='all'; setActive('topics'); },
     selectElective: ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; setActive('topics'); },
     selectTopic: (t)=>{ state.currentTopic = t; state.currentSubtopic = 'all'; setActive((t==='all') ? 'list' : 'subtopics'); },
-    startSubjectAll: (rnd)=>{ let ids = idsBySubject(state.currentSubject).map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).map(p=>p.id); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, rnd); },
-    startTopic: (topic, rnd)=>{ let ids = idsByTopic(state.currentSubject, topic).map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).map(p=>p.id); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, rnd); },
+    startSubjectAll: (rnd)=>{ let ids = idsBySubject(state.currentSubject); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
+    startTopic: (topic, rnd)=>{ let ids = idsByTopic(state.currentSubject, topic); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
     selectSubtopic: (st)=>{ state.currentSubtopic = st; setActive('list'); },
-    startTopicAll: (rnd)=>{ let ids = idsByTopic(state.currentSubject, state.currentTopic).map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).map(p=>p.id); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, rnd); },
-    startSubtopic: (st, rnd)=>{ let ids = idsBySubtopic(state.currentSubject, state.currentTopic, st).map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).map(p=>p.id); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, rnd); },
-    startAll: (rnd)=>{ let base = filtered().map(p=>p.id); const n = getSubjectCount(); const chosen = pickWithLimit(base, n, rnd); startQueue(chosen, rnd); },
+    startTopicAll: (rnd)=>{ let ids = idsByTopic(state.currentSubject, state.currentTopic); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
+    startSubtopic: (st, rnd)=>{ let ids = idsBySubtopic(state.currentSubject, state.currentTopic, st); const n = getSubjectCount(); ids = pickWithLimit(ids, n, rnd); startQueue(ids, false); },
+    startAll: (rnd)=>{ let base = filtered().map(p=>p.id); const n = getSubjectCount(); const chosen = pickWithLimit(base, n, rnd); startQueue(chosen, false); },
     startQuiz: (id, mode)=>{ state.currentProblemId = id; startSession([id], false, mode); setActive('quiz'); },
     editProblem: (id)=>{ state.currentProblemId = id; setActive('edit'); },
     deleteProblem: (id)=>{ const target = state.problems.find(p=>p.id===id); if (!target) return; if (confirm(`次の問題を削除します。よろしいですか？\n\n「${target.question}」`)) { state.problems = state.problems.filter(p=>p.id!==id); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); render(); } },
@@ -2244,4 +2266,4 @@ function latestSelfTag(p){
 })();
 </script>
 </body>
-</ht
+</html>
