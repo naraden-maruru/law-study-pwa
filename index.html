@@ -55,6 +55,9 @@
       -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
       transition: padding-left 0.3s ease;
     }
+    body.modal-open {
+      overflow: hidden;
+    }
     h1,h2,h3{
       font-family: var(--font-serif);
       font-weight:700; letter-spacing:.02em;
@@ -236,8 +239,10 @@
   
     /* ================== ANIMATIONS ================== */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes modal-pop-in { to { opacity: 1; transform: scale(1); } }
+    @keyframes modal-pop-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    @keyframes modal-pop-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
 
     .page-container {
       animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
@@ -250,6 +255,13 @@
 
     /* Modal Animations */
     #modal-root .mask{
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
       background:rgba(10,20,40,.5); 
       backdrop-filter: blur(4px);
       animation: fadeIn 0.3s ease-out forwards;
@@ -263,9 +275,13 @@
       border-radius:var(--radius-lg);
       padding:1.5rem;
       box-shadow:var(--shadow-lg);
-      opacity: 0;
-      transform: scale(0.95);
       animation: modal-pop-in 0.3s ease-out 0.1s forwards;
+    }
+    #modal-root .mask.closing {
+      animation: fadeOut 0.3s ease-out forwards;
+    }
+    #modal-root .mask.closing .modal {
+      animation: modal-pop-out 0.3s ease-out forwards;
     }
     
     /* Misc */
@@ -2269,14 +2285,27 @@ function latestSelfTag(p){
     }, 3000);
   }
   
-  function showModal(content) {
+  function closeModal() {
     const modalRoot = document.getElementById('modal-root');
-    modalRoot.innerHTML = `<div class="mask"><div class="modal">${content}</div></div>`;
-    modalRoot.querySelector('.mask').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) {
-        modalRoot.innerHTML = '';
-      }
-    });
+    const mask = modalRoot.querySelector('.mask');
+    document.body.classList.remove('modal-open');
+    if (mask) {
+        mask.classList.add('closing');
+        mask.addEventListener('animationend', () => {
+            modalRoot.innerHTML = '';
+        }, { once: true });
+    }
+  }
+
+  function showModal(content) {
+      document.body.classList.add('modal-open');
+      const modalRoot = document.getElementById('modal-root');
+      modalRoot.innerHTML = `<div class="mask"><div class="modal">${content}</div></div>`;
+      modalRoot.querySelector('.mask').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+          closeModal();
+        }
+      });
   }
 
   function showIOSImportModal() {
@@ -2287,14 +2316,14 @@ function latestSelfTag(p){
       <div class="section flex">
         <input type="file" id="ios-import-file" accept="application/json" class="hidden">
         <button class="primary" onclick="document.getElementById('ios-import-file').click()">ファイルを選択してインポート</button>
-        <button class="ghost" onclick="document.getElementById('modal-root').innerHTML = ''">閉じる</button>
+        <button class="ghost" onclick="app.closeModal()">閉じる</button>
       </div>
     `);
     document.getElementById('ios-import-file').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
         handleImportFile(file, true, () => {
-          document.getElementById('modal-root').innerHTML = '';
+          closeModal();
         });
       }
     });
@@ -2307,8 +2336,8 @@ function latestSelfTag(p){
         <p>iPhone/iPadでは、データをファイルとして保存（エクスポート）し、安全な場所に保管することを推奨します。</p>
         <p class="muted small">次回利用時にこのファイルをインポートすることで、学習データを復元できます。</p>
         <div class="section flex">
-          <button class="primary" onclick="app.doExport('problems.json'); document.getElementById('modal-root').innerHTML = ''">エクスポート</button>
-          <button class="ghost" onclick="document.getElementById('modal-root').innerHTML = ''">キャンセル</button>
+          <button class="primary" onclick="app.doExport('problems.json'); app.closeModal()">エクスポート</button>
+          <button class="ghost" onclick="app.closeModal()">キャンセル</button>
         </div>
       `);
     }
@@ -2370,6 +2399,7 @@ function latestSelfTag(p){
   // Expose functions to global scope for onclick handlers
   return {
     setActive,
+    closeModal,
     selectSubject: (s)=>{ state.currentSubject = s; state.currentTopic='all'; state.currentSubtopic='all'; setActive('topics'); },
     selectElective: ()=>{ state.currentSubject = ELECTIVE_GROUP; state.currentTopic='all'; state.currentSubtopic='all'; setActive('topics'); },
     selectTopic: (t)=>{ state.currentTopic = t; state.currentSubtopic = 'all'; setActive((t==='all') ? 'list' : 'subtopics'); },
