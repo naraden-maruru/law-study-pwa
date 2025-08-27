@@ -259,9 +259,25 @@
       border-right:1px solid rgba(255,255,255,.1);
       display:none; flex-direction:column; padding:1.25rem 1rem; gap:0.75rem; z-index:49;
     }
-    #rail .logo{ display:flex; align-items:center; gap:10px; font-weight:900; letter-spacing:.02em; color:#fff; padding-bottom: 1rem; }
-    #rail .logo .mon{ width:32px; height:32px; border-radius:999px; background:var(--accent-2); color:var(--accent);
-      display:inline-flex; align-items:center; justify-content:center; font-weight:900; font-size: 1.1rem; }
+    #rail .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 1rem;
+    }
+    #rail .logo .logo-icon {
+      color: var(--accent-2);
+      flex-shrink: 0;
+    }
+    #rail .logo .logo-text {
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #fff;
+      letter-spacing: .03em;
+    }
     #rail .nav{ display:flex; flex-direction:column; gap:6px; margin-top:10px }
     #rail .nav button{
       display:flex; align-items:center; gap:12px;
@@ -340,7 +356,7 @@
         z-index: 50;
         background: var(--panel);
       }
-      body{ padding-top: 55px; padding-bottom: calc(60px + env(safe-area-inset-bottom)); } 
+      body{ padding-top: 55px; padding-bottom: calc(80px + env(safe-area-inset-bottom)); } 
     }
     
     html.iphone #tabbar .item[data-nav="exit"]{ display:flex !important; }
@@ -667,7 +683,14 @@
 
 <body>
 <aside id="rail" aria-label="メインナビ">
-  <div class="logo"><span class="mon">法</span><span>論証タイピング</span></div>
+  <div class="logo">
+    <svg class="logo-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.6"/>
+      <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.8"/>
+    </svg>
+    <span class="logo-text">論証タイピング</span>
+  </div>
   <div class="nav">
     <button data-nav="home"><i class="lucide" data-lucide="home"></i>ホーム</button>
     <button data-nav="subjects"><i class="lucide" data-lucide="book-copy"></i>科目</button>
