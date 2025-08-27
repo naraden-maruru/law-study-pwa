@@ -6,184 +6,225 @@
   <title>司法試験 論証タイピング</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <meta name="theme-color" content="#0e2240">
+  <meta name="theme-color" content="#0d1b32">
   <!-- Chart.jsライブラリの読み込み -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Iconsライブラリの読み込み -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     /* ==================================================
-       HOSHINO-INSPIRED THEME (Navy × Gold × Ivory) - BASE
+       ANIMATION REFRESH THEME (Ivory, Navy, Gold)
        ================================================== */
     :root{
-      --bg:#f7f5ef;         /* ivory */
-      --panel:#ffffff;
-      --ink:#161a24;        /* deep ink */
-      --ink-2:#4b5563;      /* muted */
-      --line:#e6e0d4;       /* warm line */
-      --accent:#0e2240;     /* deep navy */
-      --accent-2:#b4883b;   /* warm gold */
-      --accent-soft:#eef2f8;
-      --radius-lg:14px;
-      --radius-md:10px;
-      --shadow-md:0 12px 40px rgba(10,17,30,.08);
+      /* Color Palette */
+      --bg: #f9f9f9;
+      --bg-subtle: #f0f2f5;
+      --panel: #ffffff;
+      --ink: #1a202c;
+      --ink-2: #4a5568;
+      --line: #e2e8f0;
+      --accent: #0d1b32;
+      --accent-light: #1a3a6e;
+      --accent-2: #c5984b;
+      --accent-soft: #edf2f7;
+      
+      /* Typography */
+      --font-sans: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Source Han Sans JP", "Yu Gothic",
+                   Meiryo, Arial, sans-serif;
+      --font-serif: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Source Han Serif JP",
+                   Georgia, "Times New Roman", serif;
+
+      /* Sizing & Radius */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+
+      /* Shadows (Layered) */
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-focus: 0 0 0 3px rgba(197, 152, 75, 0.3);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
-      font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                   "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Source Han Sans JP", "Yu Gothic",
-                   Meiryo, Arial, sans-serif;
+      font-family: var(--font-sans);
       color:var(--ink); background:var(--bg); letter-spacing:.01em;
       -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      transition: padding-left 0.3s ease;
     }
     h1,h2,h3{
-      font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Source Han Serif JP",
-                   Georgia, "Times New Roman", serif;
+      font-family: var(--font-serif);
       font-weight:700; letter-spacing:.02em;
     }
-    h2{ font-size:1.1rem; margin:.1rem 0 .6rem 0; font-weight:900 }
-    h3{ font-size:1rem; margin:.2rem 0 .4rem 0; font-weight:800; color:var(--ink) }
-    small,.muted{font-size:.84rem; color:var(--ink-2); letter-spacing:.01em}
-    .container, main, #app, .page{max-width:1080px; margin:0 auto; padding:12px}
-    .section{margin-top:1rem}
+    h2{ font-size:1.25rem; margin:.1rem 0 .8rem 0; font-weight:800; color: var(--accent); }
+    h3{ font-size:1.1rem; margin:.2rem 0 .6rem 0; font-weight:700; color: var(--ink) }
+    small,.muted{font-size:.875rem; color:var(--ink-2); letter-spacing:.01em}
+    .container, main, #app, .page{max-width:1200px; margin:0 auto; padding:1.5rem}
+    .section{margin-top:1.5rem}
     .card{
-      background:linear-gradient(180deg, #fff 0%, #fffdf9 100%);
+      background: var(--panel);
       border:1px solid var(--line);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-md);
-      padding:1rem;
+      padding:1.5rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .list-item{
-      border:1px solid var(--line); border-radius:12px; background:#fff; padding:.9rem;
+      border:1px solid var(--line); border-radius:var(--radius-md); background:#fff; padding:1rem 1.25rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    .list-item:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent-2);
+    }
+
     /* Controls */
     button{
-      line-height:1; border-radius:var(--radius-md);
-      font-weight:600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      line-height:1; border-radius:var(--radius-sm);
+      font-weight:600; font-family: var(--font-sans);
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
+      padding: 0.6rem 1rem;
+      border: 1px solid transparent;
+      box-shadow: var(--shadow-sm);
     }
     button:hover { 
-      filter: brightness(1.05);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    button:active {
+      transform: translateY(0px);
+      box-shadow: var(--shadow-sm);
+      filter: brightness(0.95);
     }
     button:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       filter: none;
       transform: none;
+      box-shadow: none;
     }
     button.primary{
-      height:42px; padding:0 1rem; font-weight:700;
-      background:linear-gradient(180deg, #143057 0%, #0e2240 100%);
-      border:1px solid #0e2240; color:#fff;
+      background:linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 100%);
+      border-color: var(--accent); color:#fff;
     }
-    button.primary:hover { filter: brightness(1.1); transform: scale(1.02); }
     button.ghost{
-      height:42px; padding:0 .95rem; font-weight:700;
-      border:1px solid var(--line); background:#fff;
+      border-color: var(--line); background:var(--panel); color: var(--ink);
     }
-    button.ghost:hover{ border-color:#d9cfbf; background-color: #fcfcfc; }
+    button.ghost:hover{ border-color:var(--accent-2); background-color: var(--accent-soft); color: var(--accent); }
     .badge{ display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:22px; padding:0 .5rem;
       border-radius:999px; background:var(--accent-2); color:#fff; font-weight:600; font-size:.75rem }
-    .pill{ display:inline-flex; align-items:center; padding:.22rem .6rem; border:1px solid var(--line); border-radius:999px; background:var(--panel); font-weight:600 }
+    .pill{ display:inline-flex; align-items:center; padding:.25rem .75rem; border:1px solid var(--line); border-radius:999px; background:var(--bg-subtle); font-weight:600; font-size: 0.8rem; }
+    
     /* Inputs */
-    input, select, textarea{ width:100%; background:#fff; color:var(--ink); border:1px solid var(--line);
-      border-radius:var(--radius-md); padding:.66rem; font:inherit; }
-    input:focus, select:focus, textarea:focus{ outline:none; box-shadow:0 0 0 3px rgba(180,136,59,.18); border-color:#c9b58f; }
-    textarea{ font-size:16px; line-height:1.55 }
+    input, select, textarea{ width:100%; background:var(--panel); color:var(--ink); border:1px solid var(--line);
+      border-radius:var(--radius-sm); padding:.75rem; font:inherit; transition: all 0.2s ease; }
+    input:focus, select:focus, textarea:focus{ outline:none; box-shadow:var(--shadow-focus); border-color:var(--accent-2); }
+    textarea{ font-size:16px; line-height:1.6 }
 
     /* ================== RAIL & TABBAR LAYOUT ================== */
     #rail{
       position:fixed; left:0; top:0; bottom:0; width:240px;
-      background:linear-gradient(180deg,#0e2240 0%, #0a1830 100%); color:#eaf2ff;
-      border-right:1px solid rgba(255,255,255,.08);
-      display:none; flex-direction:column; padding:16px 14px; gap:10px; z-index:49;
+      background:linear-gradient(180deg, var(--accent) 0%, #081428 100%); color:#eaf2ff;
+      border-right:1px solid rgba(255,255,255,.1);
+      display:none; flex-direction:column; padding:1.25rem 1rem; gap:0.75rem; z-index:49;
     }
-    #rail .logo{ display:flex; align-items:center; gap:10px; font-weight:900; letter-spacing:.02em; color:#fff; }
-    #rail .logo .mon{ width:30px; height:30px; border-radius:999px; background:#b4883b; color:#0e2240;
-      display:inline-flex; align-items:center; justify-content:center; font-weight:900 }
-    #rail .nav{ display:flex; flex-direction:column; gap:8px; margin-top:10px }
+    #rail .logo{ display:flex; align-items:center; gap:10px; font-weight:900; letter-spacing:.02em; color:#fff; padding-bottom: 1rem; }
+    #rail .logo .mon{ width:32px; height:32px; border-radius:999px; background:var(--accent-2); color:var(--accent);
+      display:inline-flex; align-items:center; justify-content:center; font-weight:900; font-size: 1.1rem; }
+    #rail .nav{ display:flex; flex-direction:column; gap:6px; margin-top:10px }
     #rail .nav button{
-      display:flex; align-items:center; gap:10px;
-      height:40px; padding:0 12px; font-size:.95rem; border-radius:10px;
-      background:transparent; color:#eaf2ff; border:1px solid rgba(255,255,255,.08);
-      font-weight:800; cursor:pointer;
+      display:flex; align-items:center; gap:12px;
+      height:44px; padding:0 14px; font-size:1rem; border-radius:var(--radius-sm);
+      background:transparent; color:#eaf2ff; border:none;
+      font-weight:700; cursor:pointer; justify-content: flex-start;
+      transition: all 0.2s ease;
+      box-shadow: none;
     }
-    #rail .nav button:hover{ background:rgba(255,255,255,.06) }
-    #rail .nav button.active{ background:#b4883b; color:#0e2240; border-color:#b4883b }
+    #rail .nav button:hover{ background:rgba(255,255,255,.1); transform: none; }
+    #rail .nav button.active{ background:var(--accent-2); color:var(--accent); }
+    #rail .nav button .lucide { width: 20px; height: 20px; }
     #rail .spacer{ flex:1 }
-    #rail .mode{ border-top:1px solid rgba(255,255,255,.08); padding-top:10px; display:grid; gap:8px }
+    #rail .mode{ border-top:1px solid rgba(255,255,255,.1); padding-top:1rem; display:grid; gap:8px }
     #rail .mode .seg{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
-    #rail .mode .seg button{ height:34px; font-size:.9rem; border-radius:9px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:#fff; font-weight:900 }
-    #rail .mode .seg button.active{ background:#fff; color:#0e2240 }
+    #rail .mode .seg button{ height:36px; font-size:.9rem; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,.15); background:transparent; color:#fff; font-weight:800; box-shadow: none; }
+    #rail .mode .seg button.active{ background:#fff; color:var(--accent) }
 
     #mobile-header { display: none; }
     #tabbar{
       display:flex; align-items:center; justify-content:space-around;
-      background:#0e2240; color:#eaf2ff;
-      border-bottom:1px solid rgba(255,255,255,.08);
+      background:var(--panel); color:var(--ink);
+      border-top:1px solid var(--line);
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      height: calc(60px + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
     }
     #tabbar .item{ display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center; flex:1; padding: 4px 0; }
-    #tabbar .item button{ background:transparent; border:0; color:#eaf2ff; font-size:.8rem; font-weight:700 }
-    #tabbar .item .ico{ width:20px; height:20px; opacity:.9 }
-    #tabbar .item.active button{ color:#fff }
-    #tabbar .item.active .ico{ opacity:1 }
+    #tabbar .item button{ background:transparent; border:0; color:var(--ink-2); font-size:.75rem; font-weight:600; padding: 0; box-shadow: none; }
+    #tabbar .item .lucide{ width:22px; height:22px; color: var(--ink-2); }
+    #tabbar .item.active button{ color:var(--accent) }
+    #tabbar .item.active .lucide{ color:var(--accent) }
 
-    /* ===== 【追加】モバイル用モード切り替えボタンのスタイル ===== */
     .mode-switcher-mobile {
-      background: var(--accent);
+      background: var(--bg-subtle);
       padding: 8px 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
+      border-bottom: 1px solid var(--line);
     }
-    .mode-switcher-mobile small {
-      color: #eaf2ff;
-      font-weight: 600;
-    }
+    .mode-switcher-mobile small { color: var(--ink-2); font-weight: 600; }
     .mode-switcher-mobile .seg {
       display: flex;
-      background: rgba(255,255,255,0.1);
-      border-radius: 8px;
+      background: var(--line);
+      border-radius: var(--radius-sm);
       padding: 2px;
     }
     .mode-switcher-mobile .seg button {
       padding: 4px 12px;
       border: none;
       background: transparent;
-      color: #eaf2ff;
+      color: var(--ink-2);
       font-size: 0.85rem;
       font-weight: 700;
-      border-radius: 7px;
+      border-radius: 6px;
+      box-shadow: none;
     }
     .mode-switcher-mobile .seg button.active {
-      background: #fff;
+      background: var(--panel);
       color: var(--accent);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-sm);
     }
 
     @media(min-width: 1000px){
       #rail{ display:flex }
       body{ padding-left:240px }
+      #tabbar { display: none; }
     }
     @media(max-width: 999px){
       #mobile-header {
         display: block;
         position:fixed; top:0; left:0; right:0;
         z-index: 50;
-        background: var(--accent); /* ヘッダー背景色を統一 */
+        background: var(--panel);
       }
-      /* モード切り替え分だけpadding-topを増やす */
-      body{ padding-top: 95px; } 
+      body{ padding-top: 55px; padding-bottom: calc(60px + env(safe-area-inset-bottom)); } 
     }
     
-    /* iPhone specific styles */
     html.iphone #tabbar .item[data-nav="exit"]{ display:flex !important; }
     
     /* Helper classes */
-    .flex{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap}
+    .flex{display:flex; gap:.75rem; align-items:center; flex-wrap:wrap}
     .row-sm{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
     .space{flex:1 1 auto}
     .hidden{display:none}
@@ -193,56 +234,64 @@
     #errbox{background:#111;border:1px solid #444;max-width:900px;width:100%;padding:1rem;border-radius:.75rem}
     #errbox pre{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;background:#000;padding:.75rem;border-radius:.5rem;color:#0f0;max-height:50vh;overflow:auto}
   
-    /* Modal */
-    #modal-root .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:1000}
-    #modal-root .modal{background:var(--panel,#fff);color:var(--ink,#111);width:min(680px,96vw);max-height:85vh;overflow:auto;border-radius:12px;padding:1rem;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+    /* ================== ANIMATIONS ================== */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes modal-pop-in { to { opacity: 1; transform: scale(1); } }
 
+    .page-container {
+      animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .animated-list-item {
+      opacity: 0; /* Start hidden */
+      animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    /* Modal Animations */
+    #modal-root .mask{
+      background:rgba(10,20,40,.5); 
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+    #modal-root .modal{
+      background:var(--panel);
+      color:var(--ink);
+      width:min(680px,96vw);
+      max-height:85vh;
+      overflow:auto;
+      border-radius:var(--radius-lg);
+      padding:1.5rem;
+      box-shadow:var(--shadow-lg);
+      opacity: 0;
+      transform: scale(0.95);
+      animation: modal-pop-in 0.3s ease-out 0.1s forwards;
+    }
+    
     /* Misc */
-    mark.hit{background:#fde68a}
+    mark.hit{background:#fef08a}
     mark.miss, .kw-miss, .highlight-miss{
-      background:#ffd5e5 !important; color:inherit; border-radius:4px;
+      background:#fecdd3 !important; color:inherit; border-radius:4px;
       box-shadow:0 0 0 1px rgba(255, 105, 180, .15) inset;
     }
-    .cloze-card .cloze-slot{padding:0 3px;border-bottom:2px dotted #999;cursor:pointer;border-radius:4px;transition:background .15s, border-color .15s}
-    .cloze-card .cloze-slot.ok{background:rgba(46,204,113,.18);border-bottom-color:#2ecc71}
-    .cloze-card .cloze-slot.miss{background:rgba(255,64,129,.14);border-bottom-color:#ff4081}
+    .cloze-card .cloze-slot{padding:0 3px;border-bottom:2px dotted #9ca3af;cursor:pointer;border-radius:4px;transition:background .15s, border-color .15s}
+    .cloze-card .cloze-slot.ok{background:rgba(16, 185, 129, .1);border-bottom-color:#10b981}
+    .cloze-card .cloze-slot.miss{background:rgba(239, 68, 68, .1);border-bottom-color:#ef4444}
     .cloze-card .cloze-slot.empty{background:rgba(0,0,0,.06);border-bottom-color:#bbb}
     .cloze-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.5rem}
-    .cloze-inputs input.ok{outline:2px solid #2ecc71}
-    .cloze-inputs input.miss{outline:2px solid #ff4081}
+    .cloze-inputs input.ok{outline:2px solid #10b981}
+    .cloze-inputs input.miss{outline:2px solid #ef4444}
     #rail .nav button[data-nav="exit"]{ display:none !important; }
     #tabbar .item[data-nav="exit"]{ display:none !important; }
 
-    /* ===== NEW 2025 DESIGN REFRESH & HOME SCREEN ===== */
-    :root {
-      --font-sans: "SF Pro Text", "Hiragino Kaku Gothic ProN", "Noto Sans JP", ui-sans-serif, system-ui, -apple-system, sans-serif;
-      --font-serif: "Hiragino Mincho ProN", "Noto Serif JP", serif;
-      --radius-xl: 16px;
-      --shadow-lg: 0 20px 50px -12px rgba(10, 17, 30, .12);
-    }
-    /* カードデザインの改良 */
-    .card {
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-lg);
-      border: 1px solid rgba(230, 224, 212, 0.8);
-    }
-    /* ボタンとインタラクティブ要素の改良 */
-    .list-item, .review-row {
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .list-item:hover, .review-row:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-      border-color: #d9cfbf;
-    }
     /* --- 新しいホーム画面のスタイル --- */
     .home-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.25rem;
+      gap: 1.5rem;
     }
     .stat-card {
-      background: linear-gradient(180deg, #fff 0%, #fffdf9 100%);
+      background: var(--panel);
       border: 1px solid var(--line);
       border-radius: var(--radius-lg);
       padding: 1.25rem;
@@ -252,7 +301,7 @@
       box-shadow: var(--shadow-md);
     }
     .stat-card .value {
-      font-size: 2.5rem;
+      font-size: 2.75rem;
       font-weight: 800;
       color: var(--accent);
       line-height: 1;
@@ -267,13 +316,6 @@
       font-size: 0.9rem;
       font-weight: 700;
       color: var(--ink-2);
-    }
-    
-    /* --- 検索ページのスタイル --- */
-    #search-results {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
     }
     
     /* --- トースト通知のスタイル --- */
@@ -291,57 +333,42 @@
       border-radius: var(--radius-md);
       color: #fff;
       font-weight: 700;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      box-shadow: var(--shadow-lg);
       opacity: 0;
       transform: translateY(20px);
       animation: toast-in 0.5s forwards;
     }
     .toast.success { background-color: #16a34a; }
     .toast.info { background-color: var(--accent); }
-    @keyframes toast-in {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    @keyframes toast-out {
-      from {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      to {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-    }
+    @keyframes toast-in { to { opacity: 1; transform: translateY(0); } }
+    @keyframes toast-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); } }
     
     /* --- 復習ページの新しいスタイル --- */
     .review-tabs {
       display: flex;
       gap: 0.5rem;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 2px solid var(--line);
       margin-bottom: 1.5rem;
     }
     .review-tab {
-      padding: 0.75rem 1rem;
+      padding: 0.75rem 0.25rem;
       border: none;
       background: transparent;
       cursor: pointer;
       font-weight: 700;
       color: var(--ink-2);
-      border-bottom: 2px solid transparent;
-      margin-bottom: -1px;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s ease;
+      box-shadow: none;
     }
+    .review-tab:hover { color: var(--accent); transform: none; box-shadow: none; }
     .review-tab.active {
       color: var(--accent);
-      border-bottom-color: var(--accent);
+      border-bottom-color: var(--accent-2);
     }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
     .action-card {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -355,46 +382,23 @@
       text-align: center;
     }
     .action-card.primary {
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
       color: #fff;
-      border-color: var(--accent);
+      border-color: transparent;
     }
     .action-card .icon {
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       color: var(--accent-2);
       margin-bottom: 1rem;
     }
-    .action-card.primary .icon {
-      color: #fff;
-    }
-    .action-card .title {
-      font-size: 1.2rem;
-      font-weight: 800;
-      margin: 0 0 0.5rem;
-    }
-    .action-card.primary .title {
-      color: #fff;
-    }
-    .action-card .description {
-      font-size: 0.9rem;
-      color: var(--ink-2);
-      margin: 0 0 1.5rem;
-      max-width: 400px;
-    }
-    .action-card.primary .description {
-      color: rgba(255,255,255,0.8);
-    }
-    .action-card .actions {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-    }
-    .review-details-list {
-      margin-top: 1rem;
-      border-top: 1px solid var(--line);
-      padding-top: 1rem;
-    }
+    .action-card.primary .icon { color: #fff; }
+    .action-card .title { font-size: 1.2rem; font-weight: 800; margin: 0 0 0.5rem; }
+    .action-card.primary .title { color: #fff; }
+    .action-card .description { font-size: 0.9rem; color: var(--ink-2); margin: 0 0 1.5rem; max-width: 400px; }
+    .action-card.primary .description { color: rgba(255,255,255,0.8); }
+    .action-card .actions { display: flex; gap: 1rem; justify-content: center; }
+    .review-details-list { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: 1rem; }
     .review-detail-item {
       display: flex;
       align-items: center;
@@ -402,9 +406,7 @@
       padding: 0.75rem;
       border-radius: var(--radius-md);
     }
-    .review-detail-item:hover {
-      background-color: var(--accent-soft);
-    }
+    .review-detail-item:hover { background-color: var(--accent-soft); }
     .review-detail-item .timing-tag {
       background-color: var(--accent-2);
       color: #fff;
@@ -424,45 +426,26 @@
     /* ===== 自己評価ボタンのスタイル（修正箇所） ===== */
     .selfbtn.active {
       color: #fff !important;
-      transform: translateY(0); /* ホバー効果をリセット */
-      box-shadow: none;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
     }
-    .selfbtn[data-tag="perfect"].active {
-      background: #27ae60 !important; /* Green */
-      border-color: #27ae60 !important;
-    }
-    .selfbtn[data-tag="unsure"].active {
-      background: #f39c12 !important; /* Orange */
-      border-color: #f39c12 !important;
-    }
-    .selfbtn[data-tag="fail"].active {
-      background: #c0392b !important; /* Red */
-      border-color: #c0392b !important;
-    }
+    .selfbtn[data-tag="perfect"].active { background: #27ae60 !important; border-color: #27ae60 !important; }
+    .selfbtn[data-tag="unsure"].active { background: #f39c12 !important; border-color: #f39c12 !important; }
+    .selfbtn[data-tag="fail"].active { background: #c0392b !important; border-color: #c0392b !important; }
 
     /* ===== ホーム画面のレイアウト ===== */
-    .page-header {
-        margin-bottom: 1rem;
-    }
+    .page-header { margin-bottom: 1.5rem; }
     .home-dashboard-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: auto 1fr;
-      gap: 1.25rem;
-      height: calc(100vh - 120px); 
-      min-height: 500px;
+      gap: 1.5rem;
+      height: calc(100vh - 150px); 
+      min-height: 550px;
     }
-    .home-dashboard-grid .card {
-      margin-top: 0;
-    }
-    .home-dashboard-grid .card:nth-child(1) {
-      grid-column: 1 / 2;
-      grid-row: 1 / 2;
-    }
-    .home-dashboard-grid .card:nth-child(2) {
-      grid-column: 1 / 2;
-      grid-row: 2 / 3;
-    }
+    .home-dashboard-grid .card { margin-top: 0; }
+    .home-dashboard-grid .card:nth-child(1) { grid-column: 1 / 2; grid-row: 1 / 2; }
+    .home-dashboard-grid .card:nth-child(2) { grid-column: 1 / 2; grid-row: 2 / 3; }
     .home-dashboard-grid .card-chart {
       grid-column: 2 / 3;
       grid-row: 1 / 3;
@@ -481,6 +464,7 @@
         flex-direction: column;
         height: auto;
       }
+      .container, main, #app, .page { padding: 1rem; }
     }
   </style>
   <script>
@@ -556,13 +540,13 @@
 <aside id="rail" aria-label="メインナビ">
   <div class="logo"><span class="mon">法</span><span>論証タイピング</span></div>
   <div class="nav">
-    <button data-nav="home"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>ホーム</button>
-    <button data-nav="subjects"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M4 19h16v2H4zM4 3h8a4 4 0 0 1 4 4v10H4z"/><path d="M16 7h4v10h-4z"/></svg>科目</button>
-    <button data-nav="review"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 4h18v2H3zM3 10h18v2H3zM3 16h12v2H3z"/></svg>復習</button>
-    <button data-nav="add"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg>追加</button>
-    <button data-nav="search"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>検索</button>
-    <button data-nav="settings"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58-1.92-3.32-2.4.97a7.34 7.34 0 0 0-1.62-.94l-.36-2.54h-3.84l-.36 2.54c-.57.22-1.12.53-1.62.94l-2.4-.97-1.92 3.32L4.86 11.06c-.03.31-.05.62-.05.94 0 .32.02.63.05.94l-2.03 1.58 1.92 3.32 2.4-.97c.5.41 1.05.72 1.62.94l.36 2.54h3.84l.36-2.54c.57-.22 1.12-.53 1.62-.94l2.4.97 1.92-3.32-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg>設定</button>
-    <button data-nav="exit"><svg class="ico" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg>終了</button>
+    <button data-nav="home"><i class="lucide" data-lucide="home"></i>ホーム</button>
+    <button data-nav="subjects"><i class="lucide" data-lucide="book-copy"></i>科目</button>
+    <button data-nav="review"><i class="lucide" data-lucide="sparkles"></i>復習</button>
+    <button data-nav="add"><i class="lucide" data-lucide="plus-circle"></i>追加</button>
+    <button data-nav="search"><i class="lucide" data-lucide="search"></i>検索</button>
+    <button data-nav="settings"><i class="lucide" data-lucide="settings"></i>設定</button>
+    <button data-nav="exit"><i class="lucide" data-lucide="log-out"></i>終了</button>
   </div>
   <div class="spacer"></div>
   <div class="mode">
@@ -575,7 +559,6 @@
 </aside>
 
 <header id="mobile-header">
-  <!-- ===== 【追加】モバイル用モード切り替えボタン ===== -->
   <div class="mode-switcher-mobile">
     <small>入力モード</small>
     <div class="seg">
@@ -583,18 +566,20 @@
       <button class="btn-mode-cloze">穴埋め</button>
     </div>
   </div>
-  <nav id="tabbar" aria-label="タブバー">
-    <div class="item" data-nav="home"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><button>ホーム</button></div>
-    <div class="item" data-nav="subjects"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4zM4 3h8a4 4 0 0 1 4 4v10H4z"/><path d="M16 7h4v10h-4z"/></svg><button>科目</button></div>
-    <div class="item" data-nav="review"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v2H3zM3 10h18v2H3zM3 16h12v2H3z"/></svg><button>復習</button></div>
-    <div class="item" data-nav="add"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg><button>追加</button></div>
-    <div class="item" data-nav="search"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><button>検索</button></div>
-    <div class="item" data-nav="settings"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58-1.92-3.32-2.4.97a7.34 7.34 0 0 0-1.62-.94l-.36-2.54h-3.84l-.36 2.54c-.57.22-1.12.53-1.62.94l-2.4-.97-1.92 3.32L4.86 11.06c-.03.31-.05.62-.05.94 0 .32.02.63.05.94l-2.03 1.58 1.92 3.32 2.4-.97c.5.41 1.05.72 1.62.94l.36 2.54h3.84l.36-2.54c.57-.22 1.12-.53 1.62-.94l2.4.97 1.92-3.32-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg><button>設定</button></div>
-    <div class="item" data-nav="exit"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/><path d="M4 4h6v2H6v12h4v2H4z"/></svg><button>終了</button></div>
-  </nav>
 </header>
 
 <main id="app"></main>
+
+<nav id="tabbar" aria-label="タブバー">
+    <div class="item" data-nav="home"><i class="lucide" data-lucide="home"></i><button>ホーム</button></div>
+    <div class="item" data-nav="subjects"><i class="lucide" data-lucide="book-copy"></i><button>科目</button></div>
+    <div class="item" data-nav="review"><i class="lucide" data-lucide="sparkles"></i><button>復習</button></div>
+    <div class="item" data-nav="add"><i class="lucide" data-lucide="plus-circle"></i><button>追加</button></div>
+    <div class="item" data-nav="search"><i class="lucide" data-lucide="search"></i><button>検索</button></div>
+    <div class="item" data-nav="settings"><i class="lucide" data-lucide="settings"></i><button>設定</button></div>
+    <div class="item" data-nav="exit"><i class="lucide" data-lucide="log-out"></i><button>終了</button></div>
+</nav>
+
 <div id="sys-banner" class="banner hidden"></div>
 <div id="modal-root"></div>
 <div id="errlayer"><div id="errbox"><h3>エラーが発生しました</h3><pre id="errtext"></pre><div class="section"><button onclick="document.getElementById('errlayer').style.display='none'">閉じる</button></div></div></div>
@@ -985,7 +970,14 @@ const app = (()=>{
     render();
     
     document.querySelectorAll('#rail .nav button, #tabbar .item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll(`[data-nav="${view}"]`).forEach(el => el.classList.add('active'));
+    document.querySelectorAll(`[data-nav="${view}"]`).forEach(el => {
+      // For rail buttons, the element itself gets 'active'. For tabbar, it's the parent item.
+      if (el.matches('#rail .nav button')) {
+        el.classList.add('active');
+      } else if (el.matches('#tabbar .item')) {
+        el.classList.add('active');
+      }
+    });
 
     saveUI({
       currentSubject: state.currentSubject,
@@ -1091,13 +1083,17 @@ function latestSelfTag(p){
     const btn = document.querySelector('[data-nav="review"]');
     if (!btn) return;
     const n = getDueTodayCount();
-    const labelEl = btn.querySelector('button') || btn;
+    
+    // Find the right element to add the badge to
+    const targetElement = btn.matches('#rail .nav button') ? btn : btn.querySelector('button');
+    if (!targetElement) return;
+
     const existingBadge = btn.querySelector('.badge');
     if(existingBadge) existingBadge.remove();
 
     if (n > 0){
       const shown = (n > 99 ? "99+" : String(n));
-      labelEl.innerHTML += ` <span class="badge" title="${n}件">${shown}</span>`;
+      targetElement.insertAdjacentHTML('beforeend', ` <span class="badge" title="${n}件">${shown}</span>`);
     }
   }
 
@@ -1135,19 +1131,35 @@ function latestSelfTag(p){
   }
   
   function render(){
+    let content = '';
     try{
-      if (state.view === 'home')     return renderHome();
-      if (state.view === 'search')   return renderSearch();
-      if (state.view === 'subjects') return renderSubjects();
-      if (state.view === 'topics')   return renderTopics();
-      if (state.view === 'subtopics')return renderSubtopics();
-      if (state.view === 'list')     return renderList();
-      if (state.view === 'quiz')     return renderQuiz();
-      if (state.view === 'add')      return renderAdd();
-      if (state.view === 'review')   return renderReview();
-      if (state.view === 'edit')     return renderEdit();
-      if (state.view === 'settings') return renderSettings();
-    } catch(e){ showError(e); }
+      if (state.view === 'home')     content = renderHome();
+      else if (state.view === 'search')   content = renderSearch();
+      else if (state.view === 'subjects') content = renderSubjects();
+      else if (state.view === 'topics')   content = renderTopics();
+      else if (state.view === 'subtopics')content = renderSubtopics();
+      else if (state.view === 'list')     content = renderList();
+      else if (state.view === 'quiz')     content = renderQuiz();
+      else if (state.view === 'add')      content = renderAdd();
+      else if (state.view === 'review')   content = renderReview();
+      else if (state.view === 'edit')     content = renderEdit();
+      else if (state.view === 'settings') content = renderSettings();
+    } catch(e){ 
+      showError(e); 
+      return;
+    }
+
+    $app.innerHTML = `<div class="page-container">${content}</div>`;
+    
+    // After rendering any view, initialize icons
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+
+    // Special handling for chart rendering
+    if (state.view === 'home') {
+      renderChart();
+    }
   }
 
   function calculateRadarChartData() {
@@ -1189,17 +1201,19 @@ function latestSelfTag(p){
                 label: '総回答数',
                 data: normalizedAnswersData,
                 originalData: totalAnswersData,
-                backgroundColor: 'rgba(14, 34, 64, 0.2)',
-                borderColor: 'rgba(14, 34, 64, 1)',
-                pointBackgroundColor: 'rgba(14, 34, 64, 1)',
+                backgroundColor: 'rgba(13, 27, 50, 0.2)',
+                borderColor: 'rgba(13, 27, 50, 1)',
+                pointBackgroundColor: 'rgba(13, 27, 50, 1)',
+                borderWidth: 2,
             },
             {
                 label: '正答率',
                 data: correctRateData,
                 originalData: correctRateData,
-                backgroundColor: 'rgba(180, 136, 59, 0.2)',
-                borderColor: 'rgba(180, 136, 59, 1)',
-                pointBackgroundColor: 'rgba(180, 136, 59, 1)',
+                backgroundColor: 'rgba(197, 152, 75, 0.2)',
+                borderColor: 'rgba(197, 152, 75, 1)',
+                pointBackgroundColor: 'rgba(197, 152, 75, 1)',
+                borderWidth: 2,
             }
         ]
     };
@@ -1248,21 +1262,20 @@ function latestSelfTag(p){
     const dueCount = getDueTodayCount();
     const answeredToday = todayCount();
     const streak = calcStreak();
-    const radarData = calculateRadarChartData();
     const globalStats = calculateGlobalStats();
     
     const dailyStatsHtml = `
       <h3>今日の進捗</h3>
       <div class="home-grid section">
-        <div class="stat-card">
+        <div class="stat-card animated-list-item" style="animation-delay: 0ms;">
           <div class="value">${dueCount}<span class="unit">件</span></div>
           <div class="label">今日の復習</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card animated-list-item" style="animation-delay: 100ms;">
           <div class="value">${answeredToday}<span class="unit">件</span></div>
           <div class="label">本日の解答数</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card animated-list-item" style="animation-delay: 200ms;">
           <div class="value">${streak}<span class="unit">日</span></div>
           <div class="label">継続日数</div>
         </div>
@@ -1272,33 +1285,33 @@ function latestSelfTag(p){
     const globalStatsHtml = `
       <h3>全体の進捗</h3>
       <div class="home-grid section">
-         <div class="stat-card">
+         <div class="stat-card animated-list-item" style="animation-delay: 300ms;">
           <div class="value">${globalStats.answeredProblems}<span class="unit">/ ${globalStats.totalProblems} 問</span></div>
           <div class="label">解答済み問題</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card animated-list-item" style="animation-delay: 400ms;">
           <div class="value">${globalStats.totalAnswers}<span class="unit">回</span></div>
           <div class="label">総解答数</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card animated-list-item" style="animation-delay: 500ms;">
           <div class="value">${globalStats.correctRate.toFixed(1)}<span class="unit">%</span></div>
           <div class="label">総正解率</div>
         </div>
       </div>
     `;
 
-    $app.innerHTML = `
+    return `
       <div class="page-header">
         <h2>ホーム</h2>
       </div>
       <div class="home-dashboard-grid">
-        <div class="card">
+        <div class="card animated-list-item" style="animation-delay: 0ms;">
           ${dailyStatsHtml}
         </div>
-        <div class="card">
+        <div class="card animated-list-item" style="animation-delay: 150ms;">
           ${globalStatsHtml}
         </div>
-        <div class="card card-chart">
+        <div class="card card-chart animated-list-item" style="animation-delay: 300ms;">
           <h3>学習バランス</h3>
           <div class="chart-container">
             <canvas id="radarChart"></canvas>
@@ -1306,9 +1319,12 @@ function latestSelfTag(p){
         </div>
       </div>
     `;
+  }
 
-    // グラフを描画
+  function renderChart() {
+    const radarData = calculateRadarChartData();
     const ctx = document.getElementById('radarChart');
+    if (!ctx) return;
     if (radarChart) {
         radarChart.destroy();
     }
@@ -1317,14 +1333,14 @@ function latestSelfTag(p){
         data: radarData,
         options: {
             responsive: true,
-            maintainAspectRatio: false, // コンテナに合わせてリサイズ
+            maintainAspectRatio: false,
             scales: {
                 r: {
-                    angleLines: { display: true },
+                    angleLines: { display: true, color: 'rgba(0,0,0,0.1)' },
                     suggestedMin: 0,
                     suggestedMax: 100,
-                    pointLabels: { font: { size: 12, weight: 'bold' } },
-                    ticks: { backdropColor: 'transparent' }
+                    pointLabels: { font: { size: 12, weight: 'bold', family: '"SF Pro Text", sans-serif' } },
+                    ticks: { backdropColor: 'transparent', color: 'rgba(0,0,0,0.5)' }
                 }
             },
             plugins: {
@@ -1341,6 +1357,12 @@ function latestSelfTag(p){
                             return label;
                         }
                     }
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: { family: '"SF Pro Text", sans-serif' }
+                    }
                 }
             }
         }
@@ -1348,7 +1370,7 @@ function latestSelfTag(p){
   }
 
   function renderSearch() {
-    $app.innerHTML = `
+    const html = `
       <div class="card">
         <h2>問題の検索</h2>
         <div class="section">
@@ -1359,41 +1381,45 @@ function latestSelfTag(p){
         </div>
       </div>
     `;
+    // We need to attach event listeners after rendering
+    setTimeout(() => {
+        const input = document.getElementById('search-input');
+        const resultsContainer = document.getElementById('search-results');
+        if (input) {
+            input.addEventListener('input', () => {
+              const query = input.value.toLowerCase().trim();
+              if (query.length < 1) {
+                resultsContainer.innerHTML = '<p class="muted">検索キーワードを入力してください。</p>';
+                return;
+              }
 
-    const input = document.getElementById('search-input');
-    const resultsContainer = document.getElementById('search-results');
+              const results = state.problems.filter(p => 
+                (p.question || '').toLowerCase().includes(query) ||
+                (p.topic || '').toLowerCase().includes(query) ||
+                (p.subtopic || '').toLowerCase().includes(query)
+              );
 
-    input.addEventListener('input', () => {
-      const query = input.value.toLowerCase().trim();
-      if (query.length < 1) {
-        resultsContainer.innerHTML = '<p class="muted">検索キーワードを入力してください。</p>';
-        return;
-      }
+              if (results.length === 0) {
+                resultsContainer.innerHTML = '<p class="muted">該当する問題はありませんでした。</p>';
+                return;
+              }
 
-      const results = state.problems.filter(p => 
-        (p.question || '').toLowerCase().includes(query) ||
-        (p.topic || '').toLowerCase().includes(query) ||
-        (p.subtopic || '').toLowerCase().includes(query)
-      );
-
-      if (results.length === 0) {
-        resultsContainer.innerHTML = '<p class="muted">該当する問題はありませんでした。</p>';
-        return;
-      }
-
-      resultsContainer.innerHTML = results.map(p => `
-        <div class="list-item">
-          <div class="flex">
-            <div class="space">
-              <strong>${escapeHtml(p.question)}</strong>
-              <div class="muted small">${escapeHtml(subjectLabel(p.subject))} > ${escapeHtml(p.topic)} > ${escapeHtml(p.subtopic)}</div>
-            </div>
-            <button class="ghost" onclick="app.startQuiz(${p.id})">解く</button>
-            <button class="ghost" onclick="app.editProblem(${p.id})">編集</button>
-          </div>
-        </div>
-      `).join('');
-    });
+              resultsContainer.innerHTML = results.map(p => `
+                <div class="list-item">
+                  <div class="flex">
+                    <div class="space">
+                      <strong>${escapeHtml(p.question)}</strong>
+                      <div class="muted small">${escapeHtml(subjectLabel(p.subject))} > ${escapeHtml(p.topic)} > ${escapeHtml(p.subtopic)}</div>
+                    </div>
+                    <button class="ghost" onclick="app.startQuiz(${p.id})">解く</button>
+                    <button class="ghost" onclick="app.editProblem(${p.id})">編集</button>
+                  </div>
+                </div>
+              `).join('');
+            });
+        }
+    }, 0);
+    return html;
   }
 
   function filterBarHTML(){
@@ -1427,28 +1453,29 @@ function latestSelfTag(p){
   }
 
   function renderSubjects(){
-    const coreHtml = CORE_SUBJECTS.map(s=>`
-      <div class="list-item" style="cursor:pointer" onclick="app.selectSubject('${s}')">
+    const coreHtml = CORE_SUBJECTS.map((s, i)=>`
+      <div class="list-item animated-list-item" style="animation-delay: ${i * 50}ms; cursor:pointer" onclick="app.selectSubject('${s}')">
         <div class="flex">
           <strong>${s}</strong>
           <span class="pill">${rawCountBySubject(s)} 問</span>
           <div class="space"></div>
+          <i data-lucide="chevron-right" class="lucide"></i>
         </div>
       </div>`).join('');
 
     const electiveHtml = `
-      <div class="list-item" style="cursor:pointer" onclick="app.selectElective()">
+      <div class="list-item animated-list-item" style="animation-delay: ${CORE_SUBJECTS.length * 50}ms; cursor:pointer" onclick="app.selectElective()">
         <div class="flex">
           <strong>選択科目</strong>
           <span class="pill">${rawCountBySubject("__ELECTIVE__")} 問</span>
           <div class="space"></div>
+          <i data-lucide="chevron-right" class="lucide"></i>
         </div>
       </div>
     `;
 
-    $app.innerHTML = `
-      <div class="card">
-        <h2>科目を選んでください</h2>
+    return `
+        <h2>科目を選択</h2>
         <div class="section">
           <h3>必修科目</h3>
           <div class="home-grid section">
@@ -1461,7 +1488,6 @@ function latestSelfTag(p){
             ${electiveHtml}
           </div>
         </div>
-      </div>
     `;
   }
   
@@ -1487,15 +1513,14 @@ function latestSelfTag(p){
 
   function renderTopics(){
     const subj = state.currentSubject;
-    if (!subj){ setActive('subjects'); return; }
+    if (!subj){ setActive('subjects'); return ''; }
     const topics = topicsForSubject(subj);
-    const list = topics.filter(t=>t).map(t=>`
-      <div class="list-item" style="cursor:pointer" onclick="app.selectTopic('${t.replace(/'/g,"\\'")}')">
-        <div class="list-title">
+    const list = topics.filter(t=>t).map((t, i)=>`
+      <div class="list-item animated-list-item" style="animation-delay: ${i * 50}ms; cursor:pointer" onclick="app.selectTopic('${t.replace(/'/g,"\\'")}')">
+        <div class="flex">
           <strong>${t}</strong>
           <span class="pill">${topicCount(subj, t)} 件</span>
-        </div>
-        <div class="list-actions">
+          <div class="space"></div>
           <button class="ghost" onclick="event.stopPropagation();app.startTopic('${t.replace(/'/g,"\\'")}', false)">順番</button>
           <button class="ghost" onclick="event.stopPropagation();app.startTopic('${t.replace(/'/g,"\\'")}', true)">ランダム</button>
         </div>
@@ -1504,20 +1529,18 @@ function latestSelfTag(p){
 
     const subjectCount = rawCountBySubject(subj);
 
-    $app.innerHTML = `
-      <div class="card">
+    return `
         <div class="flex">
-          <button class="ghost" onclick="app.setActive('subjects')">← 科目一覧</button>
+          <button class="ghost" onclick="app.setActive('subjects')"><i data-lucide="arrow-left"></i>科目一覧</button>
           <h2 style="margin:0 .5rem">科目：${subjectLabel(subj)}（${subjectCount} 件）</h2>
         </div>
         ${filterBarHTML()}
         <div class="section">
           <div class="list-item">
-            <div style="cursor:pointer" onclick="app.selectTopic('all')" class="list-title">
+            <div style="cursor:pointer" onclick="app.selectTopic('all')" class="flex">
               <strong>（この科目の全て）</strong>
               <span class="pill">${subjectCount} 件</span>
-            </div>
-            <div class="list-actions">
+              <div class="space"></div>
               <button class="ghost" onclick="app.startSubjectAll(false)">順番</button>
               <button class="ghost" onclick="app.startSubjectAll(true)">ランダム</button>
             </div>
@@ -1532,18 +1555,16 @@ function latestSelfTag(p){
         ${unclassifiedTopicCount(subj)>0 ? `
         <div class="section">
           <h3>未分類の分野</h3>
-          <div class="list-item">
-            <div style="cursor:pointer" onclick="app.selectTopic('')" class="list-title">
+          <div class="list-item animated-list-item" style="animation-delay: ${topics.length * 50}ms">
+            <div style="cursor:pointer" onclick="app.selectTopic('')" class="flex">
               <strong>未分類</strong>
               <span class="pill">${unclassifiedTopicCount(subj)} 件</span>
-            </div>
-            <div class="list-actions">
+              <div class="space"></div>
               <button class="ghost" onclick="app.startTopic('', false)">順番</button>
               <button class="ghost" onclick="event.stopPropagation();app.startTopic('', true)">ランダム</button>
             </div>
           </div>
         </div>` : ''}
-      </div>
     `;
   }
   
@@ -1553,17 +1574,16 @@ function latestSelfTag(p){
   function renderSubtopics(){
     const subj = state.currentSubject;
     const topic = state.currentTopic;
-    if (!subj) { setActive('subjects'); return; }
-    if (topic==='all'){ setActive('list'); return; }
+    if (!subj) { setActive('subjects'); return ''; }
+    if (topic==='all'){ setActive('list'); return ''; }
 
     const subs = subtopicsFor(subj, topic);
-    const list = subs.map(st=>`
-      <div class="list-item" style="cursor:pointer" onclick="app.selectSubtopic('${st.replace(/'/g,"\\'")}')">
-        <div class="list-title">
+    const list = subs.map((st, i)=>`
+      <div class="list-item animated-list-item" style="animation-delay: ${i * 50}ms; cursor:pointer" onclick="app.selectSubtopic('${st.replace(/'/g,"\\'")}')">
+        <div class="flex">
           <strong>${st}</strong>
           <span class="pill">${subtopicCount(subj, topic, st)} 件</span>
-        </div>
-        <div class="list-actions">
+          <div class="space"></div>
           <button class="ghost" onclick="event.stopPropagation();app.startSubtopic('${st.replace(/'/g,"\\'")}', false)">順番</button>
           <button class="ghost" onclick="event.stopPropagation();app.startSubtopic('${st.replace(/'/g,"\\'")}', true)">ランダム</button>
         </div>
@@ -1572,20 +1592,18 @@ function latestSelfTag(p){
 
     const topicAll = idsByTopic(subj, topic).map(id=>idToProb(id)).filter(Boolean).filter(meetsFilters).length;
 
-    $app.innerHTML = `
-      <div class="card">
+    return `
         <div class="flex">
-          <button class="ghost" onclick="app.setActive('topics')">← 分野一覧</button>
-          <button class="ghost" onclick="app.setActive('subjects')">← 科目一覧</button>
+          <button class="ghost" onclick="app.setActive('topics')"><i data-lucide="arrow-left"></i>分野一覧</button>
+          <button class="ghost" onclick="app.setActive('subjects')"><i data-lucide="arrow-left"></i>科目一覧</button>
           <h2 style="margin:0 .5rem">科目：${subjectLabel(subj)} / 分野：${topic}（${topicAll} 件）</h2>
         </div>
         <div class="section">
           <div class="list-item">
-            <div style="cursor:pointer" onclick="app.selectSubtopic('all')" class="list-title">
+            <div style="cursor:pointer" onclick="app.selectSubtopic('all')" class="flex">
               <strong>（この分野の全て）</strong>
               <span class="pill">${topicAll} 件</span>
-            </div>
-            <div class="list-actions">
+              <div class="space"></div>
               <button class="ghost" onclick="app.startTopicAll(false)">順番</button>
               <button class="ghost" onclick="app.startTopicAll(true)">ランダム</button>
             </div>
@@ -1600,18 +1618,16 @@ function latestSelfTag(p){
         ${unclassifiedSubtopicCount(subj, topic)>0 ? `
         <div class="section">
           <h3>未分類の小分類</h3>
-          <div class="list-item">
-            <div style="cursor:pointer" onclick="app.selectSubtopic('')" class="list-title">
+          <div class="list-item animated-list-item" style="animation-delay: ${subs.length * 50}ms">
+            <div style="cursor:pointer" onclick="app.selectSubtopic('')" class="flex">
               <strong>未分類</strong>
               <span class="pill">${unclassifiedSubtopicCount(subj, topic)} 件</span>
-            </div>
-            <div class="list-actions">
+              <div class="space"></div>
               <button class="ghost" onclick="app.startSubtopic('', false)">順番</button>
               <button class="ghost" onclick="event.stopPropagation();app.startSubtopic('', true)">ランダム</button>
             </div>
           </div>
         </div>` : ''}
-      </div>
     `;
   }
 
@@ -1632,30 +1648,30 @@ function latestSelfTag(p){
     const ids = list.map(p=>p.id);
     const disabled = ids.length===0? 'disabled':'';
 
-    $app.innerHTML = `
-      <div class="card">
+    return `
         <div class="flex">
-          ${state.currentTopic!=='all' ? `<button class="ghost" onclick="app.setActive('subtopics')">← 小分類一覧</button>` : ''}
-          <button class="ghost" onclick="app.setActive('topics')">← 分野一覧</button>
-          <button class="ghost" onclick="app.setActive('subjects')">← 科目一覧</button>
+          ${state.currentTopic!=='all' ? `<button class="ghost" onclick="app.setActive('subtopics')"><i data-lucide="arrow-left"></i>小分類一覧</button>` : ''}
+          <button class="ghost" onclick="app.setActive('topics')"><i data-lucide="arrow-left"></i>分野一覧</button>
+          <button class="ghost" onclick="app.setActive('subjects')"><i data-lucide="arrow-left"></i>科目一覧</button>
           <h2 style="margin:0 .5rem">科目：${subjectLabel(state.currentSubject)} / 分野：${topicLabel} / 小分類：${subLabel}（${list.length} 件）</h2>
         </div>
         <div class="section">
-          <div class="list-title"><strong>この一覧の全問題を連続演習：</strong></div>
-          <div class="list-actions">
+          <div class="list-item flex animated-list-item" style="animation-delay: 0ms;">
+            <strong>この一覧の全問題を連続演習：</strong>
+            <div class="space"></div>
             <button class="ghost" ${disabled} onclick="app.startAll(false)">順番</button>
             <button class="ghost" ${disabled} onclick="app.startAll(true)">ランダム</button>
           </div>
         </div>
         <div class="section">
           ${list.length===0 ? '<div class="muted">この条件の問題はありません。</div>' :
-            list.map(p=>{
+            list.map((p, i)=>{
               const tag = latestSelfTag(p);
               const tagLabel = tag==='perfect'?'できた':tag==='unsure'?'普通':tag==='fail'?'できない':'未評価';
               const tagBadge = tag ? `<span class="pill">${tagLabel}</span>` : '<span class="pill">未評価</span>';
               return `
-              <div class="list-item">
-                <div class="row">
+              <div class="list-item animated-list-item" style="animation-delay: ${(i + 1) * 50}ms;">
+                <div class="flex">
                   <div class="space"><strong>${p.question}</strong></div>
                   <div class="pill">${importanceLabel(p.importance)}</div>
                   ${tagBadge}
@@ -1669,7 +1685,6 @@ function latestSelfTag(p){
             }).join('')
           }
         </div>
-      </div>
     `;
   }
   
@@ -1687,15 +1702,15 @@ function latestSelfTag(p){
 
   function renderQuiz(){
     const p = state.problems.find(x=>x.id===state.currentProblemId);
-    if (!p) { setActive('subjects'); return; }
+    if (!p) { setActive('subjects'); return ''; }
     const prevExists = !!navPrevId();
     const nextExists = !!navNextId();
     const backButtonTarget = (sessionsState.current?.context?.mode?.startsWith('review')) ? 'review' : 'list';
 
-    $app.innerHTML = `
+    const html = `
       <div class="card">
         <div class="flex">
-          <button class="back-to-list ghost" onclick="app.setActive('${backButtonTarget}')">← 戻る</button>
+          <button class="back-to-list ghost" onclick="app.setActive('${backButtonTarget}')"><i data-lucide="arrow-left"></i>戻る</button>
           <h2 style="margin:0 .5rem">Q: ${p.question}</h2>
           <div class="space"></div>
           <div class="small">タイマー：<span id="timer" class="timer">00:00</span></div><div class="small muted" style="margin-left:.75rem">入力モード：${getInputMode()==="cloze"?"穴埋め":"全文"}</div>
@@ -1715,16 +1730,17 @@ function latestSelfTag(p){
             }catch(_){ return ''; }
           })()}
           <div class="section flex">
-            ${prevExists ? `<button class="ghost" onclick="app.prev()">◀ 前の問題へ</button>` : ""}
+            ${prevExists ? `<button class="ghost" onclick="app.prev()"><i data-lucide="arrow-left"></i>前の問題へ</button>` : ""}
             <button class="primary" id="btn-grade" onclick="app.grade()" title="ショートカット: ⌘/Ctrl + Enter">採点する</button>
-            ${nextExists ? `<button class="ghost" onclick="app.next()">次の問題へ ▶</button>` : ""}
+            ${nextExists ? `<button class="ghost" onclick="app.next()">次の問題へ<i data-lucide="arrow-right"></i></button>` : ""}
           </div>
           <div class="small muted">ショートカット：採点 <span class="kbd">⌘</span>/<span class="kbd">Ctrl</span>+<span class="kbd">Enter</span>、前へ <span class="kbd">K</span>、次へ <span class="kbd">J</span>、自己評価 <span class="kbd">1</span>/<span class="kbd">2</span>/<span class="kbd">3</span></div>
         </div>
         <div id="result" class="section"></div>
       </div>
     `;
-    startTimer();
+    setTimeout(startTimer, 0);
+    return html;
   }
 
   function getReviewTimingLabel(p) {
@@ -1745,10 +1761,10 @@ function latestSelfTag(p){
 
     const todayListHtml = state.reviewTodayListVisible ? `
       <div class="review-details-list">
-        ${dueToday.length > 0 ? dueToday.map(id => {
+        ${dueToday.length > 0 ? dueToday.map((id, i) => {
           const p = idToProb(id);
           return `
-            <div class="review-detail-item">
+            <div class="review-detail-item animated-list-item" style="animation-delay: ${i * 40}ms;">
               <span class="timing-tag">${getReviewTimingLabel(p)}</span>
               <span class="space">${escapeHtml(p.question)}</span>
               <button class="ghost" onclick="app.startQuiz(${p.id}, 'review_list')">解く</button>
@@ -1763,8 +1779,7 @@ function latestSelfTag(p){
       ${IMPORTANCES.map(im => `<option value="${im}">${importanceLabel(im)}</option>`).join('')}
     `;
 
-    $app.innerHTML = `
-      <div class="card">
+    const html = `
         <h2>復習</h2>
         <div class="review-tabs">
           <button class="review-tab ${state.reviewTab === 'today' ? 'active' : ''}" onclick="app.setReviewTab('today')">今日の復習</button>
@@ -1773,8 +1788,8 @@ function latestSelfTag(p){
         </div>
 
         <div id="tab-today" class="tab-content ${state.reviewTab === 'today' ? 'active' : ''}">
-          <div class="action-card primary" style="cursor: pointer;" onclick="app.toggleReviewTodayList()">
-            <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v2H3zM3 10h18v2H3zM3 16h12v2H3z"/></svg>
+          <div class="action-card primary animated-list-item" style="cursor: pointer;" onclick="app.toggleReviewTodayList()">
+            <i data-lucide="calendar-check" class="icon"></i>
             <h3 class="title">今日やる問題 (${dueToday.length}件)</h3>
             <p class="description">間隔反復に基づき、今日復習すべき問題です。クリックして一覧を表示します。</p>
             <div class="actions">
@@ -1786,7 +1801,8 @@ function latestSelfTag(p){
         </div>
 
         <div id="tab-weak" class="tab-content ${state.reviewTab === 'weak' ? 'active' : ''}">
-          <div class="action-card">
+          <div class="action-card animated-list-item">
+            <i data-lucide="target" class="icon"></i>
             <h3 class="title">弱点ドリル</h3>
             <p class="description">過去の評価に基づき、苦手な問題を重点的に復習します。</p>
             <div class="row-sm" style="justify-content: center;">
@@ -1798,7 +1814,8 @@ function latestSelfTag(p){
         </div>
 
         <div id="tab-custom" class="tab-content ${state.reviewTab === 'custom' ? 'active' : ''}">
-          <div class="action-card">
+          <div class="action-card animated-list-item">
+            <i data-lucide="shuffle" class="icon"></i>
             <h3 class="title">科目横断ランダム出題</h3>
             <p class="description">全ての科目からランダムで問題を出題します。</p>
             <div class="row-sm" style="justify-content: center;">
@@ -1812,31 +1829,34 @@ function latestSelfTag(p){
             </div>
           </div>
         </div>
-      </div>
     `;
     
-    const btnWdStart = document.getElementById('btnWdStart');
-    if (btnWdStart) {
-      btnWdStart.onclick = ()=>{
-        const n = Math.max(1, Number((document.getElementById('wdN')||{}).value||20));
-        const ids = state.problems.map(p=>p.id);
-        const queue = buildWeakDrillWeighted(ids, config.mixRatio, n, true);
-        startQueue(queue, false, 'review_weak');
-      };
-    }
-    
-    const btnRandStart = document.getElementById('btnRandStart');
-    if(btnRandStart) {
-      btnRandStart.onclick = ()=>{
-        const n = Math.max(1, Number((document.getElementById('randN')||{}).value||10));
-        const impSel = (document.getElementById('randImp')||{}).value || 'all';
-        let arr = state.problems.slice();
-        if (impSel !== 'all'){ arr = arr.filter(p => p.importance === impSel); }
-        arr = shuffle(arr);
-        const ids = arr.slice(0, n).map(p=>p.id);
-        startQueue(ids, false, 'review_custom');
-      };
-    }
+    setTimeout(() => {
+        const btnWdStart = document.getElementById('btnWdStart');
+        if (btnWdStart) {
+          btnWdStart.onclick = ()=>{
+            const n = Math.max(1, Number((document.getElementById('wdN')||{}).value||20));
+            const ids = state.problems.map(p=>p.id);
+            const queue = buildWeakDrillWeighted(ids, config.mixRatio, n, true);
+            startQueue(queue, false, 'review_weak');
+          };
+        }
+        
+        const btnRandStart = document.getElementById('btnRandStart');
+        if(btnRandStart) {
+          btnRandStart.onclick = ()=>{
+            const n = Math.max(1, Number((document.getElementById('randN')||{}).value||10));
+            const impSel = (document.getElementById('randImp')||{}).value || 'all';
+            let arr = state.problems.slice();
+            if (impSel !== 'all'){ arr = arr.filter(p => p.importance === impSel); }
+            arr = shuffle(arr);
+            const ids = arr.slice(0, n).map(p=>p.id);
+            startQueue(ids, false, 'review_custom');
+          };
+        }
+    }, 0);
+
+    return html;
   }
   
   function renderAdd(){
@@ -1849,7 +1869,7 @@ function latestSelfTag(p){
       </optgroup>
     `;
     const defaultSubject = state.currentSubject || CORE_SUBJECTS[0];
-    $app.innerHTML = `
+    const html = `
       <div class="card">
         <h2>新しい問題を追加</h2>
         <div class="home-grid">
@@ -1891,55 +1911,61 @@ function latestSelfTag(p){
         </div>
       </div>
     `;
-    const sel = document.getElementById('f-subject');
-    sel.value = defaultSubject;
+    
+    setTimeout(() => {
+        const sel = document.getElementById('f-subject');
+        if (!sel) return;
+        sel.value = defaultSubject;
 
-    function mountTopic(){
-      document.getElementById('f-topic-area').innerHTML = buildTopicSelectHTML(sel.value, '');
-      bindTopicHandlers();
-      mountSubtopic();
-    }
-    function currentTopicValue(){
-      const tSel = document.getElementById('f-topic');
-      if (!tSel) return (document.getElementById('f-topic-new')?.value||'').trim();
-      if (tSel.value === "__NEW__") return (document.getElementById('f-topic-new')?.value||'').trim();
-      return tSel.value;
-    }
-    function mountSubtopic(){
-      const topicVal = currentTopicValue();
-      document.getElementById('f-subtopic-area').innerHTML = buildSubtopicSelectHTML(sel.value, topicVal, '');
-      bindSubtopicHandlers();
-    }
-    function bindTopicHandlers(){
-      const tSel = document.getElementById('f-topic');
-      const tNewWrap = document.getElementById('f-topic-new-wrap');
-      if (tSel){
-        tSel.addEventListener('change', ()=>{
-          if (tSel.value === "__NEW__"){
-            if (tNewWrap) tNewWrap.classList.remove('hidden');
-          }else{
-            if (tNewWrap) tNewWrap.classList.add('hidden');
-          }
+        function mountTopic(){
+          document.getElementById('f-topic-area').innerHTML = buildTopicSelectHTML(sel.value, '');
+          bindTopicHandlers();
           mountSubtopic();
-        });
-      }
-    }
-    function bindSubtopicHandlers(){
-      const sSel = document.getElementById('f-subtopic');
-      const sNewWrap = document.getElementById('f-subtopic-new-wrap');
-      if (sSel){
-        sSel.addEventListener('change', ()=>{
-          if (sSel.value === "__NEW__"){
-            if (sNewWrap) sNewWrap.classList.remove('hidden');
-          }else{
-            if (sNewWrap) sNewWrap.classList.add('hidden');
+        }
+        function currentTopicValue(){
+          const tSel = document.getElementById('f-topic');
+          if (!tSel) return (document.getElementById('f-topic-new')?.value||'').trim();
+          if (tSel.value === "__NEW__") return (document.getElementById('f-topic-new')?.value||'').trim();
+          return tSel.value;
+        }
+        function mountSubtopic(){
+          const topicVal = currentTopicValue();
+          document.getElementById('f-subtopic-area').innerHTML = buildSubtopicSelectHTML(sel.value, topicVal, '');
+          bindSubtopicHandlers();
+        }
+        function bindTopicHandlers(){
+          const tSel = document.getElementById('f-topic');
+          const tNewWrap = document.getElementById('f-topic-new-wrap');
+          if (tSel){
+            tSel.addEventListener('change', ()=>{
+              if (tSel.value === "__NEW__"){
+                if (tNewWrap) tNewWrap.classList.remove('hidden');
+              }else{
+                if (tNewWrap) tNewWrap.classList.add('hidden');
+              }
+              mountSubtopic();
+            });
           }
-        });
-      }
-    }
+        }
+        function bindSubtopicHandlers(){
+          const sSel = document.getElementById('f-subtopic');
+          const sNewWrap = document.getElementById('f-subtopic-new-wrap');
+          if (sSel){
+            sSel.addEventListener('change', ()=>{
+              if (sSel.value === "__NEW__"){
+                if (sNewWrap) sNewWrap.classList.remove('hidden');
+              }else{
+                if (sNewWrap) sNewWrap.classList.add('hidden');
+              }
+            });
+          }
+        }
 
-    sel.addEventListener('change', ()=>{ mountTopic(); });
-    mountTopic();
+        sel.addEventListener('change', ()=>{ mountTopic(); });
+        mountTopic();
+    }, 0);
+
+    return html;
   }
 
   function buildTopicSelectHTML(subject, currentValue){
@@ -1975,7 +2001,7 @@ function latestSelfTag(p){
 
   function renderEdit(){
     const prob = state.problems.find(x=>x.id===state.currentProblemId);
-    if (!prob){ setActive('list'); return; }
+    if (!prob){ setActive('list'); return ''; }
     const subjectOptions = `
       <optgroup label="必修科目">
         ${CORE_SUBJECTS.map(s=>`<option ${prob.subject===s?'selected':''}>${s}</option>`).join('')}
@@ -1985,10 +2011,10 @@ function latestSelfTag(p){
         ${ELECTIVE_SUBJECTS.map(s=>`<option ${prob.subject===s?'selected':''}>${s}</option>`).join('')}
       </optgroup>
     `;
-    $app.innerHTML = `
+    const html = `
       <div class="card">
         <div class="flex">
-          <button class="back-to-list ghost" onclick="app.setActive('list')">← 問題一覧</button>
+          <button class="back-to-list ghost" onclick="app.setActive('list')"><i data-lucide="arrow-left"></i>問題一覧</button>
           <h2 style="margin:0 .5rem">問題の編集</h2>
         </div>
         <div class="home-grid section">
@@ -2033,52 +2059,57 @@ function latestSelfTag(p){
         </div>
       </div>
     `;
-    const sel = document.getElementById('e-subject');
-    function mountTopic(){
-      document.getElementById('e-topic-area').innerHTML = buildTopicSelectEditHTML(sel.value, prob.topic||'');
-      bindTopicHandlers();
-      mountSubtopic();
-    }
-    function currentTopicValue(){
-      const tSel = document.getElementById('e-topic');
-      if (!tSel) return (document.getElementById('e-topic-new')?.value||'').trim();
-      if (tSel.value === "__NEW__") return (document.getElementById('e-topic-new')?.value||'').trim();
-      return tSel.value;
-    }
-    function mountSubtopic(){
-      const topicVal = currentTopicValue();
-      document.getElementById('e-subtopic-area').innerHTML = buildSubtopicSelectEditHTML(sel.value, topicVal, prob.subtopic||'');
-      bindSubtopicHandlers();
-    }
-    function bindTopicHandlers(){
-      const tSel = document.getElementById('e-topic');
-      const tNewWrap = document.getElementById('e-topic-new-wrap');
-      if (tSel){
-        tSel.addEventListener('change', ()=>{
-          if (tSel.value === "__NEW__"){
-            if (tNewWrap) tNewWrap.classList.remove('hidden');
-          }else{
-            if (tNewWrap) tNewWrap.classList.add('hidden');
-          }
+
+    setTimeout(() => {
+        const sel = document.getElementById('e-subject');
+        if (!sel) return;
+        function mountTopic(){
+          document.getElementById('e-topic-area').innerHTML = buildTopicSelectEditHTML(sel.value, prob.topic||'');
+          bindTopicHandlers();
           mountSubtopic();
-        });
-      }
-    }
-    function bindSubtopicHandlers(){
-      const sSel = document.getElementById('e-subtopic');
-      const sNewWrap = document.getElementById('e-subtopic-new-wrap');
-      if (sSel){
-        sSel.addEventListener('change', ()=>{
-          if (sSel.value === "__NEW__"){
-            if (sNewWrap) sNewWrap.classList.remove('hidden');
-          }else{
-            if (sNewWrap) sNewWrap.classList.add('hidden');
+        }
+        function currentTopicValue(){
+          const tSel = document.getElementById('e-topic');
+          if (!tSel) return (document.getElementById('e-topic-new')?.value||'').trim();
+          if (tSel.value === "__NEW__") return (document.getElementById('e-topic-new')?.value||'').trim();
+          return tSel.value;
+        }
+        function mountSubtopic(){
+          const topicVal = currentTopicValue();
+          document.getElementById('e-subtopic-area').innerHTML = buildSubtopicSelectEditHTML(sel.value, topicVal, prob.subtopic||'');
+          bindSubtopicHandlers();
+        }
+        function bindTopicHandlers(){
+          const tSel = document.getElementById('e-topic');
+          const tNewWrap = document.getElementById('e-topic-new-wrap');
+          if (tSel){
+            tSel.addEventListener('change', ()=>{
+              if (tSel.value === "__NEW__"){
+                if (tNewWrap) tNewWrap.classList.remove('hidden');
+              }else{
+                if (tNewWrap) tNewWrap.classList.add('hidden');
+              }
+              mountSubtopic();
+            });
           }
-        });
-      }
-    }
-    sel.addEventListener('change', mountTopic);
-    mountTopic();
+        }
+        function bindSubtopicHandlers(){
+          const sSel = document.getElementById('e-subtopic');
+          const sNewWrap = document.getElementById('e-subtopic-new-wrap');
+          if (sSel){
+            sSel.addEventListener('change', ()=>{
+              if (sSel.value === "__NEW__"){
+                if (sNewWrap) sNewWrap.classList.remove('hidden');
+              }else{
+                if (sNewWrap) sNewWrap.classList.add('hidden');
+              }
+            });
+          }
+        }
+        sel.addEventListener('change', mountTopic);
+        mountTopic();
+    }, 0);
+    return html;
   }
   
   function buildTopicSelectEditHTML(subject, currentValue){
@@ -2115,7 +2146,7 @@ function latestSelfTag(p){
   }
   
   function renderSettings(){
-    $app.innerHTML = `
+    const html = `
       <div class="card">
         <h2>設定 / 同期</h2>
         <h3 class="section">A. 端末ローカル保存</h3>
@@ -2158,38 +2189,41 @@ function latestSelfTag(p){
         </div>
       </div>
     `;
-    document.getElementById('cfg-local').checked = !!config.autoLocalSave;
-    document.getElementById('cfg-restore').checked = !!config.autoRestore;
-    document.getElementById('cfg-ios-import-popup').checked = !!config.iosShowImportAtBoot;
-    
-    document.getElementById('cfg-mix-u').value = Number(config.mixRatio?.unsure||0);
-    document.getElementById('cfg-mix-f').value = Number(config.mixRatio?.fail||0);
-    document.getElementById('cfg-mix-o').value = Number(config.mixRatio?.other||0);
+    setTimeout(() => {
+        document.getElementById('cfg-local').checked = !!config.autoLocalSave;
+        document.getElementById('cfg-restore').checked = !!config.autoRestore;
+        document.getElementById('cfg-ios-import-popup').checked = !!config.iosShowImportAtBoot;
+        
+        document.getElementById('cfg-mix-u').value = Number(config.mixRatio?.unsure||0);
+        document.getElementById('cfg-mix-f').value = Number(config.mixRatio?.fail||0);
+        document.getElementById('cfg-mix-o').value = Number(config.mixRatio?.other||0);
 
-    document.getElementById('btn-save-cfg').onclick = ()=>{
-      config.autoLocalSave = document.getElementById('cfg-local').checked;
-      config.autoRestore = document.getElementById('cfg-restore').checked;
-      config.iosShowImportAtBoot = document.getElementById('cfg-ios-import-popup').checked;
-      config.mixRatio = {
-        unsure: Number(document.getElementById('cfg-mix-u').value||0),
-        fail:   Number(document.getElementById('cfg-mix-f').value||0),
-        other:  Number(document.getElementById('cfg-mix-o').value||0)
-      };
-      saveConfig();
-      showToast('設定を保存しました。');
-    };
-    document.getElementById('btn-clear').onclick = ()=>{
-      clearLocal();
-      showToast("ローカルキャッシュを消去しました。");
-    };
-    document.getElementById('btn-import').onclick = ()=>{
-      const f = document.getElementById('file').files[0];
-      if (!f) { showToast("ファイルを選択してください。", "error"); return; }
-      handleImportFile(f, true);
-    };
-    document.getElementById('btn-export').onclick = ()=>{
-      doExport("problems.json");
-    };
+        document.getElementById('btn-save-cfg').onclick = ()=>{
+          config.autoLocalSave = document.getElementById('cfg-local').checked;
+          config.autoRestore = document.getElementById('cfg-restore').checked;
+          config.iosShowImportAtBoot = document.getElementById('cfg-ios-import-popup').checked;
+          config.mixRatio = {
+            unsure: Number(document.getElementById('cfg-mix-u').value||0),
+            fail:   Number(document.getElementById('cfg-mix-f').value||0),
+            other:  Number(document.getElementById('cfg-mix-o').value||0)
+          };
+          saveConfig();
+          showToast('設定を保存しました。');
+        };
+        document.getElementById('btn-clear').onclick = ()=>{
+          clearLocal();
+          showToast("ローカルキャッシュを消去しました。");
+        };
+        document.getElementById('btn-import').onclick = ()=>{
+          const f = document.getElementById('file').files[0];
+          if (!f) { showToast("ファイルを選択してください。", "error"); return; }
+          handleImportFile(f, true);
+        };
+        document.getElementById('btn-export').onclick = ()=>{
+          doExport("problems.json");
+        };
+    }, 0);
+    return html;
   }
 
   function handleImportFile(file, notify=true, after){
@@ -2310,15 +2344,16 @@ function latestSelfTag(p){
       setActive(state.view);
       
       // Wire up nav and mode buttons
-      document.querySelectorAll('#rail .nav button, #tabbar .item').forEach(el => {
-        el.addEventListener('click', () => {
-          const view = el.getAttribute('data-nav');
+      document.body.addEventListener('click', (e) => {
+        const navEl = e.target.closest('[data-nav]');
+        if (navEl) {
+          const view = navEl.getAttribute('data-nav');
           if (view === 'exit') {
             exitFlow();
           } else if (view) {
             setActive(view);
           }
-        });
+        }
       });
       
       document.querySelectorAll('.btn-mode-full').forEach(el => el.addEventListener('click', () => setInputMode('full')));
@@ -2347,13 +2382,13 @@ function latestSelfTag(p){
     startQuiz: (id, mode)=>{ state.currentProblemId = id; startSession([id], false, mode); setActive('quiz'); },
     editProblem: (id)=>{ state.currentProblemId = id; setActive('edit'); },
     deleteProblem: (id)=>{ const target = state.problems.find(p=>p.id===id); if (!target) return; if (confirm(`次の問題を削除します。よろしいですか？\n\n「${target.question}」`)) { state.problems = state.problems.filter(p=>p.id!==id); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); render(); } },
-    prev: ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; renderQuiz(); } },
-    next: ()=>{ const id=navNextId(); if (id){ state.currentProblemId=id; renderQuiz(); } else { const resultEl = document.getElementById('result'); if(resultEl) { resultEl.innerHTML = `<div class="card"><div class="muted">キュー内の問題を解き終えました。</div><div class="section flex"><button class="ghost" onclick="app.goHome()">トップへ戻る</button><button class="ghost" onclick="app.setActive('review')">復習ダッシュボードに戻る</button></div></div>`; endSession(); stopTimer(); } } },
-    grade: ()=>{ const elapsed = state.timerStart ? Math.round((Date.now()-state.timerStart)/1000) : null; let txt = (document.getElementById('answer').value || '').trim(); const prob = state.problems.find(x=>x.id===state.currentProblemId); const __mode = (typeof getInputMode==='function') ? getInputMode() : 'full'; if (__mode==='cloze' && prob && Array.isArray(prob.keywords) && prob.keywords.length){ const parts = []; for (let i=1;i<=prob.keywords.length;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? String(el.value||'').trim() : ''); } txt = parts.join(' '); } const total = (prob.keywords||[]).length; let matches=[], missing=[]; function __norm(s){ try{ s = String(s||'').normalize('NFKC'); }catch(_){ s = String(s||''); } s = s.replace(/\s+/g,' ').trim().replace(/[、，]/g,',').replace(/[。．]/g,'.').toLowerCase(); return s; } if (__mode==='cloze' && total>0){ const parts = []; for (let i=1;i<=total;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? (el.value||'') : ''); } for (let i=0;i<total;i++){ if (__norm(parts[i]) === __norm(prob.keywords[i])) matches.push(prob.keywords[i]); else missing.push(prob.keywords[i]); } }else{ const nTxt = __norm(txt); matches = (prob.keywords||[]).filter(kw => nTxt.includes(__norm(kw))); missing = (prob.keywords||[]).filter(kw => !nTxt.includes(__norm(kw))); } let score="✕", cls="score-bad", scoreDetail=""; if (total===0){ score="—"; cls=""; scoreDetail="（キーワード未設定のため採点なし）"; }else{ const ratio = matches.length / total; if (ratio===1){ score="◎"; cls="score-okay"; } else if (ratio>=0.6){ score="○"; cls="score-mid"; } else if (ratio>0){ score="△"; cls="score-low"; } else { score="✕"; cls="score-bad"; } scoreDetail = `（${matches.length} / ${total}）`; } const t = todayStr(); const nextByScore = (()=>{ if (score==="◎") return [7,14,30]; if (score==="○") return [3,7,14,30]; if (score==="△") return [1,3,7,14]; if (score==="✕") return [1,3]; return [1,3,7,14,30]; })().map(addDaysLocal); prob.reviews = (prob.reviews || []).filter(d=>d>t); const set = new Set([...(prob.reviews||[]), ...nextByScore]); prob.reviews = Array.from(set).sort(); prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, secs: elapsed, self:null}); try { const mode = (sessionsState.current && sessionsState.current.context && sessionsState.current.context.mode) || null; if (mode === 'weak' && score === '◎') { prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 3); } } catch(_) {} bumpSessionOnScore(score); addDailyAnswered(1); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); } let escaped = escapeHtml(txt); matches.forEach(kw=>{ const re = new RegExp(escReg(kw), 'g'); escaped = escaped.replace(re, `<mark class="hit">${kw}</mark>`); }); let modelEscaped = escapeHtml(prob.example || "（登録なし）"); (prob.keywords || []).forEach(kw=>{ if (!kw) return; const re = new RegExp(escReg(kw), 'g'); const has = matches.includes(kw); modelEscaped = modelEscaped.replace(re, `<mark class="${has?'hit':'miss'}">${kw}</mark>`); }); const currentSel = (()=>{ for(let i=prob.history.length-1;i>=0;i--){ if (prob.history[i].self) return prob.history[i].self; } return null; })(); document.getElementById('result').innerHTML = ` <div class="card"> <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail} ${elapsed!=null? `<span class="muted small">（所要 ${Math.floor(elapsed/60)}分${elapsed%60}秒）</span>`:''}</div> <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div> ${ total>0 ? `<div class="section"><strong>抜けていたキーワード</strong><div>${missing.length? missing.map(k=>`<span class='kw kw-miss'>${k}</span>`).join(' ') : "なし"}</div></div>` : ""} <div class="section"> <label>あなたの回答（命中キーワードをハイライト）</label> <div style="white-space:pre-line;border:1px dashed #ccc;border-radius:.6rem;padding:.6rem;background:#fcfcfc">${escaped || "（未入力）"}</div> </div> <div class="section"> <strong>模範解答（命中=黄／抜け=桃）</strong> <div style="white-space:pre-line;border:1px solid #dbeafe;background:#eff6ff;border-radius:.6rem;padding:.6rem">${modelEscaped}</div> </div> ${prob.note ? `<div class="section"><strong>補足情報</strong><div class="note">${escapeHtml(prob.note)}</div></div>` : ""} <div class="section"> <strong>自己評価：</strong> <div class="flex" id="selfBtns" style="margin-top:.5rem"> <button class="ghost selfbtn ${currentSel==='perfect'?'active':''}" data-tag="perfect" onclick="app.selfMark('perfect')">できた</button> <button class="ghost selfbtn ${currentSel==='unsure'?'active':''}" data-tag="unsure" onclick="app.selfMark('unsure')">普通</button> <button class="ghost selfbtn ${currentSel==='fail'?'active':''}" data-tag="fail" onclick="app.selfMark('fail')">できない</button> </div> </div> <div class="section flex"> <button class="ghost" onclick="app.goHome()">トップへ戻る</button> ${!!navPrevId() ? `<button class="ghost" onclick="app.prev()">◀ 前の問題へ</button>` : ''} ${!!navNextId() ? `<button class="primary" onclick="app.next()">次の問題へ ▶</button>` : '<span class="muted">（キューの最後です）</span>'} </div> </div> `; },
+    prev: ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; render(); } },
+    next: ()=>{ const id=navNextId(); if (id){ state.currentProblemId=id; render(); } else { const resultEl = document.getElementById('result'); if(resultEl) { resultEl.innerHTML = `<div class="card"><div class="muted">キュー内の問題を解き終えました。</div><div class="section flex"><button class="ghost" onclick="app.goHome()">トップへ戻る</button><button class="ghost" onclick="app.setActive('review')">復習ダッシュボードに戻る</button></div></div>`; endSession(); stopTimer(); } } },
+    grade: ()=>{ const elapsed = state.timerStart ? Math.round((Date.now()-state.timerStart)/1000) : null; let txt = (document.getElementById('answer').value || '').trim(); const prob = state.problems.find(x=>x.id===state.currentProblemId); const __mode = (typeof getInputMode==='function') ? getInputMode() : 'full'; if (__mode==='cloze' && prob && Array.isArray(prob.keywords) && prob.keywords.length){ const parts = []; for (let i=1;i<=prob.keywords.length;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? String(el.value||'').trim() : ''); } txt = parts.join(' '); } const total = (prob.keywords||[]).length; let matches=[], missing=[]; function __norm(s){ try{ s = String(s||'').normalize('NFKC'); }catch(_){ s = String(s||''); } s = s.replace(/\s+/g,' ').trim().replace(/[、，]/g,',').replace(/[。．]/g,'.').toLowerCase(); return s; } if (__mode==='cloze' && total>0){ const parts = []; for (let i=1;i<=total;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? (el.value||'') : ''); } for (let i=0;i<total;i++){ if (__norm(parts[i]) === __norm(prob.keywords[i])) matches.push(prob.keywords[i]); else missing.push(prob.keywords[i]); } }else{ const nTxt = __norm(txt); matches = (prob.keywords||[]).filter(kw => nTxt.includes(__norm(kw))); missing = (prob.keywords||[]).filter(kw => !nTxt.includes(__norm(kw))); } let score="✕", cls="score-bad", scoreDetail=""; if (total===0){ score="—"; cls=""; scoreDetail="（キーワード未設定のため採点なし）"; }else{ const ratio = matches.length / total; if (ratio===1){ score="◎"; cls="score-okay"; } else if (ratio>=0.6){ score="○"; cls="score-mid"; } else if (ratio>0){ score="△"; cls="score-low"; } else { score="✕"; cls="score-bad"; } scoreDetail = `（${matches.length} / ${total}）`; } const t = todayStr(); const nextByScore = (()=>{ if (score==="◎") return [7,14,30]; if (score==="○") return [3,7,14,30]; if (score==="△") return [1,3,7,14]; if (score==="✕") return [1,3]; return [1,3,7,14,30]; })().map(addDaysLocal); prob.reviews = (prob.reviews || []).filter(d=>d>t); const set = new Set([...(prob.reviews||[]), ...nextByScore]); prob.reviews = Array.from(set).sort(); prob.history.push({date:new Date().toISOString(), score, hit:matches.length, total:total, secs: elapsed, self:null}); try { const mode = (sessionsState.current && sessionsState.current.context && sessionsState.current.context.mode) || null; if (mode === 'weak' && score === '◎') { prob.weakPoints = Math.max(0, (prob.weakPoints||0) - 3); } } catch(_) {} bumpSessionOnScore(score); addDailyAnswered(1); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); } let escaped = escapeHtml(txt); matches.forEach(kw=>{ const re = new RegExp(escReg(kw), 'g'); escaped = escaped.replace(re, `<mark class="hit">${kw}</mark>`); }); let modelEscaped = escapeHtml(prob.example || "（登録なし）"); (prob.keywords || []).forEach(kw=>{ if (!kw) return; const re = new RegExp(escReg(kw), 'g'); const has = matches.includes(kw); modelEscaped = modelEscaped.replace(re, `<mark class="${has?'hit':'miss'}">${kw}</mark>`); }); const currentSel = (()=>{ for(let i=prob.history.length-1;i>=0;i--){ if (prob.history[i].self) return prob.history[i].self; } return null; })(); document.getElementById('result').innerHTML = ` <div class="card"> <div>評価：<span class="score ${cls}">${score}</span> ${scoreDetail} ${elapsed!=null? `<span class="muted small">（所要 ${Math.floor(elapsed/60)}分${elapsed%60}秒）</span>`:''}</div> <div class="muted section">${ total===0 ? "（キーワード未設定）" : `含まれていたキーワード：${matches.length? matches.map(k=>`<span class='kw'>${k}</span>`).join(' ') : "なし"}` }</div> ${ total>0 ? `<div class="section"><strong>抜けていたキーワード</strong><div>${missing.length? missing.map(k=>`<span class='kw kw-miss'>${k}</span>`).join(' ') : "なし"}</div></div>` : ""} <div class="section"> <label>あなたの回答（命中キーワードをハイライト）</label> <div style="white-space:pre-line;border:1px dashed #ccc;border-radius:.6rem;padding:.6rem;background:#fcfcfc">${escaped || "（未入力）"}</div> </div> <div class="section"> <strong>模範解答（命中=黄／抜け=桃）</strong> <div style="white-space:pre-line;border:1px solid #dbeafe;background:#eff6ff;border-radius:.6rem;padding:.6rem">${modelEscaped}</div> </div> ${prob.note ? `<div class="section"><strong>補足情報</strong><div class="note">${escapeHtml(prob.note)}</div></div>` : ""} <div class="section"> <strong>自己評価：</strong> <div class="flex" id="selfBtns" style="margin-top:.5rem"> <button class="ghost selfbtn ${currentSel==='perfect'?'active':''}" data-tag="perfect" onclick="app.selfMark('perfect')">できた</button> <button class="ghost selfbtn ${currentSel==='unsure'?'active':''}" data-tag="unsure" onclick="app.selfMark('unsure')">普通</button> <button class="ghost selfbtn ${currentSel==='fail'?'active':''}" data-tag="fail" onclick="app.selfMark('fail')">できない</button> </div> </div> <div class="section flex"> <button class="ghost" onclick="app.goHome()">トップへ戻る</button> ${!!navPrevId() ? `<button class="ghost" onclick="app.prev()"><i data-lucide="arrow-left"></i> 前の問題へ</button>` : ''} ${!!navNextId() ? `<button class="primary" onclick="app.next()">次の問題へ <i data-lucide="arrow-right"></i></button>` : '<span class="muted">（キューの最後です）</span>'} </div> </div> `; },
     selfMark: (tag)=>{ const prob = state.problems.find(x=>x.id===state.currentProblemId); const last = prob.history[prob.history.length-1]; if (last) last.self = tag; prob.selfStats = prob.selfStats || {perfect:0,unsure:0,fail:0}; if (tag==='perfect') prob.selfStats.perfect++; if (tag==='unsure') { prob.selfStats.unsure++; prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 2); } if (tag==='fail')   { prob.selfStats.fail++;   prob.weakPoints = Math.max(0, (prob.weakPoints||0) + 3); } saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); document.querySelectorAll('.selfbtn').forEach(b=> b.classList.remove('active')); const target = Array.from(document.querySelectorAll('.selfbtn')).find(b=> b.getAttribute('data-tag')===tag); if (target) target.classList.add('active'); },
     goHome: ()=> { endSession(); stopTimer(); setActive('home'); },
-    setReviewTab: (tabName) => { state.reviewTab = tabName; state.reviewTodayListVisible = false; renderReview(); },
-    toggleReviewTodayList: () => { state.reviewTodayListVisible = !state.reviewTodayListVisible; renderReview(); },
+    setReviewTab: (tabName) => { state.reviewTab = tabName; state.reviewTodayListVisible = false; render(); },
+    toggleReviewTodayList: () => { state.reviewTodayListVisible = !state.reviewTodayListVisible; render(); },
     startQueue: (ids, rnd, mode)=> startQueue(ids, rnd, mode),
     addSubmit: ()=>{ const subject = document.getElementById('f-subject').value; let topic = ''; const tSel = document.getElementById('f-topic'); if (tSel) { topic = (tSel.value === "__NEW__") ? (document.getElementById('f-topic-new').value || '').trim() : tSel.value; } else { topic = (document.getElementById('f-topic-new').value || '').trim(); } let subtopic = ''; const sSel = document.getElementById('f-subtopic'); if (sSel) { subtopic = (sSel.value === "__NEW__") ? (document.getElementById('f-subtopic-new').value || '').trim() : sSel.value; } else { subtopic = (document.getElementById('f-subtopic-new').value || '').trim(); } const importance = document.getElementById('f-importance').value; const question = (document.getElementById('f-question').value||'').trim(); const example  = (document.getElementById('f-example').value||'').trim(); const keywordsRaw = (document.getElementById('f-keywords').value||''); const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : []; const note     = (document.getElementById('f-note').value||'').trim(); if (!question) { showToast('問題文を入力してください。', 'error'); return; } state.problems.push({ id: Date.now()+Math.floor(Math.random()*1000), subject, topic, subtopic, importance, question, example, keywords, note, history:[], reviews:[], selfStats:{perfect:0,unsure:0,fail:0} }); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); document.getElementById('f-question').value=''; document.getElementById('f-example').value=''; document.getElementById('f-keywords').value=''; document.getElementById('f-note').value=''; showToast('問題を追加しました。', 'success'); },
     saveEdit: ()=>{ const prob = state.problems.find(x=>x.id===state.currentProblemId); const subject = document.getElementById('e-subject').value; let topic = ''; const tSel = document.getElementById('e-topic'); if (tSel) { topic = (tSel.value === "__NEW__") ? (document.getElementById('e-topic-new').value || '').trim() : tSel.value; } else { topic = (document.getElementById('e-topic-new').value || '').trim(); } let subtopic = ''; const sSel = document.getElementById('e-subtopic'); if (sSel) { subtopic = (sSel.value === "__NEW__") ? (document.getElementById('e-subtopic-new').value || '').trim() : sSel.value; } else { subtopic = (document.getElementById('e-subtopic-new').value || '').trim(); } const importance = document.getElementById('e-importance').value; const question = (document.getElementById('e-question').value||'').trim(); const example  = (document.getElementById('e-example').value||'').trim(); const keywordsRaw = (document.getElementById('e-keywords').value||''); const keywords = keywordsRaw ? keywordsRaw.split(KEY_SPLIT).map(s=>s.trim()).filter(Boolean) : []; const note     = (document.getElementById('e-note').value||'').trim(); if (!question) { showToast('問題文を入力してください。', 'error'); return; } Object.assign(prob, {subject, topic, subtopic, importance, question, example, keywords, note}); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); showToast('保存しました。', 'success'); },
