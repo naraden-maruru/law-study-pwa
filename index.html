@@ -133,6 +133,125 @@
     input:focus, select:focus, textarea:focus{ outline:none; box-shadow:var(--shadow-focus); border-color:var(--accent-2); }
     textarea{ font-size:16px; line-height:1.6 }
 
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background-color: var(--bg-subtle);
+      border-radius: var(--radius-md);
+      flex-wrap: wrap;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .filter-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .filter-item label {
+      white-space: nowrap;
+      font-weight: 600;
+      color: var(--ink-2);
+    }
+    .filter-item select,
+    .filter-item input {
+      width: auto;
+      min-width: 120px;
+      padding: 0.5rem 0.75rem;
+    }
+    .filter-item input[type="number"] {
+      max-width: 100px;
+    }
+
+    /* Settings Page Specific Styles */
+    .settings-section {
+      border-top: 1px solid var(--line);
+      padding-top: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .settings-section:first-of-type {
+      border-top: none;
+      padding-top: 0;
+      margin-top: 0;
+    }
+    .settings-section h3 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+    .settings-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .settings-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+    }
+    .settings-item-info {
+      padding-right: 1rem;
+    }
+    .settings-item-info strong {
+      display: block;
+      color: var(--ink);
+    }
+    .settings-item-info .muted {
+      font-size: 0.875rem;
+      margin: 0.25rem 0 0 0;
+    }
+    .settings-item-control {
+      flex-shrink: 0;
+    }
+    /* Custom switch for checkbox */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 24px;
+    }
+    .switch input { 
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--accent);
+    }
+    input:checked + .slider:before {
+      transform: translateX(16px);
+    }
+
+
     /* ================== RAIL & TABBAR LAYOUT ================== */
     #rail{
       position:fixed; left:0; top:0; bottom:0; width:240px;
@@ -431,12 +550,6 @@
       border-radius: 999px;
       font-weight: 700;
       flex-shrink: 0;
-    }
-    .settings-row {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 0.5rem;
     }
 
     /* ===== 自己評価ボタンのスタイル（修正箇所） ===== */
@@ -1450,15 +1563,24 @@ function latestSelfTag(p){
       <option value="fail" ${state.currentSelf==='fail'?'selected':''}>できない</option>
     `;
     return `
-      <div class="section flex" style="gap:.75rem;align-items:center">
-        <label class="small">重要度：</label>
-        <select onchange="app.setImp(this.value)">${impOpts}</select>
-        <label class="small">自己評価：</label>
-        <select onchange="app.setSelf(this.value)">${selfOpts}</select>
-        <label class="small" style="margin-left:1rem">件数</label>
-        <input type="number" id="count-subject" min="1" step="1" placeholder="（空=全件）" style="max-width:6rem">
-        <div class="space"></div>
-        <button class="ghost" onclick="app.resetFilters()">リセット</button>
+      <div class="section filter-bar">
+        <div class="filter-group">
+          <div class="filter-item">
+            <label class="small">重要度</label>
+            <select onchange="app.setImp(this.value)">${impOpts}</select>
+          </div>
+          <div class="filter-item">
+            <label class="small">自己評価</label>
+            <select onchange="app.setSelf(this.value)">${selfOpts}</select>
+          </div>
+          <div class="filter-item">
+            <label class="small">件数</label>
+            <input type="number" id="count-subject" min="1" step="1" placeholder="（全件）">
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="ghost" onclick="app.resetFilters()"><i data-lucide="rotate-ccw" style="width:16px; height:16px;"></i>リセット</button>
+        </div>
       </div>
     `;
   }
@@ -2164,43 +2286,86 @@ function latestSelfTag(p){
   function renderSettings(){
     const html = `
       <div class="card">
-        <h2>設定 / 同期</h2>
-        <h3 class="section">A. 端末ローカル保存</h3>
-        <div class="section settings-row">
-          <label><input type="checkbox" id="cfg-local"> 端末に自動保存</label>
-          <label><input type="checkbox" id="cfg-restore"> 起動時に自動復元</label>
-        </div>
-        <h3 class="section">B. ファイル同期（PC推奨）</h3>
-        <div class="section">
-          <p class="muted small">PCのChrome/EdgeブラウザでiCloud Driveなどのクラウド上のJSONファイルと直接同期できます。</p>
-          <div class="row-sm">
-            <button class="ghost" onclick="app.pickFile()">ファイルを選択...</button>
-            <button class="ghost" onclick="app.tryRestoreFileHandle(true)">再接続</button>
+        <h2>設定 / データ管理</h2>
+
+        <div class="settings-section">
+          <h3>アプリケーション設定</h3>
+          <div class="settings-content">
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <strong>端末に自動保存</strong>
+                <p class="muted">ブラウザ内に学習データを自動で保存します。</p>
+              </div>
+              <div class="settings-item-control">
+                <label class="switch">
+                  <input type="checkbox" id="cfg-local">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <strong>起動時に自動復元</strong>
+                <p class="muted">アプリ起動時に自動でデータを読み込みます。</p>
+              </div>
+              <div class="settings-item-control">
+                <label class="switch">
+                  <input type="checkbox" id="cfg-restore">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+             <div class="settings-item">
+              <div class="settings-item-info">
+                <strong>iPhone/iPadで起動時に案内を表示</strong>
+                <p class="muted">手動でのインポート/エクスポート案内を表示します。</p>
+              </div>
+              <div class="settings-item-control">
+                <label class="switch">
+                  <input type="checkbox" id="cfg-ios-import-popup">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
-        <h3 class="section">C. ドリル設定</h3>
-        <div class="section">
-          <label>弱点ドリルの比率（普通 / できない / その他）</label>
-          <div class="row-sm">
-            <input type="number" id="cfg-mix-u" min="0" step="1" style="max-width:6rem">
-            <input type="number" id="cfg-mix-f" min="0" step="1" style="max-width:6rem">
-            <input type="number" id="cfg-mix-o" min="0" step="1" style="max-width:6rem">
+        
+        <div class="settings-section">
+          <h3>ドリル設定</h3>
+          <div class="settings-content">
+            <p class="muted small">弱点ドリルの出題比率を設定します。（普通 / できない / その他）</p>
+            <div class="row-sm">
+              <input type="number" id="cfg-mix-u" min="0" step="1" style="max-width:6rem">
+              <input type="number" id="cfg-mix-f" min="0" step="1" style="max-width:6rem">
+              <input type="number" id="cfg-mix-o" min="0" step="1" style="max-width:6rem">
+            </div>
           </div>
         </div>
-        <h3 class="section">D. iPhone/iPad設定</h3>
-        <div class="section settings-row">
-          <label><input type="checkbox" id="cfg-ios-import-popup"> 起動時にインポート案内を表示</label>
+
+        <div class="settings-section">
+          <h3>データ操作</h3>
+          <div class="settings-content">
+            <p class="muted small">PCのChrome/EdgeブラウザでiCloud Driveなどのクラウド上のJSONファイルと直接同期できます。</p>
+            <div class="row-sm">
+              <button class="ghost" onclick="app.pickFile()">ファイルを選択...</button>
+              <button class="ghost" onclick="app.tryRestoreFileHandle(true)">再接続</button>
+            </div>
+            <p class="muted small" style="margin-top: 1rem;">現在の学習データをファイルとして書き出したり、ファイルから読み込んだりします。</p>
+            <div class="row-sm">
+              <input type="file" id="file" accept="application/json" />
+              <button class="ghost" id="btn-import">インポート</button>
+              <button class="ghost" id="btn-export">エクスポート</button>
+            </div>
+          </div>
         </div>
-        <div class="section row-sm">
-          <button class="ghost" id="btn-save-cfg">設定を保存</button>
-          <button class="ghost danger" id="btn-clear">ローカルキャッシュを消去</button>
-        </div>
-        <h3 class="section">E. 手動インポート/エクスポート</h3>
-        <div class="section">
-          <div class="row-sm">
-            <input type="file" id="file" accept="application/json" />
-            <button class="ghost" id="btn-import">インポート</button>
-            <button class="ghost" id="btn-export">エクスポート</button>
+
+        <div class="settings-section">
+          <h3>全般</h3>
+          <div class="settings-content">
+            <div class="row-sm">
+              <button class="ghost" id="btn-save-cfg">設定を保存</button>
+              <button class="ghost danger" id="btn-clear">ローカルキャッシュを消去</button>
+            </div>
           </div>
         </div>
       </div>
