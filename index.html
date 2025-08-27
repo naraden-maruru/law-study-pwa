@@ -300,11 +300,7 @@
     #tabbar{
       display:flex; align-items:center; justify-content:space-around;
       background:var(--panel); color:var(--ink);
-      border-top:1px solid var(--line);
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
-      height: calc(60px + env(safe-area-inset-bottom));
-      padding-bottom: env(safe-area-inset-bottom);
-      box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+      height: 60px;
     }
     #tabbar .item{ display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center; flex:1; padding: 4px 0; }
     #tabbar .item button{ background:transparent; border:0; color:var(--ink-2); font-size:.75rem; font-weight:600; padding: 0; box-shadow: none; }
@@ -352,11 +348,22 @@
     @media(max-width: 999px){
       #mobile-header {
         display: block;
-        position:fixed; top:0; left:0; right:0;
+        position:fixed; 
+        top:0; 
+        left:0; 
+        right:0;
         z-index: 50;
         background: var(--panel);
+        padding-top: env(safe-area-inset-top);
+        box-shadow: var(--shadow-md);
       }
-      body{ padding-top: 55px; padding-bottom: calc(120px + env(safe-area-inset-bottom)); } 
+      #tabbar {
+        border-bottom: 1px solid var(--line);
+      }
+      body{ 
+        padding-top: calc(55px + 60px + env(safe-area-inset-top)); 
+        padding-bottom: 20px;
+      } 
     }
     
     html.iphone #tabbar .item[data-nav="exit"]{ display:flex !important; }
@@ -711,6 +718,15 @@
 </aside>
 
 <header id="mobile-header">
+  <nav id="tabbar" aria-label="タブバー">
+    <div class="item" data-nav="home"><i class="lucide" data-lucide="home"></i><button>ホーム</button></div>
+    <div class="item" data-nav="subjects"><i class="lucide" data-lucide="book-copy"></i><button>科目</button></div>
+    <div class="item" data-nav="review"><i class="lucide" data-lucide="sparkles"></i><button>復習</button></div>
+    <div class="item" data-nav="add"><i class="lucide" data-lucide="plus-circle"></i><button>追加</button></div>
+    <div class="item" data-nav="search"><i class="lucide" data-lucide="search"></i><button>検索</button></div>
+    <div class="item" data-nav="settings"><i class="lucide" data-lucide="settings"></i><button>設定</button></div>
+    <div class="item" data-nav="exit"><i class="lucide" data-lucide="log-out"></i><button>終了</button></div>
+  </nav>
   <div class="mode-switcher-mobile">
     <small>入力モード</small>
     <div class="seg">
@@ -721,16 +737,6 @@
 </header>
 
 <main id="app"></main>
-
-<nav id="tabbar" aria-label="タブバー">
-    <div class="item" data-nav="home"><i class="lucide" data-lucide="home"></i><button>ホーム</button></div>
-    <div class="item" data-nav="subjects"><i class="lucide" data-lucide="book-copy"></i><button>科目</button></div>
-    <div class="item" data-nav="review"><i class="lucide" data-lucide="sparkles"></i><button>復習</button></div>
-    <div class="item" data-nav="add"><i class="lucide" data-lucide="plus-circle"></i><button>追加</button></div>
-    <div class="item" data-nav="search"><i class="lucide" data-lucide="search"></i><button>検索</button></div>
-    <div class="item" data-nav="settings"><i class="lucide" data-lucide="settings"></i><button>設定</button></div>
-    <div class="item" data-nav="exit"><i class="lucide" data-lucide="log-out"></i><button>終了</button></div>
-</nav>
 
 <div id="sys-banner" class="banner hidden"></div>
 <div id="modal-root"></div>
@@ -2621,3 +2627,4 @@ function latestSelfTag(p){
 </script>
 </body>
 </html>
+" in the Canvas "司法試験 論証タイピング (Animation Refresh)" document, and I want to change the order of the subjec
