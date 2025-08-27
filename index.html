@@ -619,7 +619,7 @@ const app = (()=>{
   const IS_IPHONE = /iPhone|iPod/.test(UA) && "ontouchend" in document;
   if (IS_IPHONE) document.documentElement.classList.add('iphone');
 
-  const CORE_SUBJECTS = ["憲法","行政法","民法","刑法","商法","民訴法","刑訴法"];
+  const CORE_SUBJECTS = ["憲法", "民法", "刑法", "商法", "民訴法", "刑訴法", "行政法"];
   const ELECTIVE_SUBJECTS = ["労働法","倒産法","知的財産法","租税法","国際私法","国際公法","経済法","環境法"];
   const ELECTIVE_GROUP = "__ELECTIVE__";
   const IMPORTANCES = ["★重要","★中程度","★低め"];
