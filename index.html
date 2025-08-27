@@ -1020,7 +1020,8 @@ const app = (()=>{
       context: {subject: state.currentSubject, topic: state.currentTopic, subtopic: state.currentSubtopic, random: !!random, mode: mode||null},
       planned: ids.length,
       answered: 0,
-      scoreCount: {ok:0, good:0, low:0, bad:0}
+      scoreCount: {ok:0, good:0, low:0, bad:0},
+      answeredIds: []
     };
     saveLocal(state.problems, sessionsState.logs);
   }
