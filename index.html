@@ -130,6 +130,40 @@
     #tabbar .item.active button{ color:#fff }
     #tabbar .item.active .ico{ opacity:1 }
 
+    /* ===== 【追加】モバイル用モード切り替えボタンのスタイル ===== */
+    .mode-switcher-mobile {
+      background: var(--accent);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .mode-switcher-mobile small {
+      color: #eaf2ff;
+      font-weight: 600;
+    }
+    .mode-switcher-mobile .seg {
+      display: flex;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 2px;
+    }
+    .mode-switcher-mobile .seg button {
+      padding: 4px 12px;
+      border: none;
+      background: transparent;
+      color: #eaf2ff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border-radius: 7px;
+    }
+    .mode-switcher-mobile .seg button.active {
+      background: #fff;
+      color: var(--accent);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
     @media(min-width: 1000px){
       #rail{ display:flex }
       body{ padding-left:240px }
@@ -139,8 +173,10 @@
         display: block;
         position:fixed; top:0; left:0; right:0;
         z-index: 50;
+        background: var(--accent); /* ヘッダー背景色を統一 */
       }
-      body{ padding-top: 55px; }
+      /* モード切り替え分だけpadding-topを増やす */
+      body{ padding-top: 95px; } 
     }
     
     /* iPhone specific styles */
@@ -403,6 +439,49 @@
       background: #c0392b !important; /* Red */
       border-color: #c0392b !important;
     }
+
+    /* ===== ホーム画面のレイアウト ===== */
+    .page-header {
+        margin-bottom: 1rem;
+    }
+    .home-dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto 1fr;
+      gap: 1.25rem;
+      height: calc(100vh - 120px); 
+      min-height: 500px;
+    }
+    .home-dashboard-grid .card {
+      margin-top: 0;
+    }
+    .home-dashboard-grid .card:nth-child(1) {
+      grid-column: 1 / 2;
+      grid-row: 1 / 2;
+    }
+    .home-dashboard-grid .card:nth-child(2) {
+      grid-column: 1 / 2;
+      grid-row: 2 / 3;
+    }
+    .home-dashboard-grid .card-chart {
+      grid-column: 2 / 3;
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-chart .chart-container {
+      flex-grow: 1;
+      position: relative;
+      min-height: 300px;
+    }
+    
+    @media(max-width: 999px){
+      .home-dashboard-grid {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+      }
+    }
   </style>
   <script>
     // Optional: disable SW if ?nosw in URL
@@ -496,6 +575,14 @@
 </aside>
 
 <header id="mobile-header">
+  <!-- ===== 【追加】モバイル用モード切り替えボタン ===== -->
+  <div class="mode-switcher-mobile">
+    <small>入力モード</small>
+    <div class="seg">
+      <button class="btn-mode-full">全文</button>
+      <button class="btn-mode-cloze">穴埋め</button>
+    </div>
+  </div>
   <nav id="tabbar" aria-label="タブバー">
     <div class="item" data-nav="home"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><button>ホーム</button></div>
     <div class="item" data-nav="subjects"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4zM4 3h8a4 4 0 0 1 4 4v10H4z"/><path d="M16 7h4v10h-4z"/></svg><button>科目</button></div>
@@ -1183,7 +1270,7 @@ function latestSelfTag(p){
     `;
     
     const globalStatsHtml = `
-      <h3 class="section">全体の進捗</h3>
+      <h3>全体の進捗</h3>
       <div class="home-grid section">
          <div class="stat-card">
           <div class="value">${globalStats.answeredProblems}<span class="unit">/ ${globalStats.totalProblems} 問</span></div>
@@ -1201,18 +1288,26 @@ function latestSelfTag(p){
     `;
 
     $app.innerHTML = `
-      <div class="card">
+      <div class="page-header">
         <h2>ホーム</h2>
-        ${IS_IPHONE ? dailyStatsHtml + globalStatsHtml : dailyStatsHtml}
       </div>
-      ${!IS_IPHONE ? `<div class="card">${globalStatsHtml}</div>` : ''}
-      <div class="card">
-        <h3>学習バランス</h3>
-        <canvas id="radarChart"></canvas>
+      <div class="home-dashboard-grid">
+        <div class="card">
+          ${dailyStatsHtml}
+        </div>
+        <div class="card">
+          ${globalStatsHtml}
+        </div>
+        <div class="card card-chart">
+          <h3>学習バランス</h3>
+          <div class="chart-container">
+            <canvas id="radarChart"></canvas>
+          </div>
+        </div>
       </div>
     `;
 
-    // Render Chart
+    // グラフを描画
     const ctx = document.getElementById('radarChart');
     if (radarChart) {
         radarChart.destroy();
@@ -1221,6 +1316,8 @@ function latestSelfTag(p){
         type: 'radar',
         data: radarData,
         options: {
+            responsive: true,
+            maintainAspectRatio: false, // コンテナに合わせてリサイズ
             scales: {
                 r: {
                     angleLines: { display: true },
