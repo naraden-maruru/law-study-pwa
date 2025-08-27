@@ -1945,7 +1945,7 @@ function latestSelfTag(p){
     function currentTopicValue(){
       const tSel = document.getElementById('e-topic');
       if (!tSel) return (document.getElementById('e-topic-new')?.value||'').trim();
-      if (tSel.value === "__NEW__") return (document.getElementById('e-topic-new').value||'').trim();
+      if (tSel.value === "__NEW__") return (document.getElementById('e-topic-new')?.value||'').trim();
       return tSel.value;
     }
     function mountSubtopic(){
@@ -2043,11 +2043,15 @@ function latestSelfTag(p){
             <input type="number" id="cfg-mix-o" min="0" step="1" style="max-width:6rem">
           </div>
         </div>
+        <h3 class="section">D. iPhone/iPad設定</h3>
+        <div class="section settings-row">
+          <label><input type="checkbox" id="cfg-ios-import-popup"> 起動時にインポート案内を表示</label>
+        </div>
         <div class="section row-sm">
           <button class="ghost" id="btn-save-cfg">設定を保存</button>
           <button class="ghost danger" id="btn-clear">ローカルキャッシュを消去</button>
         </div>
-        <h3 class="section">D. 手動インポート/エクスポート</h3>
+        <h3 class="section">E. 手動インポート/エクスポート</h3>
         <div class="section">
           <div class="row-sm">
             <input type="file" id="file" accept="application/json" />
@@ -2057,24 +2061,25 @@ function latestSelfTag(p){
         </div>
       </div>
     `;
-    const chkLocal   = document.getElementById('cfg-local');
-    const chkRestore = document.getElementById('cfg-restore');
-    chkLocal.checked = !!config.autoLocalSave;
-    chkRestore.checked = !!config.autoRestore;
-
-    const mu = document.getElementById('cfg-mix-u');
-    const mf = document.getElementById('cfg-mix-f');
-    const mo = document.getElementById('cfg-mix-o');
-    mu.value = Number(config.mixRatio?.unsure||0);
-    mf.value = Number(config.mixRatio?.fail||0);
-    mo.value = Number(config.mixRatio?.other||0);
-
-    chkLocal.onchange = e => { config.autoLocalSave = e.target.checked; };
-    chkRestore.onchange = e => { config.autoRestore = e.target.checked; };
+    document.getElementById('cfg-local').checked = !!config.autoLocalSave;
+    document.getElementById('cfg-restore').checked = !!config.autoRestore;
+    document.getElementById('cfg-ios-import-popup').checked = !!config.iosShowImportAtBoot;
+    
+    document.getElementById('cfg-mix-u').value = Number(config.mixRatio?.unsure||0);
+    document.getElementById('cfg-mix-f').value = Number(config.mixRatio?.fail||0);
+    document.getElementById('cfg-mix-o').value = Number(config.mixRatio?.other||0);
 
     document.getElementById('btn-save-cfg').onclick = ()=>{
-      config.mixRatio = {unsure:Number(mu.value||0), fail:Number(mf.value||0), other:Number(mo.value||0)};
-      saveConfig(); showToast('設定を保存しました。');
+      config.autoLocalSave = document.getElementById('cfg-local').checked;
+      config.autoRestore = document.getElementById('cfg-restore').checked;
+      config.iosShowImportAtBoot = document.getElementById('cfg-ios-import-popup').checked;
+      config.mixRatio = {
+        unsure: Number(document.getElementById('cfg-mix-u').value||0),
+        fail:   Number(document.getElementById('cfg-mix-f').value||0),
+        other:  Number(document.getElementById('cfg-mix-o').value||0)
+      };
+      saveConfig();
+      showToast('設定を保存しました。');
     };
     document.getElementById('btn-clear').onclick = ()=>{
       clearLocal();
@@ -2144,7 +2149,6 @@ function latestSelfTag(p){
   }
 
   function showIOSImportModal() {
-    if (state.problems.length > 0) return;
     showModal(`
       <h3>ようこそ</h3>
       <p>iPhone/iPadでは、データの保存に手動でのインポート/エクスポートが必要です。</p>
