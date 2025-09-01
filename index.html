@@ -1163,13 +1163,6 @@ const app = (()=>{
     }
     return last;
   }
-
-  function getNextReviewDate(p) {
-    if (!p || !Array.isArray(p.reviews) || p.reviews.length === 0) return null;
-    // Dates are 'YYYY-MM-DD' strings, so alphabetical sort is chronological sort.
-    return p.reviews.slice().sort()[0];
-  }
-
   function todayStr(){ return ymdLocal(new Date()); }
   function escapeHtml(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function idToProb(id){ return state.problems.find(p=>p.id===id); }
@@ -1916,18 +1909,11 @@ function latestSelfTag(p){
     return html;
   }
 
-  function getReviewCycleLabel(p) {
+  function getReviewTimingLabel(p) {
     const lastAnswer = lastAnswerYmdLocal(p);
     if (!lastAnswer) return '初回';
-
-    const ladder = [1, 7, 14, 30];
-    if (p.inReview && typeof p.stage === 'number' && p.stage >= 0 && p.stage < ladder.length) {
-        return `${ladder[p.stage]}日後サイクル`;
-    }
-    
-    // フォールバックとして経過日数を表示
     const days = daysBetweenLocal(todayStr(), lastAnswer);
-    return `${days}日経過`;
+    return `${days}日後の復習`;
   }
 
   function renderReview(){
@@ -1943,16 +1929,10 @@ function latestSelfTag(p){
       <div class="review-details-list">
         ${dueToday.length > 0 ? dueToday.map((id, i) => {
           const p = idToProb(id);
-          const lastAnswerDate = lastAnswerYmdLocal(p);
-          const nextReviewDate = getNextReviewDate(p);
-          const kisanbiHtml = lastAnswerDate ? `<span class="muted small" style="flex-shrink: 0;">起算日: ${lastAnswerDate}</span>` : '';
-          const yoteibiHtml = nextReviewDate ? `<span class="muted small" style="flex-shrink: 0;">予定日: ${nextReviewDate}</span>` : '';
           return `
             <div class="review-detail-item animated-list-item" style="animation-delay: ${i * 40}ms;">
-              <span class="timing-tag">${getReviewCycleLabel(p)}</span>
+              <span class="timing-tag">${getReviewTimingLabel(p)}</span>
               <span class="space">${escapeHtml(p.question)}</span>
-              ${kisanbiHtml}
-              ${yoteibiHtml}
               <button class="ghost" onclick="app.startQuiz(${p.id}, 'review_list')">解く</button>
             </div>
           `;
@@ -2603,7 +2583,7 @@ function latestSelfTag(p){
       updateInputModeUI();
       
       if (IS_IPHONE && config.iosShowImportAtBoot) {
-        showIOSImportAtBoot();
+        showIOSImportModal();
       }
 
     }catch(e){ showError(e); }
@@ -2627,108 +2607,7 @@ function latestSelfTag(p){
     deleteProblem: (id)=>{ const target = state.problems.find(p=>p.id===id); if (!target) return; if (confirm(`次の問題を削除します。よろしいですか？\n\n「${target.question}」`)) { state.problems = state.problems.filter(p=>p.id!==id); reindex(); saveLocal(state.problems, sessionsState.logs); scheduleFileSave(); updateNavBadges(); render(); } },
     prev: ()=>{ const id=navPrevId(); if (id){ state.currentProblemId=id; render(); } },
     next: ()=>{ const useQueue = Array.isArray(state.reviewQueue) && state.reviewQueue.length; if (useQueue && state.lastGradedProblemId === state.currentProblemId && state.lastGradedScore){   const ids = state.reviewQueue.slice();   const curId = state.currentProblemId;   const idx = ids.indexOf(curId);   let nextId = null;   if (state.lastGradedScore === "◎"){     if (idx >= 0) ids.splice(idx, 1);     state.reviewQueue = ids;     nextId = (idx < ids.length) ? ids[idx] : null;   } else {     ids.push(curId);     state.reviewQueue = ids;     nextId = (idx >= 0 && idx < ids.length-1) ? ids[idx+1] : null;   }   if (nextId){ state.currentProblemId = nextId; render(); }   else {     const resultEl = document.getElementById("result");     if (resultEl){ resultEl.innerHTML = `<div class="section"><div class="muted">リストの出題が完了しました。</div><div class="section"><button class="primary" onclick="app.goHome()">ダッシュボードに戻る</button></div></div>`; }     endSession(); stopTimer();   }   return; } const id=navNextId(); if (id){ state.currentProblemId=id; render(); } else {   const resultEl = document.getElementById("result");   if (resultEl){ resultEl.innerHTML = `<div class="section"><div class="muted">キューの最後です。</div><div class="section"><button class="primary" onclick="app.goHome()">ダッシュボードに戻る</button></div></div>`; }   endSession(); stopTimer(); }},
-    grade: ()=>{ 
-      const elapsed = state.timerStart ? Math.round((Date.now()-state.timerStart)/1000) : null; 
-      let txt = (document.getElementById('answer').value || '').trim(); 
-      const prob = state.problems.find(x=>x.id===state.currentProblemId); 
-      const __mode = (typeof getInputMode==='function') ? getInputMode() : 'full';
-
-      // Levenshtein distance function for full text comparison
-      const levenshtein = (a, b) => {
-        if (a.length === 0) return b.length;
-        if (b.length === 0) return a.length;
-        const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(null));
-        for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-        for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
-        for (let i = 1; i <= a.length; i++) {
-          for (let j = 1; j <= b.length; j++) {
-            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-            matrix[i][j] = Math.min(
-              matrix[i - 1][j] + 1,      // Deletion
-              matrix[i][j - 1] + 1,      // Insertion
-              matrix[i - 1][j - 1] + cost // Substitution
-            );
-          }
-        }
-        return matrix[a.length][b.length];
-      };
-      
-      // Normalization function for comparisons (removes punctuation)
-      const normalizeForComp = (str) => (str || '').replace(/[.,\s\n\r、。「」（）]/g, '').toLowerCase();
-
-      if (__mode === 'cloze' && prob && Array.isArray(prob.keywords) && prob.keywords.length){ 
-        const parts = []; 
-        for (let i = 1; i <= prob.keywords.length; i++){ 
-          const el = document.getElementById('cloze-' + i); 
-          parts.push(el ? String(el.value || '').trim() : ''); 
-        } 
-        txt = parts.join(' '); 
-      } 
-      
-      const total = (prob.keywords||[]).length; 
-      let matches=[], missing=[]; 
-      function __norm(s){ try{ s = String(s||'').normalize('NFKC'); }catch(_){ s = String(s||''); } s = s.replace(/\s+/g,' ').trim().replace(/[、，]/g,',').replace(/[。．]/g,'.').toLowerCase(); return s; } 
-
-      let score="✕", cls="score-bad", scoreDetail="";
-
-      if (__mode === 'cloze' && total > 0) {
-        const parts = []; 
-        for (let i=1; i<=total; i++){ 
-          const el = document.getElementById('cloze-'+i); 
-          parts.push(el ? (el.value||'') : ''); 
-        } 
-        for (let i=0; i<total; i++){ 
-          if (__norm(parts[i]) === __norm(prob.keywords[i])) matches.push(prob.keywords[i]); 
-          else missing.push(prob.keywords[i]); 
-        }
-        const ratio = matches.length / total;
-        if (ratio===1){ score="◎"; cls="score-okay"; } 
-        else if (ratio>=0.6){ score="○"; cls="score-mid"; } 
-        else if (ratio>0){ score="△"; cls="score-low"; } 
-        else { score="✕"; cls="score-bad"; } 
-        scoreDetail = `（${matches.length} / ${total}）`;
-        matches = (prob.keywords||[]).filter(kw => __norm(txt).includes(__norm(kw))); // For highlighting
-        missing = (prob.keywords||[]).filter(kw => !__norm(txt).includes(__norm(kw))); // For highlighting
-
-      } else { // Full text mode logic
-        const nTxt = __norm(txt);
-        matches = (prob.keywords || []).filter(kw => nTxt.includes(__norm(kw)));
-        missing = (prob.keywords || []).filter(kw => !nTxt.includes(__norm(kw)));
-        
-        if (total === 0) {
-          score = "—";
-          cls = "";
-          scoreDetail = "（キーワード未設定のため採点なし）";
-        } else {
-          // 1. Keyword Score (80% weight)
-          const keywordRatio = matches.length / total;
-          const keywordScore = keywordRatio * 0.8;
-
-          // 2. Full Text Score (20% weight)
-          const userNorm = normalizeForComp(txt);
-          const modelNorm = normalizeForComp(prob.example);
-          let fullTextScore = 0;
-          let similarity = 0;
-          if (modelNorm.length > 0) {
-            const distance = levenshtein(userNorm, modelNorm);
-            similarity = 1 - (distance / Math.max(userNorm.length, modelNorm.length));
-            fullTextScore = Math.max(0, similarity) * 0.2; // Ensure score is not negative
-          }
-
-          // 3. Total Score
-          const finalScore = keywordScore + fullTextScore;
-          
-          if (finalScore >= 0.95) { score = "◎"; cls = "score-okay"; }
-          else if (finalScore >= 0.7) { score = "○"; cls = "score-mid"; }
-          else if (finalScore >= 0.4) { score = "△"; cls = "score-low"; }
-          else { score = "✕"; cls = "score-bad"; }
-
-          const keywordPercent = keywordRatio * 100;
-          const fullTextPercent = Math.max(0, similarity) * 100;
-          scoreDetail = `(総合: ${(finalScore * 100).toFixed(0)}% | キーワード: ${keywordPercent.toFixed(0)}% | 全文: ${fullTextPercent.toFixed(0)}%)`;
-        }
-      }
-      
+    grade: ()=>{ const elapsed = state.timerStart ? Math.round((Date.now()-state.timerStart)/1000) : null; let txt = (document.getElementById('answer').value || '').trim(); const prob = state.problems.find(x=>x.id===state.currentProblemId); const __mode = (typeof getInputMode==='function') ? getInputMode() : 'full'; if (__mode==='cloze' && prob && Array.isArray(prob.keywords) && prob.keywords.length){ const parts = []; for (let i=1;i<=prob.keywords.length;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? String(el.value||'').trim() : ''); } txt = parts.join(' '); } const total = (prob.keywords||[]).length; let matches=[], missing=[]; function __norm(s){ try{ s = String(s||'').normalize('NFKC'); }catch(_){ s = String(s||''); } s = s.replace(/\s+/g,' ').trim().replace(/[、，]/g,',').replace(/[。．]/g,'.').toLowerCase(); return s; } if (__mode==='cloze' && total>0){ const parts = []; for (let i=1;i<=total;i++){ const el = document.getElementById('cloze-'+i); parts.push(el ? (el.value||'') : ''); } for (let i=0;i<total;i++){ if (__norm(parts[i]) === __norm(prob.keywords[i])) matches.push(prob.keywords[i]); else missing.push(prob.keywords[i]); } }else{ const nTxt = __norm(txt); matches = (prob.keywords||[]).filter(kw => nTxt.includes(__norm(kw))); missing = (prob.keywords||[]).filter(kw => !nTxt.includes(__norm(kw))); } let score="✕", cls="score-bad", scoreDetail=""; if (total===0){ score="—"; cls=""; scoreDetail="（キーワード未設定のため採点なし）"; }else{ const ratio = matches.length / total; if (ratio===1){ score="◎"; cls="score-okay"; } else if (ratio>=0.6){ score="○"; cls="score-mid"; } else if (ratio>0){ score="△"; cls="score-low"; } else { score="✕"; cls="score-bad"; } scoreDetail = `（${matches.length} / ${total}）`; }
       // --- Start of simplified grading logic ---
       const t = todayStr();
       if(!state.sessionScheduled) state.sessionScheduled={};
@@ -2787,6 +2666,3 @@ function latestSelfTag(p){
 </script>
 </body>
 </html>
-
-
-
